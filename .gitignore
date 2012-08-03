@@ -1,0 +1,15 @@
+# test ingore file
+/data/
+/out/
+*.buf
+*.hdr
+!/aux/*search.hdr
+/sphinx/_*
+*.mat
+*.MAT
+*.pyc
+*.swp
+*.swo
+*.tgz
+*.prof
+.DS_store

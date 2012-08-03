@@ -1,0 +1,5 @@
+Code ideas
+---------
+
+- Verify same dt of data before processing and if necesssary apply resampling
+- Implement threading of stack module
