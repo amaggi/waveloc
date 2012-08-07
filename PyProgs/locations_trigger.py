@@ -57,13 +57,7 @@ def number_good_kurtosis_for_location(kurt_files,o_time,snr_limit=10.0,sn_time=1
   for filename in kurt_files:
     try:
       wf.read_from_file(filename,starttime=start_time,endtime=end_time)
-      k_max=np.max(wf.trace.data)
-      wf.read_from_file(filename,starttime=start_time,endtime=o_time)
-      k_mean=np.mean(np.abs(wf.trace.data))
-      if k_mean==0.0:
-        snr=0
-      else:
-        snr=k_max/k_mean
+      snr=wf.get_snr(o_time,start_time,end_time)
       if snr > snr_limit:
         n_good_kurt = n_good_kurt + 1
     except UserWarning:
