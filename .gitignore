@@ -2,6 +2,7 @@
 /data/
 /out/
 *.buf
+*.ttimes
 *.hdr
 !/aux/*search.hdr
 /sphinx/_*
