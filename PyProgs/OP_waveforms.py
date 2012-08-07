@@ -524,6 +524,24 @@ class Waveform(object):
     self.trace.filter('lowpass', freq=0.4*self.trace.stats.sampling_rate/float(factor), zerophase=True) 
     self.trace.downsample(decimation_factor=factor, strict_length=False, no_filter=True)
 
+  def get_snr(self,o_time,left_time,right_time):
+    """
+    Returns signal-to-noise ratio, where signal = max(abs(signal between left_time and right_time)) and noise = mean(abs(signal between left_time- and otime)).
+    """
+    tr_signal=self.trace.slice(left_time,right_time)
+    signal_value=np.max(np.abs(tr_signal.data))
+
+#    signal_var=np.std(tr_signal.data)
+    tr_noise=self.trace.slice(left_time,o_time)
+    noise_value=np.mean(np.abs(tr_noise.data))
+
+    if noise_value==0.0:
+      snr=0
+    else:
+      snr=signal_value / noise_value
+
+    return snr
+
   def process_envelope(self):
     """
     Runs envelope processing on a waveform.
