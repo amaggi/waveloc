@@ -5,6 +5,7 @@ import os, sys, optparse, glob
 from obspy.core import *
 import matplotlib.pyplot as plt
 import numpy as np
+from OP_waveforms import Waveform
 from grids_paths import QDGrid, StationList, ChannelList, QDTimeGrid
 from sub_PdF_waveloc import do_migration_loop_plot
 from PIL import Image
@@ -13,7 +14,7 @@ from NLL_IO import qd_read_hyp_file, qd_read_picks_from_hyp_file
 import logging
 
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
 
 # get path
 base_path=os.getenv('WAVELOC_PATH_PDF')
@@ -34,12 +35,14 @@ p.add_option('--kurt_glob',action='store',help="kurtosis glob")
 p.add_option('--grad_glob',action='store',help="kurtosis gradient glob")
 p.add_option('--time_grid',action='store',help="time grid")
 p.add_option('--hyp_glob',action='store',help="hypocenter pick glob")
-p.add_option('--reloc', action='store_true', default=False, help='apply to relocated events')
+#p.add_option('--reloc', action='store_true', default=False, help='apply to relocated events')
 p.add_option('--max_stack', action='store', default=200, help='stack value at which to saturate color scale')
+p.add_option('--snr_limit',action='store',default=10.0, help="signal_to_noise level for kurtosis acceptance")
+p.add_option('--sn_time',action='store',default=10.0, help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
 
 (options,arguments)=p.parse_args()
 
-do_reloc=options.reloc
+#do_reloc=options.reloc
 max_stack_value=np.float(options.max_stack)
 
 if options.loc_picks_dir==None or options.hyp_glob==None:
@@ -52,10 +55,7 @@ stack_path=os.path.join(base_path,'out',options.outdir,'stack')
 grid_path= os.path.join(base_path,'out',options.outdir,'grid')
 
 stack_file=os.path.join(stack_path,"combined_stack_max_filt.mseed")
-if do_reloc:
-  loc_path=os.path.join(base_path,'out',options.outdir,'reloc')
-else:
-  loc_path=os.path.join(base_path,'out',options.outdir,'loc')
+loc_path=os.path.join(base_path,'out',options.outdir,'loc')
 loc_filename=os.path.join(loc_path,'locations.dat')
 
 data_path=os.path.join(base_path,'data',options.datadir)
@@ -156,13 +156,34 @@ for loc in locs:
   start_time_migration=stack_time-60.0
   end_time_migration=stack_time+60.0
 
-  # find PdF picks
-  
+
+  # make dictionary of station names with snr ratios
+  snr_start_time=stack_time-options.sn_time
+  snr_end_time=stack_time+options.sn_time
+  snr_dict={}
+  wf=Waveform()
+  for filename in kurt_files:
+    wf.read_from_file(filename,starttime=snr_start_time,endtime=snr_end_time)
+    snr=wf.get_snr(stack_time,snr_start_time,snr_end_time)
+    station_name=wf.trace.stats.station
+    snr_dict[station_name]=snr
+
+  logging.debug("Signal to noise ratios on kurtosis")
+  logging.debug(snr_dict)
 
   # set output filename
   plot_filename=os.path.join(loc_path,"loc_%s.png"%stack_time.isoformat())
 
-  grid_name=do_migration_loop_plot(start_time_migration,end_time_migration,stack_time,grid_path,grad_files,hdr_file,time_grid)
+  # select grad files for which the snr is > snr_limit
+  grad_files_selected=[]
+  for filename in grad_files:
+    st=read(filename,headonly=True)
+    station_name=st.traces[0].stats.station
+    logging.debug("Checking station %s : snr_value = %.2f"%(station_name,snr_dict[station_name]))
+    if snr_dict[station_name]>np.float(options.snr_limit):
+      grad_files_selected.append(filename)
+
+  grid_name=do_migration_loop_plot(start_time_migration,end_time_migration,stack_time,grid_path,grad_files_selected,hdr_file,time_grid)
   # Set png name to give to plot_slice_mayavi
   png_name="%s.png"%grid_name
 
