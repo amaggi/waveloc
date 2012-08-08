@@ -691,10 +691,10 @@ class Waveform(object):
         for i in range(npts):
           mean_value = C*mean_value + (1-C)*x[i]
           var_value=C*var_value+(1-C)*(x[i]-mean_value)**2
-          if var_value>2*varx: 
+          if var_value>varx: 
             kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/var_value**2
           else : 
-            kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/(2*varx)**2
+            kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/varx**2
           xs[i]=kurt_value-3
 
       else:
@@ -703,6 +703,7 @@ class Waveform(object):
           xs[i+nwin]=ss.kurtosis(x[i:(i+nwin)])
 
         
+      #xs_filt=lowpass(xs,10*tr.stats.delta,1/tr.stats.delta,zerophase=True)
        
       # Save xs values as waveform 
       tr.data=xs
