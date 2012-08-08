@@ -54,7 +54,7 @@ def process_data(threadName, q):
 
 
 #get waveloc path from environment
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 # setup arguments for command line parsing
 p = optparse.OptionParser()

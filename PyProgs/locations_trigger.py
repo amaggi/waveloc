@@ -114,7 +114,7 @@ def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
 if __name__=='__main__':
 
   # get path
-  base_path=os.getenv('WAVELOC_PATH_PDF')
+  base_path=os.getenv('WAVELOC_PATH')
 
   # Read command line
 

@@ -15,7 +15,7 @@ from sub_PdF_waveloc import do_migration_loop_reloc
 
 
 # get path
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 # Read command line
 

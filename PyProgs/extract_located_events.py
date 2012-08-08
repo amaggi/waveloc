@@ -9,7 +9,7 @@ from NLL_IO import qd_read_hyp_file, qd_read_picks_from_hyp_file
 
 
 # get path
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 # Read command line
 

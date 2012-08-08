@@ -540,7 +540,7 @@ if __name__=='__main__':
   logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
   # get path
-  base_path=os.getenv('WAVELOC_PATH_PDF')
+  base_path=os.getenv('WAVELOC_PATH')
 
   # Read command line
   p=optparse.OptionParser()

@@ -226,7 +226,7 @@ def do_plot(stack_max,stack_time,stack_time_err_left,stack_time_err_right,stack_
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
 # get path
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 # Read command line
 

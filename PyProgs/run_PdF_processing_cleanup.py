@@ -9,7 +9,7 @@ import numpy as np
 from OP_waveforms import *
 
 #get waveloc path from environment
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 p = optparse.OptionParser()
 p.add_option('--datadir',action='store',help="data subdirectory")

@@ -23,7 +23,7 @@ from grids_paths import QDGrid, StationList
 
 def plot_slice_mayavi(dat_filename,output_file,hyp_x,hyp_y,hyp_z,search_grid_file_name,max_stack_value):
 
-  base_path=os.getenv('WAVELOC_PATH_PDF')
+  base_path=os.getenv('WAVELOC_PATH')
   aux_path="%s/aux"%base_path
 
   # grid geometry

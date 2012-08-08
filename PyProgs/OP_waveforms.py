@@ -792,7 +792,7 @@ if __name__ == '__main__':
   from obspy.core import utcdatetime
 
   #get waveloc path from environment
-  base_path=os.getenv('WAVELOC_PATH_PDF')
+  base_path=os.getenv('WAVELOC_PATH')
 
   data_dir=os.path.join(base_path,'data','2010_266')
   filename=os.path.join(data_dir,'YA.FLR.00.HHZ.2010.266.mseed.filt.sac')

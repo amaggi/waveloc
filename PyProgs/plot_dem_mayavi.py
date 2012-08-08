@@ -22,7 +22,7 @@ from scipy.io.matlab import loadmat
 from grids_paths import QDGrid, StationList
 
 
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 data_path="%s/out/testing"%base_path
 aux_path="%s/aux"%base_path
 

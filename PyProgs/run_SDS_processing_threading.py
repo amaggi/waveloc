@@ -63,7 +63,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %
 
 
 #get waveloc path from environment
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 p = optparse.OptionParser()
 p.add_option('--nthreads','-n', action='store',type='int', default=1,help="number of threads")

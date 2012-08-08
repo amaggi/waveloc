@@ -131,7 +131,7 @@ def main(options):
 
 
 #get waveloc path from environment
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 # lists of pre-calculated grids 
 time_grids=['Slow_len.100m.P','belgium.P','ijen.P']

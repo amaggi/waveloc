@@ -23,7 +23,7 @@ def trigger_detections(st_max,loc_level):
   
 
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
-base_path=os.getenv('WAVELOC_PATH_PDF')
+base_path=os.getenv('WAVELOC_PATH')
 
 # Read command line
 
