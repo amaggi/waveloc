@@ -704,9 +704,10 @@ class Waveform(object):
 
         
       #xs_filt=lowpass(xs,10*tr.stats.delta,1/tr.stats.delta,zerophase=True)
+      xs_filt=smooth(xs)
        
       # Save xs values as waveform 
-      tr.data=xs
+      tr.data=xs_filt
 
       # put trace back into stream
       self.stream.traces[itr]=tr
