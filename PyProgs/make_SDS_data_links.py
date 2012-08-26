@@ -10,6 +10,8 @@ def make_SDS_data_links(datadir,dataglob,outdir):
 
   data_dir=os.path.abspath(datadir)
   out_dir=os.path.abspath(outdir)
+  logging.debug('Data from directory %s'%data_dir)
+  logging.debug('SDS data to be put in directory %s'%out_dir)
 
   all_files=glob.glob(os.path.join(data_dir,dataglob))
 
