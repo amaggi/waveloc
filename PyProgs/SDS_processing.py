@@ -37,9 +37,9 @@ def do_SDS_processing_setup_and_run(datadir='TEST',net_list="",sta_list="",comp_
         full_path=os.path.join(data_dir,net,sta,"%s.D"%comp)
         logging.debug("Full path : %s"%full_path)
         if os.path.exists(full_path):
+
           filt_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt.mseed"%(start_time.isoformat(),net,sta,comp))
           logging.info("Processing to create %s" % (filt_filename))
-
           wf=Waveform()
           try:
             wf.read_from_SDS(data_dir,net,sta,comp, starttime=start_time, endtime=end_time)
