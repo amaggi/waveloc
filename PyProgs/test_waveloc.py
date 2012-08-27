@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
   import test_processing, test_migration
   import logging
-  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
 
   suite01 = suite()
