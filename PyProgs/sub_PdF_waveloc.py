@@ -27,26 +27,24 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
   # create quick and dirty integer versions of the kurtosed data for stacking purposes
   # integer data = data  truncated to integer value and stored in 16 bits
 
-  logging.info("\nCreating 16 bit integer version of the data for faster stacking...")
+  #logging.info("\nCreating 16 bit integer version of the data for faster stacking...")
 
   integer_data={}
   for key,wf in data.iteritems():
-    # TODO - vectoize this loop correctly and see if it can de done in one step
-    int_wf=[int(np.floor(wf.values[i])) for i in range(wf.npts)]
-    integer_data[key]=np.array(int_wf,dtype=np.int16)
+    integer_data[key]=np.array(wf.values)
 
   if options_time:
     t=time()-t_ref
-    logging.info("Time for reading and sqeezing %d data streams with %d points : %.4f s\n" % (len(data.keys()),wf.npts,t))
+    logging.info("Time for reading %d data streams with %d points : %.4f s\n" % (len(data.keys()),wf.npts,t))
 
  ######### DO THE MIGRATION #############
 
-  logging.info("Stacking shifted time series (using  16 bit integers!!)")
+  logging.info("Stacking shifted time series... ")
 
   if options_time:
     t_ref=time()  
 
-  (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_3D_stack(integer_data, delta, search_grid_filename, time_grid)
+  (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid)
 
   logging.debug("Stack geographical dimension = %d"%n_buf)
   logging.debug("Stack time extent = %d points = %.2f s"%(norm_stack_len, norm_stack_len*delta))
@@ -66,20 +64,20 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
     t_ref=time()  
 
   # set up final x,y,z,val arrays
-  max_val=np.zeros(norm_stack_len,dtype=np.int16)
+  max_val=np.zeros(norm_stack_len)
   max_x=np.zeros(norm_stack_len)
   max_y=np.zeros(norm_stack_len)
   max_z=np.zeros(norm_stack_len)
 
   # iterate over stack
   for itime in range(norm_stack_len):
-    time_slice=stack_grid.buf[:,itime]
+    time_slice=stack_grid.buf[:,:,:,itime].flatten()
     ib_max=np.argmax(time_slice)
     max_val[itime]=time_slice[ib_max]
-    ix,iy,iz=stack_grid.get_ix_iy_iz(ib_max)
-    max_x[itime]=ix*stack_grid.dx+stack_grid.x_orig
-    max_y[itime]=iy*stack_grid.dy+stack_grid.y_orig
-    max_z[itime]=iz*stack_grid.dz+stack_grid.z_orig
+    ix,iy,iz=time_grid.get_ix_iy_iz(ib_max)
+    max_x[itime]=ix*time_grid.dx+time_grid.x_orig
+    max_y[itime]=iy*time_grid.dy+time_grid.y_orig
+    max_z[itime]=iz*time_grid.dz+time_grid.z_orig
 
   stack_start_time=start_time-stack_shift_time
 

@@ -21,6 +21,7 @@ from matplotlib.mlab import griddata
 from waveloc_funcs import *
 from flexwin_funcs import *
 import logging
+import numpy as np
 
 
 # For debugging reversal problem
@@ -1338,6 +1339,9 @@ class QDTimeGrid(QDGrid):
 
     #logging.debug('Times for first point in geographical grid : %s '%self.buf[0])
 
+class QDStackGrid(object):
+  def __init__(self,nx,ny,nz,nt):
+    self.buf=np.zeros((nx,ny,nz,nt))
 
 class QDCorrGrid(QDGrid):
   """
