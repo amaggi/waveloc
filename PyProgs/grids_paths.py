@@ -1338,10 +1338,6 @@ class QDTimeGrid(QDGrid):
 
     #logging.debug('Times for first point in geographical grid : %s '%self.buf[0])
 
-class QDStackGrid(object):
-
-  def __init__(self,nt,nx,ny,nz):
-    self.buf=np.zeros(nt,nx,ny,nz)
 
 class QDCorrGrid(QDGrid):
   """
@@ -2112,96 +2108,6 @@ def make_movie(timestamp_directory_name,movie_filename):
 
 
 
-def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
-  # save the list of data keys
-  # note : keys of integer data are all included in keys of time_grid, but there may be more times than data
-  wf_ids=integer_data.keys()
-  time_dict=time_grid.buf[0]
-  time_ids=time_dict.keys()
-  #logging.debug('Length of time ids %d, %s'%(len(time_ids),time_ids))
-  #logging.debug('Length of waveform ids %d, %s'%(len(wf_ids),wf_ids))
-
-  # save the smallest number of points of all the data streams 
-  # this will dimension many of the subsequent arrays
-  min_npts=min([len(integer_data[key]) for key in wf_ids])
-  logging.debug("Stack max time dimension = %d"%min_npts)
-
-  # The stack grid has exactly the same geometry as the time-grid
-  stack_grid=QDCorrGrid()
-  stack_grid.read_NLL_hdr_file(search_grid_filename)
-  stack_grid.construct_empty_grid(min_npts)
-
-  # Number of geographical points in the stack
-  n_buf=stack_grid.nx*stack_grid.ny*stack_grid.nz
-  
-  # keep information on the shortest length of stack for later
-  shortest_n_len=min_npts
-
-  # set up the stack grid 
-  for ib in range(n_buf):
-
-      times=time_grid.buf[ib]
-
-      # find the slice indexes
-      i_times=[int(round(times[wf_id]/delta)) for wf_id in wf_ids]
-      min_i_time=min(i_times)
-      max_i_time=max(i_times)
-      start_end_indexes=[(i_time-min_i_time, i_time+min_npts-max_i_time) for i_time in i_times]
-      n_lens=[start_end_indexes[i][1]-start_end_indexes[i][0] for i in range(len(wf_ids))]
-      n_len=min(n_lens)
-
-      # keep shortest n_len for later
-      if n_len < shortest_n_len:
-        shortest_n_len=n_len
-
-      # initialize the stack
-      stack=numpy.zeros(min_npts,dtype=numpy.int16)
-
-      for i in range(len(wf_ids)):
-        wf_id=wf_ids[i]
-        stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
-    
-      stack_grid.buf[ib][0:n_len]=stack[0:n_len]
-      
-  logging.debug('Stacking done..')
-
-######## FIXUP THE CORR GRID START TIMES #########
-
-
-  # Each stack starts at ref_time - the minimum travel-time and ends at the ref_time + seismogram duration - max travel_time
-  # We need to homogenize, and get everything to start and end at the same time
-
-
-  # deal with the start of the traces
-  # start index for slice = min_itime for the single stack - smallest min_itime for all stacks
-
-  logging.debug('Fixing up stack start times')
-#  iextreme_min_times=[int(round(min(time_grid.buf[ib])/delta)) for ib in range(time_grid.npts)]
-#  iextreme_max_times=[int(round(max(time_grid.buf[ib])/delta)) for ib in range(time_grid.npts)]
-  iextreme_min_times=[int(round(min([time_grid.buf[ib][wf_id] for wf_id in wf_ids])/delta))  for ib in range(n_buf) ]
-  iextreme_max_times=[int(round(max([time_grid.buf[ib][wf_id] for wf_id in wf_ids])/delta))  for ib in range(n_buf) ]
-  iextreme_min_time=min(iextreme_min_times)
-  iextreme_max_time=max(iextreme_max_times)
-
-  # fix the length of the stack to the shortest possible length given all the previous travel time information
-  norm_stack_len=shortest_n_len-iextreme_max_time
-
-  # iterate over the time-arrays in the time_grid to extract the minimum and fix up the stacks
-  for ib in range(n_buf):
-    start_index = iextreme_min_times[ib] - iextreme_min_time
-    tmp=stack_grid.buf[ib][:]
-    try:
-      stack_grid.buf[ib][0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
-    except ValueError:
-#      logging.debug('(norm_stack_len,shortest_n_len,iextreme_max_time) = (%s,%s,%s)'%(norm_stack_len,shortest_n_len,iextreme_max_time))
-#      logging.debug("(ib,norm_stack_len,start_index) = (%s,%s,%s)"%(ib,norm_stack_len,start_index))
-      logging.error("Length of time slice for migration too short compared with the largest migration time.")
-      raise 
-   
-  logging.debug('Done fixing up stack start times')
-  stack_shift_time=delta*iextreme_min_time
-  return n_buf, norm_stack_len, stack_shift_time, stack_grid
- 
 
 def migrate_3D_stack(integer_data, delta, search_grid_filename, time_grid):
   # save the list of data keys
