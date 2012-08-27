@@ -1,11 +1,6 @@
 import unittest
 import os
 
-def suite():
-  suite = unittest.TestSuite()
-  suite.addTest(SetupTests('test_setup'))
-  return suite
-
 def setUpModule():
 
   from make_SDS_data_links import make_SDS_data_links
@@ -18,17 +13,14 @@ def setUpModule():
 
 class SetupTests(unittest.TestCase):
 
+
   def test_setup(self):
     self.assertTrue(True)
 
 if __name__ == '__main__':
 
-  import test_processing
-
-  suite01 = suite()
-  suite02 = test_processing.suite()
-
-  alltests=unittest.TestSuite([suite01, suite02])
-
-  unittest.TextTestRunner(verbosity=2).run(alltests)
+#  import logging
+#  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
+ 
+  unittest.main()
  
