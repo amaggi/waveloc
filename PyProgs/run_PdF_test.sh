@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to run waveloc on the test dataset for Piton de la Fournaise
-data_dir="PdF"
+data_dir="TEST"
 net_list="YA"
 sta_list="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
 comp_list="HHZ"
@@ -15,8 +15,8 @@ snr_limit=10.0
 n_kurt_min=4
 
 time_grid=Slow_len.100m.P
-search_grid=grid.Taisne.search.hdr
-coord_stations=coord_stations_piton
+search_grid=test_grid.search.hdr
+coord_stations=coord_stations_test
 
 mkdir -p $WAVELOC_PATH/out/$out_dir
 mkdir -p $WAVELOC_PATH/out/$out_dir/grid
@@ -24,9 +24,10 @@ mkdir -p $WAVELOC_PATH/out/$out_dir/stack
 mkdir -p $WAVELOC_PATH/out/$out_dir/loc
 mkdir -p $WAVELOC_PATH/out/$out_dir/reloc
 
-./SDS_processing.py --datadir=$data_dir --net_list=$net_list --sta_list=$sta_list --comp_list=$comp_list  --starttime=$start_time --endtime=$end_time --c1=4 --c2=10 --kwin=3.0 --resample --fs=50 --kderiv
+#./SDS_processing.py --datadir=$data_dir --net_list=$net_list --sta_list=$sta_list --comp_list=$comp_list  --starttime=$start_time --endtime=$end_time --c1=4 --c2=10 --kwin=3.0 --resample --fs=50 --kderiv
 
 #./run_waveloc_threading.py -t -v -n 1 --time_grid $time_grid --search_grid $search_grid -s $coord_stations -o $out_dir --datadir=$data_dir --dataglob=*kurt_grad.mseed --starttime=$start_time --endtime=$end_time --data_length=600 --data_overlap=20
+./migration.py -t -v --time_grid $time_grid --search_grid $search_grid -s $coord_stations -o $out_dir --datadir=$data_dir --dataglob=*kurt_grad.mseed --starttime=$start_time --endtime=$end_time --data_length=600 --data_overlap=20
 #./run_waveloc_threading.py -t -v -n 4 --time_grid $time_grid --search_grid $search_grid -s $coord_stations -o $out_dir --datadir=$data_dir --dataglob=*kurt_grad.mseed --starttime=$start_time --endtime=$end_time --data_length=600 --data_overlap=20 --load_ttimes_buf 
 
 #./locations_trigger.py --outdir=$out_dir --loclevel=50 --datadir=$data_dir --dataglob=*kurt.mseed --n_kurt_min=$n_kurt_min --snr_limit=$snr_limit
