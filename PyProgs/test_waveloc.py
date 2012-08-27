@@ -34,7 +34,7 @@ class SetupTests(unittest.TestCase):
 
 if __name__ == '__main__':
 
-  import test_processing, test_migration
+  import test_processing, test_migration, test_location
   import logging
   logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
@@ -42,8 +42,9 @@ if __name__ == '__main__':
   suite01 = suite()
   suite02 = test_processing.suite()
   suite03 = test_migration.suite()
+  suite04 = test_location.suite()
 
-  alltests=unittest.TestSuite([suite01, suite02, suite03])
+  alltests=unittest.TestSuite([suite01, suite02, suite03, suite04])
 
   unittest.TextTestRunner(verbosity=2).run(alltests)
  

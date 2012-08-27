@@ -109,109 +109,87 @@ def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
 
   return locs
    
-#  plot_location_trigg
-
-if __name__=='__main__':
-
-  # get path
-  base_path=os.getenv('WAVELOC_PATH')
-
-  # Read command line
-
-  p = optparse.OptionParser()
-  p.add_option('--outdir', '-o', action='store', help='output subdirectory in which the stack directory is found')
-  p.add_option('--reloc', action='store_true', default=False, help='apply to relocated events')
-  p.add_option('--loclevel', action='store', default=100, help='trigger stack level for locations (e.g. 100) ')
-  p.add_option('--datadir',action='store',help="data subdirectory")
-  p.add_option('--dataglob',action='store',help="data glob")
-  p.add_option('--snr_limit',action='store',default=10.0, help="signal_to_noise level for kurtosis acceptance")
-  p.add_option('--sn_time',action='store',default=10.0, help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
-  p.add_option('--n_kurt_min',action='store',default=4, help="min number of good kurtosis traces for a location")
-
-  (options,arguements)=p.parse_args()
+def do_locations_trigger_setup_and_run(base_path="",outdir="",reloc=False,loclevel=None,datadir="",dataglob="",snr_limit=None,sn_time=None,n_kurt_min=None):
 
   # parse command line
-  out_dir=options.outdir
-  do_reloc=options.reloc
-  loc_level=np.float(options.loclevel)
-  data_dir=os.path.join(base_path,'data',options.datadir)
-  kurt_files=glob.glob(os.path.join(data_dir,options.dataglob))
-  snr_limit=np.float(options.snr_limit)
-  sn_time=np.float(options.sn_time)
-  n_kurt_min=np.int(options.n_kurt_min)
+  data_dir=os.path.join(base_path,'data',datadir)
+  kurt_files=glob.glob(os.path.join(data_dir,dataglob))
 
   # corner frequency for lowpass filtering of max stack
   corner=1.0 
-  left_trig=loc_level
-  right_trig=loc_level
+  left_trig=loclevel
+  right_trig=loclevel
 
   # start logging
-  #logfile=base_path + os.sep + 'out'+ os.sep +  out_dir + os.sep + 'combine_stacks.log'
-  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+  #logfile=base_path + os.sep + 'out'+ os.sep +  outdir + os.sep + 'combine_stacks.log'
 
   logging.info("Starting log for combine_stacks.")
 
-  stack_path="%s/out/%s/stack"%(base_path,out_dir)
+  stack_path=os.path.join(base_path,'out',outdir,'stack')
 
-  if do_reloc:
-    loc_path="%s/out/%s/reloc"%(base_path,out_dir)
+  if reloc:
+    loc_path=os.path.join(base_path,'out',outdir,'reloc')
   else:
-    loc_path="%s/out/%s/loc"%(base_path,out_dir)
+    loc_path=os.path.join(base_path,'out',outdir,'loc')
 
-  loc_filename="%s/locations.dat"%(loc_path)
+  if not os.path.exists(loc_path):
+    os.makedirs(loc_path)
+
+
+  loc_filename=os.path.join(loc_path,"locations.dat")
   logging.info("Path for stack files : %s"%stack_path)
   logging.info("Path for loc files : %s"%loc_path)
   logging.info("Location file : %s"%loc_filename)
 
   # DO DATA PREP ACCORDING TO RELOC OR NOT
 
-  if do_reloc:
+  if reloc:
     logging.info("\nDealing with relocation, so taper before merging ...\n")
 
-    st_max=read("%s/reloc_stack_max*"%stack_path)
+    st_max=read(os.path.join(stack_path,"reloc_stack_max*"))
     st_max=stream_taper(st_max)
     st_max.merge(method=1,fill_value='interpolate')
-    st_max.write("%s/combined_reloc_stack_max.mseed"%stack_path,format='MSEED')
+    st_max.write(os.path.join(stack_path,"combined_reloc_stack_max.mseed"),format='MSEED')
     st_max_filt=filter_max_stack(st_max,corner)
-    st_max_filt.write("%s/combined_reloc_stack_max_filt.mseed"%stack_path,format='MSEED')
+    st_max_filt.write(os.path.join(stack_path,"combined_reloc_stack_max_filt.mseed"),format='MSEED')
 
-    st_x=read("%s/reloc_stack_x*"%stack_path)
+    st_x=read(os.path.join(stack_path,"reloc_stack_x*"))
     st_x=stream_taper(st_x)
     st_x.merge(method=1,fill_value='interpolate')
-    st_x.write("%s/combined_reloc_stack_x.mseed"%stack_path,format='MSEED')
+    st_x.write(os.path.join(stack_path,"combined_reloc_stack_x.mseed"),format='MSEED')
 
-    st_y=read("%s/reloc_stack_y*"%stack_path)
+    st_y=read(os.path.join(stack_path,"reloc_stack_y*"))
     st_y=stream_taper(st_y)
     st_y.merge(method=1,fill_value='interpolate')
-    st_y.write("%s/combined_reloc_stack_y.mseed"%stack_path,format='MSEED')
+    st_y.write(os.path.join(stack_path,"combined_reloc_stack_y.mseed"),format='MSEED')
 
-    st_z=read("%s/reloc_stack_z*"%stack_path)
+    st_z=read(os.path.join(stack_path,"reloc_stack_z*"))
     st_z=stream_taper(st_z)
     st_z.merge(method=1,fill_value='interpolate')
-    st_z.write("%s/combined_reloc_stack_z.mseed"%stack_path,format='MSEED')
+    st_z.write(os.path.join(stack_path,"combined_reloc_stack_z.mseed"),format='MSEED')
 
 
   else:
 
     logging.info("\nDealing with continuous location, so merging stack files directly ...\n")
 
-    st_max=read("%s/stack_max*"%stack_path)
+    st_max=read(os.path.join(stack_path,"stack_max*"))
     st_max.merge(method=1,fill_value='interpolate')
-    st_max.write("%s/combined_stack_max.mseed"%stack_path,format='MSEED')
+    st_max.write(os.path.join(stack_path,"combined_stack_max.mseed"),format='MSEED')
     st_max_filt=filter_max_stack(st_max,corner)
-    st_max_filt.write("%s/combined_stack_max_filt.mseed"%stack_path,format='MSEED')
+    st_max_filt.write(os.path.join(stack_path,"combined_stack_max_filt.mseed"),format='MSEED')
 
-    st_x=read("%s/stack_x*"%stack_path)
+    st_x=read(os.path.join(stack_path,"stack_x*"))
     st_x.merge(method=1,fill_value='interpolate')
-    st_x.write("%s/combined_stack_x.mseed"%stack_path,format='MSEED')
+    st_x.write(os.path.join(stack_path,"combined_stack_x.mseed"),format='MSEED')
 
-    st_y=read("%s/stack_y*"%stack_path)
+    st_y=read(os.path.join(stack_path,"stack_y*"))
     st_y.merge(method=1,fill_value='interpolate')
-    st_y.write("%s/combined_stack_y.mseed"%stack_path,format='MSEED')
+    st_y.write(os.path.join(stack_path,"combined_stack_y.mseed"),format='MSEED')
 
-    st_z=read("%s/stack_z*"%stack_path)
+    st_z=read(os.path.join(stack_path,"stack_z*"))
     st_z.merge(method=1,fill_value='interpolate')
-    st_z.write("%s/combined_stack_z.mseed"%stack_path,format='MSEED')
+    st_z.write(os.path.join(stack_path,"combined_stack_z.mseed"),format='MSEED')
 
 
 
@@ -233,4 +211,27 @@ if __name__=='__main__':
   loc_file.close()
   logging.info('Wrote %d locations to file %s.'%(n_ok,loc_filename))
 
-  
+ 
+if __name__=='__main__':
+
+  # get path
+  base_path=os.getenv('WAVELOC_PATH')
+
+  # Read command line
+
+  p = optparse.OptionParser()
+  p.add_option('--outdir', '-o', action='store', help='output subdirectory in which the stack directory is found')
+  p.add_option('--reloc', action='store_true', default=False, help='apply to relocated events')
+  p.add_option('--loclevel', action='store', type='float', default=100, help='trigger stack level for locations (e.g. 100) ')
+  p.add_option('--datadir',action='store',help="data subdirectory")
+  p.add_option('--dataglob',action='store',help="data glob")
+  p.add_option('--snr_limit',action='store',type='float',default=10.0, help="signal_to_noise level for kurtosis acceptance")
+  p.add_option('--sn_time',action='store',type='float',default=10.0, help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
+  p.add_option('--n_kurt_min',action='store',type='int',default=4, help="min number of good kurtosis traces for a location")
+
+  (options,arguements)=p.parse_args()
+
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+
+  do_locations_trigger_setup_and_run(base_path=base_path, outdir=options.outdir, reloc=options.reloc, loclevel=options.loclevel, datadir=options.datadir, dataglob=options.dataglob, snr_limit=options.snr_limit, sn_time=options.sn_time, n_kurt_min=options.n_kurt_min)
+ 
