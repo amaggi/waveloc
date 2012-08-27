@@ -64,20 +64,31 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
     t_ref=time()  
 
   # set up final x,y,z,val arrays
-  max_val=np.zeros(norm_stack_len)
-  max_x=np.zeros(norm_stack_len)
-  max_y=np.zeros(norm_stack_len)
-  max_z=np.zeros(norm_stack_len)
+  #max_val=np.zeros(norm_stack_len)
+  #max_x=np.zeros(norm_stack_len)
+  #max_y=np.zeros(norm_stack_len)
+  #max_z=np.zeros(norm_stack_len)
+
+  # magic matrix manipulations (see relevant inotebook)
+  max_val=stack_grid.buf.max(0).max(0).max(0)
+  max_x=stack_grid.buf.max(2).max(1).argmax(0)
+  max_y=stack_grid.buf.max(2).max(0).argmax(0)
+  max_z=stack_grid.buf.max(1).max(0).argmax(0)
+
+  #go from indexes to coordinates
+  max_x=max_x*time_grid.dx+time_grid.x_orig
+  max_y=max_y*time_grid.dy+time_grid.y_orig
+  max_z=max_z*time_grid.dz+time_grid.z_orig
 
   # iterate over stack
-  for itime in range(norm_stack_len):
-    time_slice=stack_grid.buf[:,:,:,itime].flatten()
-    ib_max=np.argmax(time_slice)
-    max_val[itime]=time_slice[ib_max]
-    ix,iy,iz=time_grid.get_ix_iy_iz(ib_max)
-    max_x[itime]=ix*time_grid.dx+time_grid.x_orig
-    max_y[itime]=iy*time_grid.dy+time_grid.y_orig
-    max_z[itime]=iz*time_grid.dz+time_grid.z_orig
+#  for itime in range(norm_stack_len):
+#    time_slice=stack_grid.buf[:,:,:,itime].flatten()
+#    ib_max=np.argmax(time_slice)
+#    max_val[itime]=time_slice[ib_max]
+#    ix,iy,iz=time_grid.get_ix_iy_iz(ib_max)
+#    max_x[itime]=ix*time_grid.dx+time_grid.x_orig
+#    max_y[itime]=iy*time_grid.dy+time_grid.y_orig
+#    max_z[itime]=iz*time_grid.dz+time_grid.z_orig
 
   stack_start_time=start_time-stack_shift_time
 

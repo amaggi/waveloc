@@ -28,7 +28,7 @@ def do_migration_setup_and_run(base_path="",runtime=False, verbose=False, twoD=F
 
   # output directory
   output_dir=os.path.join(base_path,'out',outdir)
-  stack_dir=os.path.join(outdir,'stack')
+  stack_dir=os.path.join(output_dir,'stack')
   if not os.path.exists(stack_dir):
     os.makedirs(stack_dir)
 
