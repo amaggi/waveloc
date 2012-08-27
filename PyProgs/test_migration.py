@@ -38,7 +38,7 @@ class MigrationTests(unittest.TestCase):
 
     #do_migration_setup_and_run(base_path=self.base_path,runtime=True,verbose=True, twoD=False, time_grid=self.time_grid, search_grid=self.search_grid, stations=self.coord_stations, outdir=self.datadir, datadir=self.datadir, dataglob='*kurt_grad.mseed', starttime=self.starttime, endtime=self.endtime, data_length=self.data_length, data_overlap=self.data_overlap,load_ttimes_buf=False)
 
-    waveforms_to_signature(self.base_path,os.path.join('out',self.datadir,'stack'),'*mseed','stack_signature.dat')
+    waveforms_to_signature(self.base_path,os.path.join('out',self.datadir,'stack'),'stack*mseed','stack_signature.dat')
     signature_filename=os.path.join(self.base_path,'out',self.datadir,'stack','stack_signature.dat')
     signature_file = open(signature_filename,'r') 
     lines=signature_file.readlines()
