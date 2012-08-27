@@ -223,10 +223,10 @@ class Waveform(object):
       st.printGaps()
 
     if rmean:
-      st.rmean()
+      st=stream_rmean(st)
 
     if taper:
-      st=taper()
+      st=stream_taper(st)
 
     if not pad_value is None:
       try:
