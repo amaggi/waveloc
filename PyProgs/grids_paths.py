@@ -22,6 +22,7 @@ from waveloc_funcs import *
 from flexwin_funcs import *
 import logging
 import numpy as np
+import numexpr as ne
 
 
 # For debugging reversal problem
@@ -2127,7 +2128,8 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   logging.debug("Stack max time dimension = %d"%min_npts)
 
   # The stack grid has exactly the same geometry as the time-grid
-  stack_grid=QDStackGrid(time_grid.nx,time_grid.ny,time_grid.nz,min_npts)
+  #stack_grid=QDStackGrid(time_grid.nx,time_grid.ny,time_grid.nz,min_npts)
+  stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts))
   #stack_grid.read_NLL_hdr_file(search_grid_filename)
   #stack_grid.construct_empty_grid(min_npts)
 
@@ -2162,11 +2164,10 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
         wf_id=wf_ids[i]
         stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
 
-      stack_grid.buf[ix,iy,iz,0:n_len] = stack[0:n_len]
+      stack_grid[ix,iy,iz,0:n_len] = stack[0:n_len]
     
-#      stack_grid.buf[ib][0:n_len]=stack[0:n_len]
       
-  logging.debug('Stacking done..')
+  logging.debug('Stacking done.')
 
 ######## FIXUP THE CORR GRID START TIMES #########
 
@@ -2194,10 +2195,10 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
     ix,iy,iz=time_grid.get_ix_iy_iz(ib)
     start_index = iextreme_min_times[ib] - iextreme_min_time
 #    tmp=stack_grid.buf[ib][:]
-    tmp=stack_grid.buf[ix,iy,iz,:]
+    tmp=stack_grid[ix,iy,iz,:]
     try:
       #stack_grid.buf[ib][0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
-      stack_grid.buf[ix,iy,iz,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
+      stack_grid[ix,iy,iz,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
     except ValueError:
 #      logging.debug('(norm_stack_len,shortest_n_len,iextreme_max_time) = (%s,%s,%s)'%(norm_stack_len,shortest_n_len,iextreme_max_time))
 #      logging.debug("(ib,norm_stack_len,start_index) = (%s,%s,%s)"%(ib,norm_stack_len,start_index))
@@ -2208,7 +2209,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   stack_shift_time=delta*iextreme_min_time
   return n_buf, norm_stack_len, stack_shift_time, stack_grid
  
-
+@profile
 def migrate_3D_stack(integer_data, delta, search_grid_filename, time_grid):
   # save the list of data keys
   # note : keys of integer data are all included in keys of time_grid, but there may be more times than data

@@ -4,6 +4,8 @@
 import os, sys
 
 import numpy as np
+import numexpr as ne
+import carray as ca
 
 from OP_waveforms import *
 
@@ -69,20 +71,28 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
   #max_y=np.zeros(norm_stack_len)
   #max_z=np.zeros(norm_stack_len)
 
+  
   # magic matrix manipulations (see relevant inotebook)
-  max_val=stack_grid.buf.max(0).max(0).max(0)
-  max_x=stack_grid.buf.max(2).max(1).argmax(0)
-  max_y=stack_grid.buf.max(2).max(0).argmax(0)
-  max_z=stack_grid.buf.max(1).max(0).argmax(0)
+  max_val=stack_grid.max(0).max(0).max(0)
+  max_x=stack_grid.max(2).max(1).argmax(0)
+  max_y=stack_grid.max(2).max(0).argmax(0)
+  max_z=stack_grid.max(1).max(0).argmax(0)
+
+  dx=time_grid.dx
+  dy=time_grid.dy
+  dz=time_grid.dz
+  x_orig=time_grid.x_orig
+  y_orig=time_grid.y_orig
+  z_orig=time_grid.z_orig
 
   #go from indexes to coordinates
-  max_x=max_x*time_grid.dx+time_grid.x_orig
-  max_y=max_y*time_grid.dy+time_grid.y_orig
-  max_z=max_z*time_grid.dz+time_grid.z_orig
+  max_x=ne.evaluate('max_x*dx+x_orig')
+  max_y=ne.evaluate('max_y*dy+y_orig')
+  max_z=ne.evaluate('max_z*dz+z_orig')
 
   # iterate over stack
 #  for itime in range(norm_stack_len):
-#    time_slice=stack_grid.buf[:,:,:,itime].flatten()
+#    time_slice=stack_grid[:,:,:,itime].flatten()
 #    ib_max=np.argmax(time_slice)
 #    max_val[itime]=time_slice[ib_max]
 #    ix,iy,iz=time_grid.get_ix_iy_iz(ib_max)
