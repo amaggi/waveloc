@@ -11,9 +11,8 @@ def suite():
     
 def waveforms_to_signature(base_path,datadir,dataglob,output_filename):
 
-
-  sig_file=open(os.path.join(base_path,'data',datadir,output_filename),'w')
-  allfiles=glob.glob(os.path.join(base_path,'data',datadir, dataglob))
+  sig_file=open(os.path.join(base_path,datadir,output_filename),'w')
+  allfiles=glob.glob(os.path.join(base_path,datadir, dataglob))
   for filename in allfiles :
     basename=os.path.basename(filename)
     wf=Waveform()
@@ -50,22 +49,9 @@ class ProcessingTests(unittest.TestCase):
     expected_signature_file = open(expected_signature_filename,'r') 
     expected_lines=expected_signature_file.readlines()
 
-#    do_SDS_processing_setup_and_run(
-#      datadir=self.datadir,
-#      net_list=self.net_list,
-#      sta_list=self.sta_list,
-#      comp_list=self.comp_list,
-#      starttime=self.starttime,
-#      endtime=self.endtime,
-#      resample=self.resample,
-#      fs=self.fs,
-#      c1=self.c1,
-#      c2=self.c2,
-#      kwin=self.kwin,
-#      krec=self.krec,
-#      kderiv=self.kderiv)
+#    do_SDS_processing_setup_and_run( datadir=self.datadir, net_list=self.net_list, sta_list=self.sta_list, comp_list=self.comp_list, starttime=self.starttime, endtime=self.endtime, resample=self.resample, fs=self.fs, c1=self.c1, c2=self.c2, kwin=self.kwin, krec=self.krec, kderiv=self.kderiv)
    
-    waveforms_to_signature(self.base_path,self.datadir,'*mseed','data_signature.dat')
+    waveforms_to_signature(self.base_path,os.path.join('data',self.datadir),'*mseed','data_signature.dat')
     signature_filename=os.path.join(self.base_path,'data',self.datadir,'data_signature.dat')
     signature_file = open(signature_filename,'r') 
     lines=signature_file.readlines()
