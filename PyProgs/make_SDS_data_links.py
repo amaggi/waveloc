@@ -6,65 +6,54 @@ import numpy as np
 import logging
 from obspy.core import read
 
-def make_SDS_data_links(datadir,dataglob,outdir):
 
-  data_dir=os.path.abspath(datadir)
-  out_dir=os.path.abspath(outdir)
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
 
-  all_files=glob.glob(os.path.join(data_dir,dataglob))
+p=optparse.OptionParser()
+p.add_option('--datadir',action='store',help="data directory")
+p.add_option('--outdir',action='store',help="output directory")
+p.add_option('--dataglob',action='store',help="data glob")
 
-  filedict={}
-  for filename in all_files:
-    st=read(filename)
-    net=st.traces[0].stats.network
-    sta=st.traces[0].stats.station
-    cha=st.traces[0].stats.channel
-    dirid="%s.%s.%s"%(net,sta,cha)
-    if filedict.has_key(dirid):
-      filedict[dirid].append(filename)
-    else:
-      filedict[dirid]=[filename]
+(options,arguments)=p.parse_args()
 
-  for dirid,filelist in filedict.iteritems():
-    net=dirid.split('.')[0]
-    sta=dirid.split('.')[1]
-    cha=dirid.split('.')[2]
-    dirname=os.path.join(out_dir,net,sta,"%s.D"%cha)
-    try:
-      os.makedirs(dirname)
-      logging.info("Made directories : %s"%dirname)
-    except OSError:
-      logging.debug("Directories already exist : %s"%dirname)
-      pass
+data_dir=os.path.abspath(options.datadir)
+out_dir=os.path.abspath(options.outdir)
 
-    for my_file in filelist:
-      dest_file=os.path.join(dirname,os.path.basename(my_file))
-      try:
-        os.symlink(my_file,dest_file)
-        logging.info("Linked %s"%dest_file)
-      except OSError:
-        logging.debug("Removing old %s"%dest_file)
-        os.remove(dest_file)
-        os.symlink(my_file,dest_file)
-        logging.info("Linked %s"%dest_file)
-    
+all_files=glob.glob(os.path.join(data_dir,options.dataglob))
 
-
-if __name__ == '__main__':
-
-  p=optparse.OptionParser()
-
-  p.add_option('--datadir',action='store',help="data directory")
-  p.add_option('--dataglob',action='store',help="data glob")
-  p.add_option('--outdir',action='store',help="output directory")
-  p.add_option('--debug',action='store_true',help="turn on debugging output")
-
-  (options,arguments)=p.parse_args()
-
-  if options.debug:
-    logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
+filedict={}
+for filename in all_files:
+  st=read(filename)
+  print st
+  net=st.traces[0].stats.network
+  sta=st.traces[0].stats.station
+  cha=st.traces[0].stats.channel
+  dirid="%s.%s.%s"%(net,sta,cha)
+  if filedict.has_key(dirid):
+    filedict[dirid].append(filename)
   else:
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+    filedict[dirid]=[filename]
 
-  make_SDS_data_links(options.datadir,options.dataglob,options.outdir)
+for dirid,filelist in filedict.iteritems():
+  net=dirid.split('.')[0]
+  sta=dirid.split('.')[1]
+  cha=dirid.split('.')[2]
+  dirname=os.path.join(out_dir,net,sta,"%s.D"%cha)
+  try:
+    os.makedirs(dirname)
+    logging.debug("Made directories : %s"%dirname)
+  except OSError:
+    logging.debug("Directories already exist : %s"%dirname)
+    pass
 
+  for my_file in filelist:
+    dest_file=os.path.join(dirname,os.path.basename(my_file))
+    try:
+      os.symlink(my_file,dest_file)
+      logging.debug("Linked %s"%dest_file)
+    except OSError:
+      logging.debug("Removing old %s"%dest_file)
+      os.remove(dest_file)
+      os.symlink(my_file,dest_file)
+      logging.debug("Linked %s"%dest_file)
+    
