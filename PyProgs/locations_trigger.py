@@ -112,8 +112,8 @@ def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
 def do_locations_trigger_setup_and_run(base_path="",outdir="",reloc=False,loclevel=None,datadir="",dataglob="",snr_limit=None,sn_time=None,n_kurt_min=None):
 
   # parse command line
-  data_dir=os.path.join(base_path,'data',options.datadir)
-  kurt_files=glob.glob(os.path.join(data_dir,options.dataglob))
+  data_dir=os.path.join(base_path,'data',datadir)
+  kurt_files=glob.glob(os.path.join(data_dir,dataglob))
 
   # corner frequency for lowpass filtering of max stack
   corner=1.0 

@@ -2195,10 +2195,10 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
     ix,iy,iz=time_grid.get_ix_iy_iz(ib)
     start_index = iextreme_min_times[ib] - iextreme_min_time
 #    tmp=stack_grid.buf[ib][:]
+    tmp=stack_grid.buf[ix,iy,iz,:]
     try:
       #stack_grid.buf[ib][0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
-      tmp=stack_grid.buf[ix,iy,iz,start_index:start_index+norm_stack_len]
-      stack_grid.buf[ix,iy,iz,0:norm_stack_len]=tmp
+      stack_grid.buf[ix,iy,iz,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
     except ValueError:
 #      logging.debug('(norm_stack_len,shortest_n_len,iextreme_max_time) = (%s,%s,%s)'%(norm_stack_len,shortest_n_len,iextreme_max_time))
 #      logging.debug("(ib,norm_stack_len,start_index) = (%s,%s,%s)"%(ib,norm_stack_len,start_index))
