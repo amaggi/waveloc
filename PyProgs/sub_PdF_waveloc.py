@@ -74,13 +74,14 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
   # iterate over stack
   # TODO - this is inefficient - try using a natively 4d array, keeping time first for ease of extraction
   for itime in range(norm_stack_len):
-    time_slice=stack_grid.buf[:,itime]
+    time_slice=stack_grid.buf[:,:,:,itime].flatten()
     ib_max=np.argmax(time_slice)
     max_val[itime]=time_slice[ib_max]
-    ix,iy,iz=stack_grid.get_ix_iy_iz(ib_max)
-    max_x[itime]=ix*stack_grid.dx+stack_grid.x_orig
-    max_y[itime]=iy*stack_grid.dy+stack_grid.y_orig
-    max_z[itime]=iz*stack_grid.dz+stack_grid.z_orig
+
+    ix,iy,iz=time_grid.get_ix_iy_iz(ib_max)
+    max_x[itime]=ix*time_grid.dx+time_grid.x_orig
+    max_y[itime]=iy*time_grid.dy+time_grid.y_orig
+    max_z[itime]=iz*time_grid.dz+time_grid.z_orig
 
   stack_start_time=start_time-stack_shift_time
 
