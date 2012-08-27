@@ -542,11 +542,6 @@ class Waveform(object):
 
     return snr
 
-  def compute_signature(self):
-    maximum=np.max(self.trace.data)
-    datasum=np.sum(self.trace.data)
-    return (maximum, datasum)
-
   def process_envelope(self):
     """
     Runs envelope processing on a waveform.

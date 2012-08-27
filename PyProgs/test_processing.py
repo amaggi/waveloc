@@ -1,7 +1,6 @@
 import unittest
-import os, glob
+import os
 from SDS_processing import do_SDS_processing_setup_and_run
-from OP_waveforms import Waveform
 
 def suite():
   suite = unittest.TestSuite()
@@ -24,32 +23,21 @@ def setUpModule():
   krec=False
   kderiv=True
 
-#  do_SDS_processing_setup_and_run(
-#     datadir=datadir,
-#     net_list=net_list,
-#     sta_list=sta_list,
-#     comp_list=comp_list,
-#     starttime=starttime,
-#     endtime=endtime,
-#     resample=resample,
-#     fs=fs,
-#     c1=c1,
-#     c2=c2,
-#     kwin=kwin,
-#     krec=krec,
-#     kderiv=kderiv)
+  do_SDS_processing_setup_and_run(
+     datadir=datadir,
+     net_list=net_list,
+     sta_list=sta_list,
+     comp_list=comp_list,
+     starttime=starttime,
+     endtime=endtime,
+     resample=resample,
+     fs=fs,
+     c1=c1,
+     c2=c2,
+     kwin=kwin,
+     krec=krec,
+     kderiv=kderiv)
 
-  base_path=os.getenv('WAVELOC_PATH')
-
-  sig_file=open(os.path.join(base_path,'test_data','test_data_signature.dat'),'w')
-  allfiles=glob.glob(os.path.join(base_path,'data',datadir,'*mseed'))
-  for filename in allfiles :
-    basename=os.path.basename(filename)
-    wf=Waveform()
-    wf.read_from_file(filename,format='MSEED')
-    (maximum, datasum) = wf.compute_signature()
-    sig_file.write("%s \t\t %.6f \t %.6f\n"%(basename,maximum,datasum))
-    
 
 
 class ProcessingTests(unittest.TestCase):
