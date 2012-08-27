@@ -3,7 +3,7 @@
 /out/
 *.buf
 *.ttimes
-/aux/*.hdr
+*.hdr
 !/aux/*search.hdr
 /sphinx/_*
 *.mat
