@@ -2157,12 +2157,13 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
         shortest_n_len=n_len
 
       # initialize the stack
-      #stack=numpy.zeros(min_npts,dtype=numpy.int16)
+      stack=numpy.zeros(min_npts)
 
       for i in range(len(wf_ids)):
         wf_id=wf_ids[i]
-#        stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
-        stack_grid.buf[ix,iy,iz,0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
+        stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
+
+      stack_grid.buf[ix,iy,iz,0:n_len] = stack[0:n_len]
     
 #      stack_grid.buf[ib][0:n_len]=stack[0:n_len]
       
