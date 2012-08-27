@@ -21,7 +21,6 @@ from matplotlib.mlab import griddata
 from waveloc_funcs import *
 from flexwin_funcs import *
 import logging
-import numpy as np
 
 
 # For debugging reversal problem
@@ -1341,8 +1340,8 @@ class QDTimeGrid(QDGrid):
 
 class QDStackGrid(object):
 
-  def __init__(self,nx,ny,nz,nt):
-    self.buf=np.zeros((nx,ny,nz,nt))
+  def __init__(self,nt,nx,ny,nz):
+    self.buf=np.zeros(nt,nx,ny,nz)
 
 class QDCorrGrid(QDGrid):
   """
@@ -2128,12 +2127,12 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   logging.debug("Stack max time dimension = %d"%min_npts)
 
   # The stack grid has exactly the same geometry as the time-grid
-  stack_grid=QDStackGrid(time_grid.nx,time_grid.ny,time_grid.nz,min_npts)
-  #stack_grid.read_NLL_hdr_file(search_grid_filename)
-  #stack_grid.construct_empty_grid(min_npts)
+  stack_grid=QDCorrGrid()
+  stack_grid.read_NLL_hdr_file(search_grid_filename)
+  stack_grid.construct_empty_grid(min_npts)
 
   # Number of geographical points in the stack
-  n_buf=time_grid.nx*time_grid.ny*time_grid.nz
+  n_buf=stack_grid.nx*stack_grid.ny*stack_grid.nz
   
   # keep information on the shortest length of stack for later
   shortest_n_len=min_npts
@@ -2142,7 +2141,6 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   for ib in range(n_buf):
 
       times=time_grid.buf[ib]
-      ix,iy,iz=time_grid.get_ix_iy_iz(ib)
 
       # find the slice indexes
       i_times=[int(round(times[wf_id]/delta)) for wf_id in wf_ids]
@@ -2157,14 +2155,13 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
         shortest_n_len=n_len
 
       # initialize the stack
-      #stack=numpy.zeros(min_npts,dtype=numpy.int16)
+      stack=numpy.zeros(min_npts,dtype=numpy.int16)
 
       for i in range(len(wf_ids)):
         wf_id=wf_ids[i]
-#        stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
-        stack_grid.buf[ix,iy,iz,0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
+        stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
     
-#      stack_grid.buf[ib][0:n_len]=stack[0:n_len]
+      stack_grid.buf[ib][0:n_len]=stack[0:n_len]
       
   logging.debug('Stacking done..')
 
@@ -2191,13 +2188,10 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
 
   # iterate over the time-arrays in the time_grid to extract the minimum and fix up the stacks
   for ib in range(n_buf):
-    ix,iy,iz=time_grid.get_ix_iy_iz(ib)
     start_index = iextreme_min_times[ib] - iextreme_min_time
-#    tmp=stack_grid.buf[ib][:]
+    tmp=stack_grid.buf[ib][:]
     try:
-      #stack_grid.buf[ib][0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
-      tmp=stack_grid.buf[ix,iy,iz,start_index:start_index+norm_stack_len]
-      stack_grid.buf[ix,iy,iz,0:norm_stack_len]=tmp
+      stack_grid.buf[ib][0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
     except ValueError:
 #      logging.debug('(norm_stack_len,shortest_n_len,iextreme_max_time) = (%s,%s,%s)'%(norm_stack_len,shortest_n_len,iextreme_max_time))
 #      logging.debug("(ib,norm_stack_len,start_index) = (%s,%s,%s)"%(ib,norm_stack_len,start_index))
