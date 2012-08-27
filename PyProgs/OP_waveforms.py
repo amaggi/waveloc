@@ -80,7 +80,7 @@ class Waveform(object):
     return np.arange(0,self.trace.stats.npts * self.trace.stats.delta, self.trace.stats.delta)
   def _get_values_(self):
     """Read-only property.  Returns values of ``self.trace.data``. """
-    return self.trace.data
+    return np.array(self.trace.data)
 
 
   npts=property(_get_npts_)
