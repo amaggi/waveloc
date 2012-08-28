@@ -15,11 +15,10 @@ from scipy import weave
 from scipy.weave import converters
 import logging
 
-
-def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename, options_verbose=False, options_time=False):
+def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose=False, options_time=False):
 
   if options_time:
-    t_ref=time()  
+   t_ref=time()  
 
   time_dict=time_grid.buf[0]
   time_ids=time_dict.keys()
@@ -47,16 +46,25 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
     t_ref=time()  
 
   (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid)
+  stack_start_time=start_time-stack_shift_time
 
   logging.debug("Stack geographical dimension = %d"%n_buf)
   logging.debug("Stack time extent = %d points = %.2f s"%(norm_stack_len, norm_stack_len*delta))
   logging.debug("Start time of stack (wrt start time of data)= %.2f s"%(-stack_shift_time))
+  logging.debug("Start time of stack %s"%(stack_start_time.isoformat()))
+
+  return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
 
 
   if options_time:
     t=time()-t_ref
     logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,norm_stack_len,t))
-  
+ 
+
+def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename, options_verbose=False, options_time=False):
+
+ 
+  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)= do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose, options_time)
 
   ###### Extract maximum of stack #######
 
@@ -64,12 +72,6 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
 
   if options_time:
     t_ref=time()  
-
-  # set up final x,y,z,val arrays
-  #max_val=np.zeros(norm_stack_len)
-  #max_x=np.zeros(norm_stack_len)
-  #max_y=np.zeros(norm_stack_len)
-  #max_z=np.zeros(norm_stack_len)
 
   
   # magic matrix manipulations (see relevant inotebook)
@@ -99,8 +101,6 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
 #    max_x[itime]=ix*time_grid.dx+time_grid.x_orig
 #    max_y[itime]=iy*time_grid.dy+time_grid.y_orig
 #    max_z[itime]=iz*time_grid.dz+time_grid.z_orig
-
-  stack_start_time=start_time-stack_shift_time
 
   if options_time:
     t=time()-t_ref
