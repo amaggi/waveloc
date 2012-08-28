@@ -23,7 +23,6 @@ def trigger_detections(st_max,loc_level):
 
   return detections
 
-def 
   
 def do_locations_prob_setup_and_run(base_path="",outdir="",loclevel=None,datadir="",dataglob="",snr_limit=None,sn_time=None,n_kurt_min=None):
 
