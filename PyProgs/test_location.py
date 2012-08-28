@@ -1,11 +1,13 @@
 import unittest
 import os, glob
 from locations_trigger import do_locations_trigger_setup_and_run
+from locations_prob import do_locations_prob_setup_and_run
 from OP_waveforms import Waveform
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(LocationTests('test_locations_trigger'))
+  suite.addTest(LocationTests('test_locations_prob'))
   return suite
 
     
@@ -32,16 +34,21 @@ class LocationTests(unittest.TestCase):
     self.dataglob="*kurt.mseed"
 
 
+
   def test_locations_trigger(self):
 
     do_locations_trigger_setup_and_run(base_path=self.base_path, outdir=self.datadir, datadir=self.datadir, dataglob=self.dataglob, reloc=False, loclevel=self.loclevel,snr_limit=self.snr_limit,sn_time=self.sn_time,n_kurt_min=self.kwin)
     self.assertTrue(True)
 
+  def test_locations_prob(self):
+
+    do_locations_prob_setup_and_run(base_path=self.base_path, outdir=self.datadir, loclevel=self.loclevel, datadir=self.datadir, dataglob=self.dataglob, snr_limit=self.snr_limit, sn_time=self.sn_time)
+    self.assertTrue(True)
 
 if __name__ == '__main__':
 
   import logging
   logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
  
-  unittest.TextTestRunner(verbosity=2).run(suite)
+  unittest.TextTestRunner(verbosity=2).run(suite())
  
