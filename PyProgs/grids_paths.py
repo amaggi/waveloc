@@ -2129,7 +2129,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
 
   # The stack grid has exactly the same geometry as the time-grid
   #stack_grid=QDStackGrid(time_grid.nx,time_grid.ny,time_grid.nz,min_npts)
-  stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts))
+  stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.int32)
   #stack_grid.read_NLL_hdr_file(search_grid_filename)
   #stack_grid.construct_empty_grid(min_npts)
 
@@ -2158,7 +2158,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
         shortest_n_len=n_len
 
       # initialize the stack
-      stack=numpy.zeros(min_npts)
+      stack=numpy.zeros(min_npts,dtype=np.int32)
 
       for i in range(len(wf_ids)):
         wf_id=wf_ids[i]
@@ -2209,7 +2209,6 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   stack_shift_time=delta*iextreme_min_time
   return n_buf, norm_stack_len, stack_shift_time, stack_grid
  
-@profile
 def migrate_3D_stack(integer_data, delta, search_grid_filename, time_grid):
   # save the list of data keys
   # note : keys of integer data are all included in keys of time_grid, but there may be more times than data
