@@ -4,15 +4,13 @@ from integrate4D import *
 
 def setup_test_grid():
 
-  dims=(20,30,40,50)
+  dims=(16,12,6,200)
   grid4D=np.zeros(dims)
-  x0=np.linspace(0,4,dims[0])
+  x0=np.linspace(0,8,dims[0])
   x1=np.linspace(0,6,dims[1])
-  x2=np.linspace(0,8,dims[2])
-  x3=np.linspace(0,10,dims[3])
-  grid4D[1,2,3,7]=2
-  grid4D[1,2,4,7]=4  # add something interesting to find in the matrix
-  grid4D[1,2,5,7]=2
+  x2=np.linspace(0,2,dims[2])
+  x3=np.linspace(0,20,dims[3])
+  grid4D[8,4,3,60]=60  # add something interesting to find in the matrix
 
   #grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
 

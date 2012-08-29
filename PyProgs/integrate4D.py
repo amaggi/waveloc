@@ -8,9 +8,11 @@ def compute_integral4D(grid4D,x0,x1,x2,x3):
 
 def compute_expected_coordinates4D(grid4D,x0,x1,x2,x3,return_2Dgrids=False):
   # expect 
+  grid_integral= compute_integral4D(grid4D,x0,x1,x2,x3)
   grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
 
   sanity_check=compute_integral4D(grid4D,x0,x1,x2,x3)
+  logging.debug('Integral over raw stuff : %.3f'%grid_integral)
   logging.debug('This integral should be 1.0 : %.3f'%sanity_check)
 
   # get 1D marginals, expected values and variances

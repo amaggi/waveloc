@@ -114,8 +114,12 @@ class MigrationTests(unittest.TestCase):
     # DO MIGRATION
     (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data,s_delta,search_grid_filename,time_grid)
 
+    stack_grid.tofile('broken_grid.dat')
     
-    print stack_grid.dtype
+    print stack_grid.shape, stack_grid.dtype
+    print time_grid.dx*time_grid.nx
+    print time_grid.dy*time_grid.ny
+    print time_grid.dz*time_grid.nz
     
 
     logging.debug('At correct x,y : %s'%stack_grid[ix,iy,:,:])

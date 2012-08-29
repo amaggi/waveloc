@@ -2140,28 +2140,20 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   # keep information on the shortest length of stack for later
   shortest_n_len=min_npts
 
-  logging.debug('Delta = %.2f'%delta)
   # set up the stack grid 
   for ib in range(n_buf):
 
       times=time_grid.buf[ib]
       ix,iy,iz=time_grid.get_ix_iy_iz(ib)
-      if ib==603 or ib==100:
-        logging.debug('ix, iy, iz for ib=%d : %d, %d, %d'%(ib,ix,iy,iz))
 
 
       # find the slice indexes
       i_times=[int(round(times[wf_id]/delta)) for wf_id in wf_ids]
-      if ib==603 or ib==100:
-        logging.debug('Times for ib=%d : %s'%(ib,times))
-        logging.debug('iTimes for ib=%d : %s'%(ib,i_times))
       min_i_time=min(i_times)
       max_i_time=max(i_times)
       start_end_indexes=[(i_time-min_i_time, i_time+min_npts-max_i_time) for i_time in i_times]
       n_lens=[start_end_indexes[i][1]-start_end_indexes[i][0] for i in range(len(wf_ids))]
       n_len=min(n_lens)
-      if ib==603 or ib==100:
-        logging.debug('start_end_indexes for ib=%d : %s'%(ib,start_end_indexes))
 
       # keep shortest n_len for later
       if n_len < shortest_n_len:
@@ -2177,8 +2169,6 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
         stack[0:n_lens[i]] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
 
       stack_grid[ix,iy,iz,0:n_len] = stack[0:n_len]
-      if ib==603 or ib==100:
-        logging.debug('stack at ib=%d = %s'%(ib,stack[0:n_len]))
     
       
   logging.debug('Stacking done.')
