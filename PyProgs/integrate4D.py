@@ -70,5 +70,19 @@ def compute_expected_coordinates4D(grid4D,x0,x1,x2,x3,return_2Dgrids=False):
   cov_matrix[2,3]=cov_x2_x3
   cov_matrix[3,2]=cov_x2_x3
 
-  if not return_2Dgrids:
+  if return_2Dgrids:
+    grid_dict={}
+    grid_dict['prob_x0']=prob_x0
+    grid_dict['prob_x1']=prob_x1
+    grid_dict['prob_x2']=prob_x2
+    grid_dict['prob_x3']=prob_x3
+    grid_dict['prob_x0_x1']=prob_x0_x1
+    grid_dict['prob_x0_x2']=prob_x0_x2
+    grid_dict['prob_x0_x3']=prob_x0_x3
+    grid_dict['prob_x1_x2']=prob_x1_x2
+    grid_dict['prob_x1_x3']=prob_x1_x3
+    grid_dict['prob_x2_x3']=prob_x2_x3
+
+    return exp_x0,exp_x1,exp_x2,exp_x3,cov_matrix,grid_dict
+  else:
     return exp_x0,exp_x1,exp_x2,exp_x3,cov_matrix
