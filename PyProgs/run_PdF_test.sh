@@ -24,9 +24,9 @@ mkdir -p $WAVELOC_PATH/out/$out_dir/stack
 mkdir -p $WAVELOC_PATH/out/$out_dir/loc
 mkdir -p $WAVELOC_PATH/out/$out_dir/reloc
 
-./SDS_processing.py --datadir=$data_dir --net_list=$net_list --sta_list=$sta_list --comp_list=$comp_list  --starttime=$start_time --endtime=$end_time --c1=4 --c2=10 --kwin=3.0 --resample --fs=50 --kderiv
+#./SDS_processing.py --datadir=$data_dir --net_list=$net_list --sta_list=$sta_list --comp_list=$comp_list  --starttime=$start_time --endtime=$end_time --c1=4 --c2=10 --kwin=3.0 --resample --fs=50 --kderiv
 
-#./migration.py -t -v --time_grid $time_grid --search_grid $search_grid -s $coord_stations -o $out_dir --datadir=$data_dir --dataglob=*kurt_grad.mseed --starttime=$start_time --endtime=$end_time --data_length=600 --data_overlap=20
+./migration.py -t -v --time_grid $time_grid --search_grid $search_grid -s $coord_stations -o $out_dir --datadir=$data_dir --dataglob=*kurt_grad.mseed --starttime=$start_time --endtime=$end_time --data_length=600 --data_overlap=20
 
 #./locations_trigger.py --outdir=$out_dir --loclevel=50 --datadir=$data_dir --dataglob=*kurt.mseed --n_kurt_min=$n_kurt_min --snr_limit=$snr_limit
 #./locations_prob.py --outdir=$out_dir --loclevel=50 --datadir=$data_dir --dataglob=*kurt.mseed --n_kurt_min=$n_kurt_min --snr_limit=$snr_limit
