@@ -1,13 +1,17 @@
 import numpy as np
 import scipy.integrate as si
+import logging
 
 def compute_integral4D(grid4D,x0,x1,x2,x3):
   grid_norm=si.trapz(si.trapz(si.trapz(si.trapz(grid4D,x=x0,axis=0),x=x1,axis=0),x=x2,axis=0),x=x3,axis=0)
   return grid_norm
 
 def compute_expected_coordinates4D(grid4D,x0,x1,x2,x3,return_2Dgrids=False):
-  # expect normalized grid
+  # expect 
   grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
+
+  sanity_check=compute_integral4D(grid4D,x0,x1,x2,x3)
+  logging.debug('This integral should be 1.0 : %.3f'%sanity_check)
 
   # get 1D marginals, expected values and variances
   prob_x0=si.trapz(si.trapz(si.trapz(grid4D,x=x1,axis=1),x=x2,axis=1),x=x3,axis=1)

@@ -14,7 +14,7 @@ def setup_test_grid():
   grid4D[1,2,4,7]=4  # add something interesting to find in the matrix
   grid4D[1,2,5,7]=2
 
-  grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
+  #grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
 
   exp0,exp1,exp2,exp3,cov_matrix,grid_dict = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3,return_2Dgrids=True)
 

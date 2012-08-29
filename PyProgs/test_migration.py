@@ -27,13 +27,13 @@ class MigrationTests(unittest.TestCase):
     from plot_mpl import plot_locations_static_matplotlib
     
     #define length and sampling frequency of synthetic data
-    s_data_length = 60.0 # seconds
-    s_sample_freq = 100.0 # Hz
+    s_data_length = 20.0 # seconds
+    s_sample_freq = 10.0 # Hz
     s_npts=s_data_length*s_sample_freq
     s_delta=1/s_sample_freq
 
     # define origin time
-    s_t0 = 10.0
+    s_t0 = 6.0
 
     # set some options for output - may not be needed
     self.wo.opdict['outdir'] = 'TEST_Dirac'
@@ -91,28 +91,41 @@ class MigrationTests(unittest.TestCase):
     ix=nx/2
     iy=ny/3
     iz=ny/4
+    it=s_t0/s_delta
+
+    logging.debug('True ix, iy, iz, it = %d %d %d %s'%(ix,iy,iz,it))
 
     # retrieve travel times for chosen hypocenter 
     ib= ix*ny*nz + iy*nz + iz
     ttimes=time_grid.buf[ib]
+    logging.debug('ib for true hypocenter = %d'%ib)
     #print ttimes
+    logging.debug('Travel-times for true hypocenter = %s'%ttimes)
 
     # construct data with these travel times
     integer_data={}
     for key,delay in ttimes.iteritems():
-      s=np.zeros(s_npts,dtype=np.int)
+      s=np.zeros(s_npts,dtype=np.float32)
       atime=s_t0+delay
       i_atime=np.int(atime/s_delta)
-      s[i_atime]=5
+      s[i_atime]=5.0
       integer_data[key]=s
       
     # DO MIGRATION
     (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data,s_delta,search_grid_filename,time_grid)
 
+    
+    print stack_grid.dtype
+    
+
+    logging.debug('At correct x,y : %s'%stack_grid[ix,iy,:,:])
     # extract maximum
-    x0=np.arange(nx)*time_grid.dx+time_grid.x_orig
-    x1=np.arange(ny)*time_grid.dy+time_grid.y_orig
-    x2=np.arange(nz)*time_grid.dz+time_grid.z_orig
+    #x0=np.arange(nx)*time_grid.dx+time_grid.x_orig
+    #x1=np.arange(ny)*time_grid.dy+time_grid.y_orig
+    #x2=np.arange(nz)*time_grid.dz+time_grid.z_orig
+    x0=np.arange(nx)*time_grid.dx
+    x1=np.arange(ny)*time_grid.dy
+    x2=np.arange(nz)*time_grid.dz
     xt=np.arange(norm_stack_len)*s_delta
     exp_x0,exp_x1,exp_x2,exp_xt,cov_matrix,prob_dict = compute_expected_coordinates4D(stack_grid[:,:,:,0:norm_stack_len],x0,x1,x2,xt,return_2Dgrids=True)
 
@@ -125,6 +138,9 @@ class MigrationTests(unittest.TestCase):
 
     fig_name=os.path.join(fig_path,'fig_synt_st_mpl')
     plot_locations_static_matplotlib(prob_dict,[x0,x1,x2,xt],fig_name)
+
+
+
 
   @unittest.skip('Not running small test')
   def test_migration(self):
@@ -177,7 +193,7 @@ class MigrationTests(unittest.TestCase):
 if __name__ == '__main__':
 
   import logging
-  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
  
   unittest.TextTestRunner(verbosity=2).run(suite())
  
