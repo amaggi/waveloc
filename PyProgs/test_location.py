@@ -84,6 +84,7 @@ class LocationTests(unittest.TestCase):
     do_locations_prob_setup_and_run(self.wo.opdict)
     self.assertTrue(True)
 
+  @unittest.skip('Not bothering with high res test')
   def test_locations_prob_fullRes(self):
 
     self.wo.opdict['outdir']='TEST_fullRes'

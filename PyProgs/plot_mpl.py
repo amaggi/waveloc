@@ -94,6 +94,6 @@ if __name__ == '__main__':
 
   base_filename = os.path.join(fig_dir,'testplot_st_mpl')
   grid4D, grid_dict,x_list = setup_test_grid()
-  plot_locations_static_matplotlib(grid4D,grid_dict,x_list,base_filename)
+  plot_locations_static_matplotlib(grid_dict,x_list,base_filename)
   
 

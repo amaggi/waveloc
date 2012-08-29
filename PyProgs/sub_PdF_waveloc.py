@@ -18,7 +18,7 @@ import logging
 def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose=False, options_time=False):
 
   if options_time:
-   t_ref=time()  
+    t_ref=time()  
 
   time_dict=time_grid.buf[0]
   time_ids=time_dict.keys()
@@ -53,13 +53,11 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
   logging.debug("Start time of stack (wrt start time of data)= %.2f s"%(-stack_shift_time))
   logging.debug("Start time of stack %s"%(stack_start_time.isoformat()))
 
-  return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
-
-
   if options_time:
     t=time()-t_ref
     logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,norm_stack_len,t))
  
+  return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
 
 def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename, options_verbose=False, options_time=False):
 
