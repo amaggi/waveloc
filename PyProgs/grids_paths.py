@@ -2130,7 +2130,8 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   # The stack grid has exactly the same geometry as the time-grid
   #stack_grid=QDStackGrid(time_grid.nx,time_grid.ny,time_grid.nz,min_npts)
   #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.int32)
-  stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.float32)
+  #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.float)
+  stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts))
   #stack_grid.read_NLL_hdr_file(search_grid_filename)
   #stack_grid.construct_empty_grid(min_npts)
 
@@ -2161,14 +2162,16 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
 
       # initialize the stack
       #stack=numpy.zeros(min_npts,dtype=np.int32)
-      stack=numpy.zeros(min_npts,dtype=np.float32)
+      #stack=numpy.zeros(min_npts,dtype=np.float)
+      stack=numpy.zeros(min_npts)
 
       for i in range(len(wf_ids)):
         wf_id=wf_ids[i]
         #stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
         stack[0:n_lens[i]] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
 
-      stack_grid[ix,iy,iz,0:n_len] = stack[0:n_len]
+      #stack_grid[ix,iy,iz,0:n_len] = stack[0:n_len]
+      stack_grid[ix,iy,iz,:] = stack[:]
     
       
   logging.debug('Stacking done.')

@@ -23,8 +23,8 @@ class MigrationTests(unittest.TestCase):
 
   def test_migration_synthetic(self):
     from grids_paths import StationList, ChannelList, QDTimeGrid, migrate_4D_stack
-    from integrate4D import compute_expected_coordinates4D
-    from plot_mpl import plot_locations_static_matplotlib
+    from integrate4D import compute_expected_coordinates4D, compute_integral4D, compute_expected_coordinates1D 
+    from plot_mpl import plot_locations_static_matplotlib, plot_test
     
     #define length and sampling frequency of synthetic data
     s_data_length = 20.0 # seconds
@@ -105,43 +105,58 @@ class MigrationTests(unittest.TestCase):
     # construct data with these travel times
     integer_data={}
     for key,delay in ttimes.iteritems():
-      s=np.zeros(s_npts,dtype=np.float32)
+      #s=np.random.randn(s_npts)
+      s=np.zeros(s_npts)
       atime=s_t0+delay
       i_atime=np.int(atime/s_delta)
-      s[i_atime]=5.0
+      #s[i_atime-2:i_atime+2]=5.0
+      s[i_atime]=50.0
       integer_data[key]=s
       
+
     # DO MIGRATION
     (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data,s_delta,search_grid_filename,time_grid)
 
     stack_grid.tofile('broken_grid.dat')
-    
-    print stack_grid.shape, stack_grid.dtype
-    print time_grid.dx*time_grid.nx
-    print time_grid.dy*time_grid.ny
-    print time_grid.dz*time_grid.nz
+
     
 
-    logging.debug('At correct x,y : %s'%stack_grid[ix,iy,:,:])
-    # extract maximum
-    #x0=np.arange(nx)*time_grid.dx+time_grid.x_orig
-    #x1=np.arange(ny)*time_grid.dy+time_grid.y_orig
-    #x2=np.arange(nz)*time_grid.dz+time_grid.z_orig
     x0=np.arange(nx)*time_grid.dx
     x1=np.arange(ny)*time_grid.dy
     x2=np.arange(nz)*time_grid.dz
     xt=np.arange(norm_stack_len)*s_delta
-    exp_x0,exp_x1,exp_x2,exp_xt,cov_matrix,prob_dict = compute_expected_coordinates4D(stack_grid[:,:,:,0:norm_stack_len],x0,x1,x2,xt,return_2Dgrids=True)
+
+    exp_x0,exp_x1,exp_x2,exp_xt,cov_matrix,prob_dict = compute_expected_coordinates4D(stack_grid[0:nx,0:ny,0:nz,0:norm_stack_len],x0,x1,x2,xt,return_2Dgrids=True)
+
+    i_xt = int(round(exp_xt/s_delta)) 
+    ib=np.argmax(stack_grid[:,:,:,i_xt])
+    (ix,iy,iz)=np.unravel_index(ib,(nx,ny,nz))
+    logging.debug('Absolute maximum of stack (%.3f) at ix=%d, iy=%d, iz=%d, it=%d, ib=%d'%(stack_grid[ix,iy,iz,i_xt],ix,iy,iz,i_xt,ib))
+    stack_x=stack_grid[:,iy,iz,i_xt]
+    stack_y=stack_grid[ix,:,iz,i_xt]
+    stack_z=stack_grid[ix,iy,:,i_xt]
+
+    exp_x, var_x = compute_expected_coordinates1D(stack_x,x0)
+    exp_y, var_y = compute_expected_coordinates1D(stack_y,x1)
+    exp_z, var_z = compute_expected_coordinates1D(stack_z,x2)
+
+    sigma_x=np.sqrt(var_x)
+    sigma_y=np.sqrt(var_y)
+    sigma_z=np.sqrt(var_z)
+    
 
     sigma_x0 = np.sqrt(cov_matrix[0,0])
     sigma_x1 = np.sqrt(cov_matrix[1,1])
     sigma_x2 = np.sqrt(cov_matrix[2,2])
     sigma_xt = np.sqrt(cov_matrix[3,3])
-    
-    logging.info("Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(stack_grid[:,:,:,0:norm_stack_len].max(),exp_xt,sigma_xt, exp_x0,sigma_x0,exp_x1,sigma_x1,exp_x2,sigma_x2))
+
+    logging.info("Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(exp_xt,sigma_xt,exp_x,sigma_x, exp_y,sigma_y,exp_z,sigma_z))
+
+    logging.info("Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(stack_grid[0:nx,0:ny,0:nz,0:norm_stack_len].max(),exp_xt,sigma_xt, exp_x0,sigma_x0,exp_x1,sigma_x1,exp_x2,sigma_x2))
 
     fig_name=os.path.join(fig_path,'fig_synt_st_mpl')
-    plot_locations_static_matplotlib(prob_dict,[x0,x1,x2,xt],fig_name)
+    #plot_locations_static_matplotlib(prob_dict,[x0,x1,x2,xt],fig_name)
+    plot_test((stack_x, stack_y, stack_z, prob_dict['prob_x3']),(x0,x1,x2,xt),fig_name)
 
 
 

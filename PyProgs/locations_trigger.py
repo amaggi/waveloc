@@ -13,7 +13,7 @@ def plot_location_triggers(trace,trig_start,trig_end,trig_95_start, trig_95_end,
     df = trace.stats.sampling_rate
     dt = trace.stats.delta
     npts = trace.stats.npts
-    t = np.arange(npts, dtype='float32') / df
+    t = np.arange(npts) / df
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     ax1.plot(t[trig_start-100:trig_end+100], trace.data[trig_start-100:trig_end+100], 'k')

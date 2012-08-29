@@ -8,7 +8,7 @@ def setup_test_grid():
   grid4D=np.zeros(dims)
   x0=np.linspace(0,8,dims[0])
   x1=np.linspace(0,6,dims[1])
-  x2=np.linspace(0,2,dims[2])
+  x2=np.linspace(0,3,dims[2])
   x3=np.linspace(0,20,dims[3])
   grid4D[8,4,3,60]=60  # add something interesting to find in the matrix
 
