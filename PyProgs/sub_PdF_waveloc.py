@@ -171,25 +171,9 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
   if options_time:
     t_ref=time()
 
-  data={}
-
+  # Read in the data
   files=glob.glob(os.path.join(data_dir,data_glob))
-
-  for file_kurtosis in files:
-    wf=Waveform()
-    try:
-      # read will return UserWarning if there is no data within start and end time
-      # will pad blanks with zeros if required (no tapering applied, as kurtosis files are already correctly tapered to zero)
-      wf.read_from_file(file_kurtosis,starttime=start_time,endtime=end_time,pad_value=0)
-      wf_id="%s.%s"%(wf.station,wf.comp)
-      # if all is ok, and we have a corresponding time id, add data to dictionary
-      if time_dict.has_key(wf_id):
-        data[wf_id]=wf
-      else:
-        logging.warning('Station %s not present in time_grid.  Ignoring station...'%wf_id)
-    except UserWarning,msg:
-      # for any UserWarning, ignore data
-      logging.warning("No data data found between limits for file %s. Ignoring station."%file_kurtosis)
+  data=read_data_compatible_with_time_dict(files,time_dict,start_time,end_time)
 
   # Set the global variable delta (dt for all the seismograms)
   try:
@@ -228,24 +212,7 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
   if options_time:
     t_ref=time()
 
-  data={}
-
-
-  for file_kurtosis in kurtosis_filenames:
-    wf=Waveform()
-    try:
-      # read will return UserWarning if there is no data within start and end time
-      # will pad blanks with zeros if required (no tapering applied, as kurtosis files are already correctly tapered to zero)
-      wf.read_from_file(file_kurtosis,'SAC',starttime=start_time,endtime=end_time,pad_value=0)
-      wf_id="%s.%s"%(wf.station,wf.comp)
-      # if all is ok, and we have a corresponding time id, add data to dictionary
-      if time_dict.has_key(wf_id):
-        data[wf_id]=wf
-      else:
-        logging.info('Station %s not present in time_grid.  Ignoring station...'%wf_id)
-    except UserWarning,msg:
-      # for any UserWarning, ignore data
-      logging.error("No data data found between limits for file %s. Ignore station."%file_kurtosis)
+  data=read_data_compatible_with_time_dict(kurtosis_filenames,time_dict,start_time,end_time)
 
   # Set the global variable delta (dt for all the seismograms)
   try:
@@ -282,24 +249,7 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
   logging.info("Reading processed data into dictionary")
 
 
-  data={}
-
-
-  for file_kurtosis in kurtosis_filenames:
-    wf=Waveform()
-    try:
-      # read will return UserWarning if there is no data within start and end time
-      # will pad blanks with zeros if required (no tapering applied, as kurtosis files are already correctly tapered to zero)
-      wf.read_from_file(file_kurtosis,starttime=start_time,endtime=end_time,pad_value=0)
-      wf_id="%s.%s"%(wf.station,wf.comp)
-      # if all is ok, and we have a corresponding time id, add data to dictionary
-      if time_dict.has_key(wf_id):
-        data[wf_id]=wf
-      else:
-        logging.info('Station %s not present in time_grid.  Ignoring station...'%wf_id)
-    except UserWarning,msg:
-      # for any UserWarning, ignore data
-      logging.error("No data data found between limits for file %s. Ignore station."%file_kurtosis)
+  data=read_data_compatible_with_time_dict(kurtosis_filenames,time_dict,start_time,end_time)
 
   # Set the global variable delta (dt for all the seismograms)
   try:
