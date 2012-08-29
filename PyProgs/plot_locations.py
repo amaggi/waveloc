@@ -29,7 +29,7 @@ p.add_option('--datadir', '-d', action='store', help='data subdirectory')
 p.add_option('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
 p.add_option('--loc_picks_dir', action='store', help='subdirectory for location picks')
 p.add_option('--search_grid',action='store',help="search grid %s")
-p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/aux)')
+p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
 p.add_option('--data_glob',action='store',help="data glob")
 p.add_option('--kurt_glob',action='store',help="kurtosis glob")
 p.add_option('--grad_glob',action='store',help="kurtosis gradient glob")
@@ -50,7 +50,7 @@ if options.loc_picks_dir==None or options.hyp_glob==None:
 else:
   do_hyp = True
 
-aux_path=os.path.join(base_path,'aux')
+lib_path=os.path.join(base_path,'lib')
 stack_path=os.path.join(base_path,'out',options.outdir,'stack')
 grid_path= os.path.join(base_path,'out',options.outdir,'grid')
 
@@ -59,9 +59,9 @@ loc_path=os.path.join(base_path,'out',options.outdir,'loc')
 loc_filename=os.path.join(loc_path,'locations.dat')
 
 data_path=os.path.join(base_path,'data',options.datadir)
-hdr_file= os.path.join(aux_path,options.search_grid)
-grid_filename_base=os.path.join(aux_path,options.time_grid)
-stations_filename=os.path.join(aux_path,options.stations)
+hdr_file= os.path.join(lib_path,options.search_grid)
+grid_filename_base=os.path.join(lib_path,options.time_grid)
+stations_filename=os.path.join(lib_path,options.stations)
 
 if do_hyp:
   hyp_path=os.path.join(base_path,'data',options_loc_picks_dir,'loc_hyp')

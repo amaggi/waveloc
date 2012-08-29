@@ -28,7 +28,7 @@ p.add_option('--datadir', '-d', action='store', help='data subdirectory')
 p.add_option('--search_grid',action='store',type='choice',choices=search_grids,help="search grid %s"%(search_grids))
 p.add_option('--data_glob',action='store',help="data glob")
 p.add_option('--kurt_glob',action='store',help="kurtosis glob")
-p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/aux)')
+p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
 p.add_option('--time_grid',action='store',type='choice',choices=time_grids,help="time grid %s"%(time_grids))
 p.add_option('--snr',action='store',default='7',help="cutoff signal-to-noise ratio for re-location (snr is on kurtosis)")
 
@@ -37,17 +37,17 @@ p.add_option('--snr',action='store',default='7',help="cutoff signal-to-noise rat
 options_verbose=True
 options_time=True
 
-aux_path=base_path + os.sep + "aux"
+lib_path=base_path + os.sep + "lib"
 output_dir=base_path+os.sep+'out'+os.sep+options.outdir
 stack_path=output_dir+os.sep+'stack'
 loc_path=output_dir+os.sep+'loc'
 reloc_path=output_dir+os.sep+'reloc'
 data_dir=base_path+os.sep+'data'+os.sep + options.datadir
-hdr_file=aux_path+os.sep+options.search_grid
+hdr_file=lib_path+os.sep+options.search_grid
 
-stations_filename="%s/aux/%s"%(base_path,options.stations)
-search_grid_filename="%s/%s"%(aux_path,options.search_grid)
-grid_filename_base="%s/%s"%(aux_path,options.time_grid)
+stations_filename="%s/lib/%s"%(base_path,options.stations)
+search_grid_filename="%s/%s"%(lib_path,options.search_grid)
+grid_filename_base="%s/%s"%(lib_path,options.time_grid)
 
 # start logging
 logfile=output_dir + os.sep + 'reloc_by_snr.log'

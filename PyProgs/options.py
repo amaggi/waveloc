@@ -10,9 +10,9 @@ class WavelocOptions(object):
     if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
     self.opdict['base_path']=base_path
 
-    # check for existence of aux directory
-    aux_path=os.path.join(base_path,'aux')
-    if not os.path.isdir(aux_path): raise UserWarning('Directory %s does not exist.'%aux_path)
+    # check for existence of lib directory
+    lib_path=os.path.join(base_path,'lib')
+    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
   
     self.p = argparse.ArgumentParser()
 
@@ -44,9 +44,9 @@ class WavelocOptions(object):
     self.p.add_argument('--data_length', action='store',type=float,help="length in seconds for data segments to analyse (e.g. 630)")
     self.p.add_argument('--data_overlap',action='store',type=float,help="length in seconds for overlapping data segments (e.g. 30)")
 
-    self.p.add_argument('--stations',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/aux)')
-    self.p.add_argument('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/aux)")
-    self.p.add_argument('--time_grid',  action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/aux)")
+    self.p.add_argument('--stations',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
+    self.p.add_argument('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/lib)")
+    self.p.add_argument('--time_grid',  action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/lib)")
     self.p.add_argument('--load_ttimes_buf',action='store_true',default=False,help='load pre-calculated travel-times for the search grid from file')
 
     self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
@@ -189,15 +189,15 @@ class WavelocOptions(object):
     if self.opdict['data_overlap']==None:   raise UserWarning('Empty data segment overlap') 
 
     if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'aux',self.opdict['stations'])
+    stations=os.path.join(base_path,'lib',self.opdict['stations'])
     if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
 
     if self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'aux',self.opdict['search_grid'])
+    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
     if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
 
     if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'aux',self.opdict['time_grid'])
+    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
     tg_glob=time_grid+'*'
     tg_files=glob.glob(tg_glob)
     if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
@@ -237,11 +237,11 @@ class WavelocOptions(object):
     if self.opdict['n_kurt_min']==None:   raise UserWarning('Empty minimum number of good kurtosis for location') 
 
     if self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'aux',self.opdict['search_grid'])
+    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
     if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
 
     if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'aux',self.opdict['time_grid'])
+    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
     tg_glob=time_grid+'*'
     tg_files=glob.glob(tg_glob)
     if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)

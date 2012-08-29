@@ -23,11 +23,11 @@ def do_migration_setup_and_run(opdict):
 
   # set variables from command line options
   # grid
-  grid_filename_base=os.path.join(base_path,'aux',opdict['time_grid'])
-  search_grid_filename=os.path.join(base_path,'aux',opdict['search_grid'])
+  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
+  search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
 
   # stations
-  stations_filename=os.path.join(base_path,'aux',opdict['stations'])
+  stations_filename=os.path.join(base_path,'lib',opdict['stations'])
 
   # output directory
   output_dir=os.path.join(base_path,'out',opdict['outdir'])

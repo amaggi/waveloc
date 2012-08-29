@@ -24,16 +24,16 @@ from grids_paths import QDGrid, StationList
 
 base_path=os.getenv('WAVELOC_PATH')
 data_path="%s/out/testing"%base_path
-aux_path="%s/aux"%base_path
+lib_path="%s/lib"%base_path
 
 
 # stations
-stations_file="%s/coord_stations_piton"%aux_path
+stations_file="%s/coord_stations_piton"%lib_path
 sta=StationList()
 sta.read_from_file(stations_file)
 
 # DEM
-dem=loadmat("%s/MNT_PdF.mat"%aux_path)
+dem=loadmat("%s/MNT_PdF.mat"%lib_path)
 #print dem
 demx=numpy.array(dem['XIsub']).flatten()/1000.0
 demy=numpy.array(dem['YIsub']).flatten()/1000.0
@@ -45,7 +45,7 @@ print "Read DEM"
 data_glob = "*2010-10-14T00:15:40.98*.dat"
 data_files=glob.glob(data_path + os.sep + data_glob)
 
-hdr_file="%s/grid.500m.search.hdr"%aux_path
+hdr_file="%s/grid.500m.search.hdr"%lib_path
 
 # creat the object to contain the stations
 pd = tvtk.PolyData()

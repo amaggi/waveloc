@@ -62,9 +62,9 @@ p.add_option('--nthreads','-n', action='store',type='int', default=1,help="numbe
 p.add_option('--time','-t',action='store_true',help='print timing information to stout')
 p.add_option('--verbose','-v',action='store_true',default=False,help='print debugging information to stout')
 p.add_option('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
-p.add_option('--time_grid',action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/aux)")
-p.add_option('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/aux)")
-p.add_option('--stations','-s',action='store',help='station list (found in $WAVELOC_PATH/aux)')
+p.add_option('--time_grid',action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/lib)")
+p.add_option('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/lib)")
+p.add_option('--stations','-s',action='store',help='station list (found in $WAVELOC_PATH/lib)')
 p.add_option('--outdir','-o',action='store',help="output subdirectory")
 p.add_option('--datadir',action='store',help="data subdirectory")
 p.add_option('--dataglob',action='store',help="data glob")
@@ -83,10 +83,10 @@ p.add_option('--load_ttimes_buf',action='store_true',default=False,dest='load_bu
 # grid
 logging.debug(base_path)
 logging.debug(options.time_grid)
-grid_filename_base=os.path.join(base_path,'aux',options.time_grid)
-search_grid_filename=os.path.join(base_path,'aux',options.search_grid)
+grid_filename_base=os.path.join(base_path,'lib',options.time_grid)
+search_grid_filename=os.path.join(base_path,'lib',options.search_grid)
 # stations
-stations_filename=os.path.join(base_path,'aux',options.stations)
+stations_filename=os.path.join(base_path,'lib',options.stations)
 # output directory
 if options.outdir==None: raise UserWarning("No output subdirectory supplied")
 output_dir=os.path.join(base_path,'out',options.outdir)

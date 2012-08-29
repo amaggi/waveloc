@@ -34,7 +34,7 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   datadir=opdict['datadir']
   outdir=opdict['outdir']
   # directories
-  aux_path = os.path.join(base_path,'aux')
+  lib_path = os.path.join(base_path,'lib')
   data_path= os.path.join(base_path,'data',datadir)
   grid_path= os.path.join(base_path,'out',outdir,'grid')
   loc_path = os.path.join(base_path,'out',outdir,'loc')
@@ -47,9 +47,9 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   kurt_glob=opdict['kurtglob']
   grad_glob=opdict['gradglob']
 
-  hdr_file = os.path.join(aux_path,search_grid)
-  grid_filename_base=os.path.join(aux_path,time_grid)
-  stations_filename= os.path.join(aux_path,stations)
+  hdr_file = os.path.join(lib_path,search_grid)
+  grid_filename_base=os.path.join(lib_path,time_grid)
+  stations_filename= os.path.join(lib_path,stations)
   search_grid_filename= hdr_file
   kurt_files=glob.glob(os.path.join(data_path,kurt_glob))
   grad_files=glob.glob(os.path.join(data_path,grad_glob))

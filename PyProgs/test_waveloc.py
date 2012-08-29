@@ -18,11 +18,11 @@ def setUpModule():
  
   # make link for test grid file
   try:
-    os.symlink(os.path.join(base_path,'test_data','test_grid.search.hdr'),os.path.join(base_path,'aux','test_grid.search.hdr'))
+    os.symlink(os.path.join(base_path,'test_data','test_grid.search.hdr'),os.path.join(base_path,'lib','test_grid.search.hdr'))
   except OSError:
     logging.debug("File %s already linked"%'test_grid_search.hdr')
   try:
-    os.symlink(os.path.join(base_path,'test_data','coord_stations_test'),os.path.join(base_path,'aux','coord_stations_test'))
+    os.symlink(os.path.join(base_path,'test_data','coord_stations_test'),os.path.join(base_path,'lib','coord_stations_test'))
   except OSError:
     logging.debug("File %s already linked"%'coord_stations_test')
   
