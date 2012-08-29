@@ -44,13 +44,21 @@ class IntegrationTests(unittest.TestCase):
     my_exp3=x3[7]
 
 
-    exp0,exp1,exp2,exp3 = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3)
+    exp0,exp1,exp2,exp3,cov_matrix = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3)
+    var_x0=cov_matrix[0,0]
+    var_x1=cov_matrix[1,1]
+    var_x2=cov_matrix[2,2]
+    var_x3=cov_matrix[3,3]
 
     self.assertAlmostEqual(my_exp0,exp0,7)
     self.assertAlmostEqual(my_exp1,exp1,7)
     self.assertAlmostEqual(my_exp2,exp2,7)
     self.assertAlmostEqual(my_exp3,exp3,7)
 
+    self.assertAlmostEqual(var_x0,0.0,7)
+    self.assertAlmostEqual(var_x1,0.0,7)
+    self.assertAlmostEqual(var_x2,0.0051,4)
+    self.assertAlmostEqual(var_x3,0.0,7)
 
 class LocationTests(unittest.TestCase):
 
