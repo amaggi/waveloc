@@ -11,6 +11,7 @@ def suite():
   suite.addTest(IntegrationTests('test_expected_values'))
   suite.addTest(LocationTests('test_locations_trigger'))
   suite.addTest(LocationTests('test_locations_prob'))
+  suite.addTest(LocationTests('test_locations_prob_fullRes'))
   return suite
 
 class IntegrationTests(unittest.TestCase):
@@ -70,14 +71,23 @@ class LocationTests(unittest.TestCase):
     self.wo.verify_location_options()
 
 
+  @unittest.skip('Not bothering with trigger test')
   def test_locations_trigger(self):
 
     do_locations_trigger_setup_and_run(self.wo.opdict)
     self.assertTrue(True)
 
+  @unittest.skip('Not bothering with low res test')
   def test_locations_prob(self):
 
     #self.wo.opdict['loclevel']=50
+    do_locations_prob_setup_and_run(self.wo.opdict)
+    self.assertTrue(True)
+
+  def test_locations_prob_fullRes(self):
+
+    self.wo.opdict['outdir']='TEST_fullRes'
+    self.wo.verify_location_options()
     do_locations_prob_setup_and_run(self.wo.opdict)
     self.assertTrue(True)
 

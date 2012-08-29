@@ -176,8 +176,8 @@ class WavelocOptions(object):
     if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     outdir=os.path.join(base_path,'out',self.opdict['outdir'])
     if not os.path.exists(outdir):  
-      op.makedirs(outdir)
-      op.makedirs(os.path.join(outdir,'stack'))
+      os.makedirs(outdir)
+      os.makedirs(os.path.join(outdir,'stack'))
 
     if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
@@ -223,13 +223,13 @@ class WavelocOptions(object):
     if not os.path.isdir(stackdir): raise UserWarning('Stack directory %s does not exist.  Have you run migration correctly ?') 
 
     locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): op.makedirs(locdir)  
+    if not os.path.exists(locdir): os.makedirs(locdir)  
 
     relocdir=os.path.join(base_path,'out',self.opdict['outdir'],'reloc')
-    if self.opdict['reloc'] and not os.path.exists(relocdir): op.makedirs(relocdir)  
+    if self.opdict['reloc'] and not os.path.exists(relocdir): os.makedirs(relocdir)  
 
     griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): op.makedirs(griddir)  
+    if not os.path.exists(griddir): os.makedirs(griddir)  
 
     figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
     if not os.path.exists(figdir): os.makedirs(figdir)  
