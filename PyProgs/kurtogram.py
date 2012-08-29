@@ -548,7 +548,7 @@ if __name__=='__main__':
   p.add_option('--datadir', '-d', action='store', help='data subdirectory')
   p.add_option('--data_glob',action='store',help="data glob")
   p.add_option('--kurt_glob',action='store',help="kurtosis glob")
-  p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/aux)')
+  p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
   p.add_option('--starttime',action='store',help="start time for data e.g. 2010-10-14T00:00:00.0Z")
   p.add_option('--endtime',action='store',help="end time for data e.g. 2010-10-14T10:00:00.0Z")
   p.add_option('--new_file',action='store',help="name of new kurtosis files")
@@ -559,7 +559,7 @@ if __name__=='__main__':
   out_dir="%s/out/%s"%(base_path,options.outdir)
   loc_filename="%s/loc/locations.dat"%out_dir
   data_dir="%s/data/%s"%(base_path,options.datadir)
-  sta_filename="%s/aux/%s"%(base_path,options.stations)
+  sta_filename="%s/lib/%s"%(base_path,options.stations)
 
   with open(loc_filename,'r') as locfile:
     loc_lines=locfile.readlines()

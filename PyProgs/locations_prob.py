@@ -8,7 +8,7 @@ from obspy.signal import *
 from filters import smooth
 from locations_trigger import filter_max_stack, number_good_kurtosis_for_location
 from grids_paths import StationList, ChannelList, QDTimeGrid, QDGrid
-from OP_waveforms import Waveform
+from OP_waveforms import Waveform, read_data_compatible_with_time_dict
 from sub_PdF_waveloc import do_innermost_migration_loop
 from integrate4D import *
 
@@ -34,7 +34,7 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   datadir=opdict['datadir']
   outdir=opdict['outdir']
   # directories
-  aux_path = os.path.join(base_path,'aux')
+  lib_path = os.path.join(base_path,'lib')
   data_path= os.path.join(base_path,'data',datadir)
   grid_path= os.path.join(base_path,'out',outdir,'grid')
   loc_path = os.path.join(base_path,'out',outdir,'loc')
@@ -47,9 +47,9 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   kurt_glob=opdict['kurtglob']
   grad_glob=opdict['gradglob']
 
-  hdr_file = os.path.join(aux_path,search_grid)
-  grid_filename_base=os.path.join(aux_path,time_grid)
-  stations_filename= os.path.join(aux_path,stations)
+  hdr_file = os.path.join(lib_path,search_grid)
+  grid_filename_base=os.path.join(lib_path,time_grid)
+  stations_filename= os.path.join(lib_path,stations)
   search_grid_filename= hdr_file
   kurt_files=glob.glob(os.path.join(data_path,kurt_glob))
   grad_files=glob.glob(os.path.join(data_path,grad_glob))
@@ -93,24 +93,7 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   # read data into a dictionary
 
   logging.info("Reading processed data into dictionary")
-
-  data={}
-
-  for filename in grad_files:
-    wf=Waveform()
-    try:
-      # read will return UserWarning if there is no data within start and end time
-      # will pad blanks with zeros if required (no tapering applied, as kurtosis files are already correctly tapered to zero)
-      wf.read_from_file(filename,starttime=starttime,endtime=endtime,pad_value=0)
-      wf_id="%s.%s"%(wf.station,wf.comp)
-      # if all is ok, and we have a corresponding time id, add data to dictionary
-      if time_dict.has_key(wf_id):
-        data[wf_id]=wf
-      else:
-        logging.info('Station %s not present in time_grid.  Ignoring station...'%wf_id)
-    except UserWarning,msg:
-      # for any UserWarning, ignore data
-      logging.error("No data data found between limits for file %s. Ignore station."%filename)
+  data=read_data_compatible_with_time_dict(grad_files, time_dict, starttime, endtime)
 
   # Set the global variable delta (dt for all the seismograms)
   try:

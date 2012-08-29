@@ -24,16 +24,16 @@ from grids_paths import QDGrid, StationList
 def plot_slice_mayavi(dat_filename,output_file,hyp_x,hyp_y,hyp_z,search_grid_file_name,max_stack_value):
 
   base_path=os.getenv('WAVELOC_PATH')
-  aux_path="%s/aux"%base_path
+  lib_path="%s/lib"%base_path
 
   # grid geometry
-  hdr_file=aux_path + os.sep + search_grid_file_name
+  hdr_file=lib_path + os.sep + search_grid_file_name
 
   # detection
   detection=50
 
   # stations
-  stations_file="%s/coord_stations_piton"%aux_path
+  stations_file="%s/coord_stations_piton"%lib_path
   sta=StationList()
   sta.read_from_file(stations_file)
 

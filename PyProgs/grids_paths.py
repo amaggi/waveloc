@@ -2321,7 +2321,7 @@ if __name__ == '__main__':
 
   grd=QDGrid()
   #grd.read_from_NLL_files('/Users/alessia/grilles_temps/Slow_len.100m.P.FLR.time')
-  grd.read_from_NLL_files('../aux/belgium2D.P.MASA.time')
+  grd.read_from_NLL_files('../lib/belgium2D.P.MASA.time')
   print grd.npts 
   print grd.min_x, grd.max_x 
   print grd.min_y, grd.max_y

@@ -24,7 +24,7 @@ p.add_option('--right_pad', action='store', help='seconds to pad on right of ori
 (options,arguments)=p.parse_args()
 
 
-aux_path=base_path + os.sep + "aux"
+lib_path=base_path + os.sep + "lib"
 loc_path="%s/out/%s/loc"%(base_path,options.outdir)
 data_path="%s/data/%s"%(base_path,options.datadir)
 extract_path="%s/out/%s/extract"%(base_path,options.outdir)

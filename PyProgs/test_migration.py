@@ -42,7 +42,7 @@ class MigrationTests(unittest.TestCase):
 if __name__ == '__main__':
 
   import logging
-  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
   unittest.TextTestRunner(verbosity=2).run(suite())
  

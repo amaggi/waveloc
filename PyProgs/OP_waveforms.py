@@ -144,7 +144,7 @@ class Waveform(object):
         # save delta (to save typing)
         delta=first_tr.stats.delta
         if (not starttime is None) and ((first_tr.stats.starttime - starttime) > delta):
-          logging.info("Padding with value %f from %s to first point in file at %s."%(pad_value, starttime.isoformat(), first_tr.stats.starttime.isoformat()))
+          logging.debug("Padding with value %f from %s to first point in file at %s."%(pad_value, starttime.isoformat(), first_tr.stats.starttime.isoformat()))
           # find the number of points from starttime to end of the first trace
           npts_full_trace=int(np.floor((first_tr.stats.endtime-starttime)/delta))+1
           # find the number of points of the padding section
@@ -162,7 +162,7 @@ class Waveform(object):
         # save delta (to save typing)
         delta=last_tr.stats.delta
         if (not endtime is None) and ((endtime - last_tr.stats.endtime) > delta):
-          logging.info("Padding with value %f from last point in file at %s to %s."%(pad_value, last_tr.stats.endtime.isoformat(), endtime.isoformat()))
+          logging.debug("Padding with value %f from last point in file at %s to %s."%(pad_value, last_tr.stats.endtime.isoformat(), endtime.isoformat()))
           # find the number of points from starttime to end of the first trace
           npts_full_trace=int(np.floor((endtime-last_tr.stats.starttime)/delta))+1
           # fill the full time range with padd value
@@ -235,7 +235,7 @@ class Waveform(object):
         # save delta (to save typing)
         delta=first_tr.stats.delta
         if (not starttime is None) and ((first_tr.stats.starttime - starttime) > delta):
-          logging.info("Padding with value %f from %s to first point in file at %s."%(pad_value, starttime.isoformat(), first_tr.stats.starttime.isoformat()))
+          logging.debug("Padding with value %f from %s to first point in file at %s."%(pad_value, starttime.isoformat(), first_tr.stats.starttime.isoformat()))
           # find the number of points from starttime to end of the first trace
           npts_full_trace=int(np.floor((first_tr.stats.endtime-starttime)/delta))+1
           # find the number of points of the padding section
@@ -253,7 +253,7 @@ class Waveform(object):
         # save delta (to save typing)
         delta=last_tr.stats.delta
         if (not endtime is None) and ((endtime - last_tr.stats.endtime) > delta):
-          logging.info("Padding with value %f from last point in file at %s to %s."%(pad_value, last_tr.stats.endtime.isoformat(), endtime.isoformat()))
+          logging.debug("Padding with value %f from last point in file at %s to %s."%(pad_value, last_tr.stats.endtime.isoformat(), endtime.isoformat()))
           # find the number of points from starttime to end of the first trace
           npts_full_trace=int(np.floor((endtime-last_tr.stats.starttime)/delta))+1
           # fill the full time range with padd value
@@ -769,6 +769,28 @@ def stream_taper(st):
     tr.data=t_tr
   return st
 
+def read_data_compatible_with_time_dict(filenames, time_dict, starttime, endtime):
+
+  data={}
+
+  for filename in filenames:
+    wf=Waveform()
+    try:
+      # read will return UserWarning if there is no data within start and end time
+      # will pad blanks with zeros if required (no tapering applied)
+      wf.read_from_file(filename,starttime=starttime,endtime=endtime,pad_value=0)
+      wf_id="%s.%s"%(wf.station,wf.comp)
+      # if all is ok, and we have a corresponding time id, add data to dictionary
+      if time_dict.has_key(wf_id):
+        data[wf_id]=wf
+      else:
+        logging.info('Station %s not present in time_grid.  Ignoring station...'%wf_id)
+    except UserWarning,msg:
+      # for any UserWarning, ignore data
+      logging.error("No data data found between limits for file %s. Ignore station."%filename)
+
+
+  return data
 
 def process_all_data_kurtosis(files, start_time, end_time, filter_c1, filter_c2, kurt_window):
   """

@@ -21,10 +21,10 @@ logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %
 def main(options):
   # set variables from command line options
   # grid
-  grid_filename_base=os.path.join(base_path,'aux',options.time_grid)
-  search_grid_filename=os.path.join(base_path,'aux',options.search_grid)
+  grid_filename_base=os.path.join(base_path,'lib',options.time_grid)
+  search_grid_filename=os.path.join(base_path,'lib',options.search_grid)
   # stations
-  stations_filename=os.path.join(base_path,'aux',options.stations)
+  stations_filename=os.path.join(base_path,'lib',options.stations)
   # output directory
   if options.outdir==None: raise UserWarning("No output subdirectory supplied")
   output_dir=os.path.join(base_path,'out',options.outdir)
@@ -143,7 +143,7 @@ p.add_option('--time','-t',action='store_true',help='print timing information to
 p.add_option('--verbose','-v',action='store_true',help='print debugging information to stout')
 p.add_option('--time_grid',action='store',type='choice',choices=time_grids,help="time grid %s"%(time_grids))
 p.add_option('--search_grid',action='store',type='choice',choices=search_grids,help="search grid %s"%(search_grids))
-p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/aux)')
+p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
 p.add_option('--outdir','-o',action='store',help="output subdirectory")
 p.add_option('--datadir',action='store',help="data subdirectory")
 p.add_option('--dataglob',action='store',help="data glob")
