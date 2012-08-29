@@ -19,5 +19,5 @@ def setup_test_grid():
   exp0,exp1,exp2,exp3,cov_matrix,grid_dict = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3,return_2Dgrids=True)
 
   
-  return grid4D,grid_dict
+  return grid4D,grid_dict,[x0,x1,x2,x3]
 

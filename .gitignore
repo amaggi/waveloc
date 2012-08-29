@@ -1,6 +1,7 @@
 # test ingore file
 /data/
 /out/
+/test_figures/
 *.buf
 *.ttimes
 /lib/*.hdr
