@@ -6,7 +6,7 @@ def compute_integral4D(grid4D,x0,x1,x2,x3):
   return grid_norm
 
 def compute_expected_coordinates4D(grid4D,x0,x1,x2,x3,return_2Dgrids=False):
-  # normalize grid
+  # expect normalized grid
   grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
 
   # get 1D marginals, expected values and variances

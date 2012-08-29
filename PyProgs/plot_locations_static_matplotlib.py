@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from visualization import setup_test_grid
 
-def plot_locations_static_matplotlib(grid4D,grid_dict,x_list,base_filename):
+def plot_locations_static_matplotlib(grid_dict,x_list,base_filename):
 
   print grid_dict.keys()
 

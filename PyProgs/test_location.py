@@ -29,7 +29,7 @@ class IntegrationTests(unittest.TestCase):
     self.assertAlmostEqual(grid_area,grid_integral,7)
     
   def test_expected_values(self):
-    dims=(40,60,80,100)
+    dims=(20,30,40,50)
     grid4D=np.zeros(dims)
     x0=np.linspace(0,4,dims[0])
     x1=np.linspace(0,6,dims[1])
@@ -44,6 +44,7 @@ class IntegrationTests(unittest.TestCase):
     my_exp3=x3[7]
 
 
+    #grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
     exp0,exp1,exp2,exp3,cov_matrix = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3)
     var_x0=cov_matrix[0,0]
     var_x1=cov_matrix[1,1]
@@ -57,7 +58,7 @@ class IntegrationTests(unittest.TestCase):
 
     self.assertAlmostEqual(var_x0,0.0,7)
     self.assertAlmostEqual(var_x1,0.0,7)
-    self.assertAlmostEqual(var_x2,0.0051,4)
+    self.assertAlmostEqual(var_x2,0.0210,4)
     self.assertAlmostEqual(var_x3,0.0,7)
 
 class LocationTests(unittest.TestCase):

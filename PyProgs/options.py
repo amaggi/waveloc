@@ -231,6 +231,9 @@ class WavelocOptions(object):
     griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
     if not os.path.exists(griddir): op.makedirs(griddir)  
 
+    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
+    if not os.path.exists(figdir): os.makedirs(figdir)  
+
     if self.opdict['loclevel']==None:   raise UserWarning('Empty location threshold') 
     if self.opdict['snr_limit']==None:   raise UserWarning('Empty threshold for signal to noise ratio') 
     if self.opdict['sn_time']==None:   raise UserWarning('Empty time span for signal to noise ratio computation') 
