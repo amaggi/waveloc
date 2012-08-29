@@ -1,4 +1,4 @@
-import os, argparse
+import os, glob, argparse
 
 class WavelocOptions(object):
 
@@ -7,9 +7,12 @@ class WavelocOptions(object):
     self.opdict={}
 
     base_path=os.getenv('WAVELOC_PATH')
-    if not os.path.exists(base_path):
-      raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
+    if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
     self.opdict['base_path']=base_path
+
+    # check for existence of aux directory
+    aux_path=os.path.join(base_path,'aux')
+    if not os.path.isdir(aux_path): raise UserWarning('Directory %s does not exist.'%aux_path)
   
     self.p = argparse.ArgumentParser()
 
@@ -46,6 +49,7 @@ class WavelocOptions(object):
     self.p.add_argument('--time_grid',  action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/aux)")
     self.p.add_argument('--load_ttimes_buf',action='store_true',default=False,help='load pre-calculated travel-times for the search grid from file')
 
+    self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
     self.p.add_argument('--loclevel', action='store', default=50,   type=float,help='trigger stack level for locations (e.g. 50) ')
     self.p.add_argument('--snr_limit',action='store', default=10.0, type=float,help="signal_to_noise level for kurtosis acceptance")
     self.p.add_argument('--sn_time',action='store',   default=10.0, type=float,help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
@@ -88,6 +92,7 @@ class WavelocOptions(object):
     self.opdict['time_grid']=args.time_grid
     self.opdict['load_ttimes_buf']=args.load_ttimes_buf
 
+    self.opdict['reloc']=args.reloc
     self.opdict['loclevel']=args.loclevel
     self.opdict['snr_limit']=args.snr_limit
     self.opdict['sn_time']=args.sn_time
@@ -131,13 +136,19 @@ class WavelocOptions(object):
 
     self.opdict['load_ttimes_buf']=True
 
+    self.opdict['reloc']=False
+    self.opdict['loclevel']=50.0
+    self.opdict['snr_limit']=10.0
+    self.opdict['sn_time']=10.0
+    self.opdict['n_kurt_min']=4
+
   def verify_SDS_processing_options(self):
 
     base_path=self.opdict['base_path']
 
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
     if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
-    if not os.path.exists(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if self.opdict['net_list']==None:  raise UserWarning('Empty network list') 
     if self.opdict['sta_list']==None:  raise UserWarning('Empty station list') 
@@ -160,7 +171,7 @@ class WavelocOptions(object):
 
     if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.exists(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     outdir=os.path.join(base_path,'out',self.opdict['outdir'])
@@ -169,6 +180,8 @@ class WavelocOptions(object):
       op.makedirs(os.path.join(outdir,'stack'))
 
     if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
+    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
+    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s',grad_names)
     
     if self.opdict['starttime']==None: raise UserWarning('Empty start time') 
     if self.opdict['endtime']==None:   raise UserWarning('Empty end time') 
@@ -176,6 +189,61 @@ class WavelocOptions(object):
     if self.opdict['data_overlap']==None:   raise UserWarning('Empty data segment overlap') 
 
     if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
+    stations=os.path.join(base_path,'aux',self.opdict['stations'])
+    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+
     if self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
+    search_grid=os.path.join(base_path,'aux',self.opdict['search_grid'])
+    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
+
     if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    
+    time_grid=os.path.join(base_path,'aux',self.opdict['time_grid'])
+    tg_glob=time_grid+'*'
+    tg_files=glob.glob(tg_glob)
+    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+
+  def verify_location_options(self):
+
+    base_path=self.opdict['base_path']
+
+    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+
+    if self.opdict['kurtglob']==None:  raise UserWarning('Empty kurtglob') 
+    kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
+    if len(kurt_names)==0: raise UserWarning('No kurtosis files found : %s',kurt_names)
+
+    if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
+    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
+    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s',grad_names)
+
+    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
+    stackdir=os.path.join(base_path,'out',self.opdict['outdir'],'stack')
+    if not os.path.isdir(stackdir): raise UserWarning('Stack directory %s does not exist.  Have you run migration correctly ?') 
+
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+    if not os.path.exists(locdir): op.makedirs(locdir)  
+
+    relocdir=os.path.join(base_path,'out',self.opdict['outdir'],'reloc')
+    if self.opdict['reloc'] and not os.path.exists(relocdir): op.makedirs(relocdir)  
+
+    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
+    if not os.path.exists(griddir): op.makedirs(griddir)  
+
+    if self.opdict['loclevel']==None:   raise UserWarning('Empty location threshold') 
+    if self.opdict['snr_limit']==None:   raise UserWarning('Empty threshold for signal to noise ratio') 
+    if self.opdict['sn_time']==None:   raise UserWarning('Empty time span for signal to noise ratio computation') 
+    if self.opdict['n_kurt_min']==None:   raise UserWarning('Empty minimum number of good kurtosis for location') 
+
+    if self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
+    search_grid=os.path.join(base_path,'aux',self.opdict['search_grid'])
+    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
+
+    if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
+    time_grid=os.path.join(base_path,'aux',self.opdict['time_grid'])
+    tg_glob=time_grid+'*'
+    tg_files=glob.glob(tg_glob)
+    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+
+

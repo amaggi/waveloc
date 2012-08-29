@@ -2,10 +2,15 @@
 # encoding: utf-8
 
 import os, sys, optparse, glob, logging
+import numpy as np
 from obspy.core import *
 from obspy.signal import *
 from filters import smooth
 from locations_trigger import filter_max_stack, number_good_kurtosis_for_location
+from grids_paths import StationList, ChannelList, QDTimeGrid, QDGrid
+from OP_waveforms import Waveform
+from sub_PdF_waveloc import do_innermost_migration_loop
+from integrate4D import *
 
 
 def trigger_detections(st_max,loc_level):
@@ -23,28 +28,31 @@ def trigger_detections(st_max,loc_level):
 
   return detections
 
-def compute_stats_from_4Dgrid(base_path,outdir,datadir,search_grid,time_grid,stations,data_glob,kurt_glob,grad_glob,starttime,endtime):
+def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   
+  base_path=opdict['base_path']
+  datadir=opdict['datadir']
+  outdir=opdict['outdir']
   # directories
   aux_path = os.path.join(base_path,'aux')
   data_path= os.path.join(base_path,'data',datadir)
   grid_path= os.path.join(base_path,'out',outdir,'grid')
   loc_path = os.path.join(base_path,'out',outdir,'loc')
 
-  if not os.path.exists(grid_path):
-    os.makedirs(grid_path)
-  if not os.path.exists(loc_path):
-    os.makedirs(loc_path)
 
   # files
+  search_grid=opdict['search_grid']
+  time_grid=opdict['time_grid']
+  stations=opdict['stations']
+  kurt_glob=opdict['kurtglob']
+  grad_glob=opdict['gradglob']
+
   hdr_file = os.path.join(aux_path,search_grid)
   grid_filename_base=os.path.join(aux_path,time_grid)
   stations_filename= os.path.join(aux_path,stations)
-  search_grid_filename= os.path.join(aux_path,search_grid)
-  data_files=glob.glob(os.path.join(data_path,data_glob))
+  search_grid_filename= hdr_file
   kurt_files=glob.glob(os.path.join(data_path,kurt_glob))
   grad_files=glob.glob(os.path.join(data_path,grad_glob))
-  data_files.sort()
   kurt_files.sort()
   grad_files.sort()
 
@@ -53,11 +61,16 @@ def compute_stats_from_4Dgrid(base_path,outdir,datadir,search_grid,time_grid,sta
   sta.read_from_file(stations_filename)
 
   cha=ChannelList()
-  cha.populate_from_station_list_and_data_files(sta,data_files)
+  cha.populate_from_station_list_and_data_files(sta,kurt_files)
 
   time_grid=QDTimeGrid()
   time_grid.read_NLL_hdr_file(hdr_file)
   time_grid.populate_from_time_grids(grid_filename_base,cha,load_buf=True)
+
+  max_grid_time=0.0
+  for point in time_grid.buf:
+    max_time_tmp=max(point.values())
+    max_grid_time=max(max_grid_time,max_time_tmp)
   
   # get grid geometry information
   dummy_grid=QDGrid()
@@ -69,7 +82,11 @@ def compute_stats_from_4Dgrid(base_path,outdir,datadir,search_grid,time_grid,sta
   # TODO
   # clean up data (preselect on signal to noise ratios etc)
 
-  logging.info("Processing time slice %s - %s "%starttime.isoformat(),endtime.isoformat())
+  logging.info("Processing time slice %s - %s "%(starttime.isoformat(),endtime.isoformat()))
+ 
+  endtime=endtime+2*max_grid_time
+  starttime=starttime-2*max_grid_time
+  logging.info("Expanding to time slice %s - %s to account for propagation time"%(starttime.isoformat(),endtime.isoformat()))
 
   time_dict=time_grid.buf[0]
 
@@ -84,7 +101,7 @@ def compute_stats_from_4Dgrid(base_path,outdir,datadir,search_grid,time_grid,sta
     try:
       # read will return UserWarning if there is no data within start and end time
       # will pad blanks with zeros if required (no tapering applied, as kurtosis files are already correctly tapered to zero)
-      wf.read_from_file(filename,starttime=start_time,endtime=end_time,pad_value=0)
+      wf.read_from_file(filename,starttime=starttime,endtime=endtime,pad_value=0)
       wf_id="%s.%s"%(wf.station,wf.comp)
       # if all is ok, and we have a corresponding time id, add data to dictionary
       if time_dict.has_key(wf_id):
@@ -105,16 +122,25 @@ def compute_stats_from_4Dgrid(base_path,outdir,datadir,search_grid,time_grid,sta
   n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid = do_innermost_migration_loop(starttime, endtime, data, time_grid, delta, search_grid_filename)
 
   # set up integration limits
-  xt=np.arange(norm_stack_len)*delta
   x0=np.arange(nx)*dx
   x1=np.arange(ny)*dy
   x2=np.arange(nz)*dz
+  xt=np.arange(norm_stack_len)*delta
   
-  print xt.shape(), stack_grid.shape()
+  logging.debug('Expected shape of time axis : %s, actual shape : %s.  Shape of 4D grid : %s.'%(norm_stack_len, xt.shape, stack_grid.shape))
+  exp_x0,exp_x1,exp_x2,exp_xt = compute_expected_coordinates4D(stack_grid[:,:,:,0:norm_stack_len],x0,x1,x2,xt)
 
+  exp_x0 += x_orig
+  exp_x1 += y_orig
+  exp_x2 += z_orig
+  exp_otime = stack_start_time + exp_xt
 
-def do_locations_prob_setup_and_run(base_path="",outdir="",loclevel=None,datadir="",dataglob="",snr_limit=None,sn_time=None,n_kurt_min=None,search_grid=""):
+  logging.info('Located event at %s, x = %.3f, y = %.3f, z = %.3f'%(exp_otime,exp_x0,exp_x1,exp_x2))
 
+def do_locations_prob_setup_and_run(opdict):
+
+  base_path=opdict['base_path']
+  outdir=opdict['outdir']
   # set up some paths
   stack_path=os.path.join(base_path,'out',outdir,'stack')
   loc_path=os.path.join(base_path,'out',outdir,'loc')
@@ -131,37 +157,26 @@ def do_locations_prob_setup_and_run(base_path="",outdir="",loclevel=None,datadir
   st_max_filt=filter_max_stack(st_max,1.0)
   st_max_filt.write(os.path.join(stack_path,"combined_stack_max_filt.mseed"),format='MSEED')
 
+  loclevel=opdict['loclevel']
   detection_list=trigger_detections(st_max_filt,loclevel)
 
-  print detection_list
+  logging.debug(detection_list)
 
   for (starttime,endtime) in detection_list:
     
-    compute_stats_from_4Dgrid(base_path,outdir,datadir,search_grid,time_grid,stations,data_glob,kurt_glob,grad_glob,starttime,endtime)
+    compute_stats_from_4Dgrid(opdict,starttime,endtime)
 
 if __name__=='__main__':
 
-  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
-  base_path=os.getenv('WAVELOC_PATH')
+  from options import WavelocOptions
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
-  # Read command line
+  wo = WavelocOptions()
+  args=wo.p.parse_args()
 
-  p = optparse.OptionParser()
-  p.add_option('--outdir', '-o', action='store', help='output subdirectory in which the stack directory is found')
-  p.add_option('--loclevel', action='store', default=100, type='float',help='trigger stack level for locations (e.g. 100) ')
-  p.add_option('--datadir',action='store',help="data subdirectory")
-  p.add_option('--dataglob',action='store',help="data glob")
-  p.add_option('--snr_limit',action='store',default=10.0, type='float',help="signal_to_noise level for kurtosis acceptance")
-  p.add_option('--sn_time',action='store',default=10.0, type='float',help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
-  p.add_option('--n_kurt_min',action='store',default=4, type='int',help="min number of good kurtosis traces for a location")
-  p.add_option('--search_grid',action='store',help="search grid %s")
-  p.add_option('--stations','-s',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/aux)')
-  p.add_option('--data_glob',action='store',help="data glob")
-  p.add_option('--kurt_glob',action='store',help="kurtosis glob")
-  p.add_option('--grad_glob',action='store',help="kurtosis gradient glob")
-  p.add_option('--snr_limit',action='store',default=10.0, help="signal_to_noise level for kurtosis acceptance")
-  p.add_option('--sn_time',action='store',default=10.0, help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
+  wo.set_all_arguments(args)
+  wo.verify_location_options()
 
-  (options,arguements)=p.parse_args()
+  do_locations_prob_setup_and_run(wo.opdict)
 
-  do_locations_prob_setup_and_run(base_path=base_path,outdir=options.outdir,loclevel=options.loclevel,datadir=options.datadir,dataglob=options.dataglob,snr_limit=options.snr_limit,sn_time=options.sn_time,n_kurt_min=options.n_kurt_min)
+

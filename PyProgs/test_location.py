@@ -1,13 +1,14 @@
-import unittest
-import os, glob
+import os, glob, unittest
+from options import WavelocOptions
+from OP_waveforms import Waveform
 from locations_trigger import do_locations_trigger_setup_and_run
 from locations_prob import do_locations_prob_setup_and_run
-from OP_waveforms import Waveform
 from integrate4D import *
 
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(IntegrationTests('test_integration'))
+  suite.addTest(IntegrationTests('test_expected_values'))
   suite.addTest(LocationTests('test_locations_trigger'))
   suite.addTest(LocationTests('test_locations_prob'))
   return suite
@@ -42,10 +43,8 @@ class IntegrationTests(unittest.TestCase):
     my_exp2=x2[4]
     my_exp3=x3[7]
 
-    grid_norm = compute_integral4D(grid4D,x0,x1,x2,x3)
-    grid4D=grid4D/grid_norm
 
-    exp0,epx1,exp2,exp3 = compute_expected_coordintes4D(grid4D,x0,x1,x2,x3)
+    exp0,exp1,exp2,exp3 = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3)
 
     self.assertAlmostEqual(my_exp0,exp0,7)
     self.assertAlmostEqual(my_exp1,exp1,7)
@@ -57,40 +56,26 @@ class LocationTests(unittest.TestCase):
 
   def setUp(self):
 
-    self.base_path=os.getenv('WAVELOC_PATH')
-
-    self.test_datadir='test_data'
-    self.datadir='TEST'
-    self.net_list='YA'
-    self.sta_list="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
-    self.comp_list="HHZ"
-    self.starttime="2010-10-14T00:14:00.0Z"
-    self.endtime="2010-10-14T00:18:00.0Z"
-    self.time_grid='Slow_len.100m.P'
-    self.search_grid='test_grid.search.hdr'
-    self.coord_stations='coord_stations_test'
-    self.kwin=4
-    self.loclevel=50
-    self.snr_limit=10.0
-    self.sn_time=10.0
-    self.dataglob="*kurt.mseed"
-
+    self.wo=WavelocOptions()
+    self.wo.set_test_options()
+    self.wo.verify_location_options()
 
 
   def test_locations_trigger(self):
 
-    do_locations_trigger_setup_and_run(base_path=self.base_path, outdir=self.datadir, datadir=self.datadir, dataglob=self.dataglob, reloc=False, loclevel=self.loclevel,snr_limit=self.snr_limit,sn_time=self.sn_time,n_kurt_min=self.kwin)
+    do_locations_trigger_setup_and_run(self.wo.opdict)
     self.assertTrue(True)
 
   def test_locations_prob(self):
 
-    do_locations_prob_setup_and_run(base_path=self.base_path, outdir=self.datadir, loclevel=self.loclevel, datadir=self.datadir, dataglob=self.dataglob, snr_limit=self.snr_limit, sn_time=self.sn_time)
+    #self.wo.opdict['loclevel']=50
+    do_locations_prob_setup_and_run(self.wo.opdict)
     self.assertTrue(True)
 
 if __name__ == '__main__':
 
   import logging
-  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
   unittest.TextTestRunner(verbosity=2).run(suite())
  

@@ -1,9 +1,8 @@
-import unittest
-import os, glob
-from migration import do_migration_setup_and_run
-from OP_waveforms import Waveform
-from test_processing import waveforms_to_signature
+import os, glob, unittest
 from options import WavelocOptions
+from OP_waveforms import Waveform
+from migration import do_migration_setup_and_run
+from test_processing import waveforms_to_signature
 
 def suite():
   suite = unittest.TestSuite()

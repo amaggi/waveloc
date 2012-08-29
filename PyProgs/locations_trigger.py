@@ -109,14 +109,16 @@ def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
 
   return locs
    
-def do_locations_trigger_setup_and_run(base_path="",outdir="",reloc=False,loclevel=None,datadir="",dataglob="",snr_limit=None,sn_time=None,n_kurt_min=None):
+def do_locations_trigger_setup_and_run(opdict):
 
+  base_path=opdict['base_path']
   # parse command line
-  data_dir=os.path.join(base_path,'data',datadir)
-  kurt_files=glob.glob(os.path.join(data_dir,dataglob))
+  data_dir=os.path.join(base_path,'data',opdict['datadir'])
+  kurt_files=glob.glob(os.path.join(data_dir,opdict['kurtglob']))
 
   # corner frequency for lowpass filtering of max stack
   corner=1.0 
+  loclevel=opdict['loclevel']
   left_trig=loclevel
   right_trig=loclevel
 
@@ -125,15 +127,14 @@ def do_locations_trigger_setup_and_run(base_path="",outdir="",reloc=False,loclev
 
   logging.info("Starting log for combine_stacks.")
 
-  stack_path=os.path.join(base_path,'out',outdir,'stack')
+  out_path=os.path.join(base_path,'out',opdict['outdir'])
+  stack_path=os.path.join(out_path,'stack')
 
+  reloc=opdict['reloc']
   if reloc:
-    loc_path=os.path.join(base_path,'out',outdir,'reloc')
+    loc_path=os.path.join(out_path,'reloc')
   else:
-    loc_path=os.path.join(base_path,'out',outdir,'loc')
-
-  if not os.path.exists(loc_path):
-    os.makedirs(loc_path)
+    loc_path=os.path.join(out_path,'loc')
 
 
   loc_filename=os.path.join(loc_path,"locations.dat")
@@ -200,6 +201,10 @@ def do_locations_trigger_setup_and_run(base_path="",outdir="",reloc=False,loclev
 
   loc_file=open(loc_filename,'w')
 
+  snr_limit=opdict['snr_limit']
+  sn_time=opdict['sn_time']
+  n_kurt_min=opdict['n_kurt_min']
+
   n_ok=0
   for (max_trig,o_time,o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma) in loc_list:
     if number_good_kurtosis_for_location(kurt_files,o_time,snr_limit,sn_time) > n_kurt_min:
@@ -214,24 +219,15 @@ def do_locations_trigger_setup_and_run(base_path="",outdir="",reloc=False,loclev
  
 if __name__=='__main__':
 
-  # get path
-  base_path=os.getenv('WAVELOC_PATH')
-
-  # Read command line
-
-  p = optparse.OptionParser()
-  p.add_option('--outdir', '-o', action='store', help='output subdirectory in which the stack directory is found')
-  p.add_option('--reloc', action='store_true', default=False, help='apply to relocated events')
-  p.add_option('--loclevel', action='store', type='float', default=100, help='trigger stack level for locations (e.g. 100) ')
-  p.add_option('--datadir',action='store',help="data subdirectory")
-  p.add_option('--dataglob',action='store',help="data glob")
-  p.add_option('--snr_limit',action='store',type='float',default=10.0, help="signal_to_noise level for kurtosis acceptance")
-  p.add_option('--sn_time',action='store',type='float',default=10.0, help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
-  p.add_option('--n_kurt_min',action='store',type='int',default=4, help="min number of good kurtosis traces for a location")
-
-  (options,arguements)=p.parse_args()
-
+  from options import WavelocOptions
   logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
-  do_locations_trigger_setup_and_run(base_path=base_path, outdir=options.outdir, reloc=options.reloc, loclevel=options.loclevel, datadir=options.datadir, dataglob=options.dataglob, snr_limit=options.snr_limit, sn_time=options.sn_time, n_kurt_min=options.n_kurt_min)
+  wo = WavelocOptions()
+  args=wo.p.parse_args()
+
+  wo.set_all_arguments(args)
+  wo.verify_location_options()
+
+  do_locations_setup_and_run(wo.opdict)
+
  
