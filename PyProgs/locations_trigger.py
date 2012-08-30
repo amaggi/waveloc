@@ -64,7 +64,43 @@ def number_good_kurtosis_for_location(kurt_files,o_time,snr_limit=10.0,sn_time=1
       logging.info('No data around %s for file %s.'%(o_time.isoformat(),filename))
   return n_good_kurt
     
-    
+def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,delta):    
+
+    locs=[]
+    trigs=trigger.triggerOnset(max_val,left_trig,right_trig)
+
+    df=1/delta
+
+    logging.debug('Found %d triggers.'%len(trigs))
+
+    for trig in trigs:
+
+      i_start=trig[0]
+      i_end=trig[1]+1
+      i_max_trig=np.argmax(max_val.data[i_start:i_end])+i_start
+      max_trig=max_val[i_max_trig]
+      max_trig_95=0.95*max_trig
+      logging.debug('Max_trig = %.3f, max_trig_95 = %.3f'%(max_trig,max_trig_95))
+      trigs_95=trigger.triggerOnset(max_val[i_start:i_end],max_trig_95,max_trig_95)
+      for trig_95 in trigs_95:
+        if i_max_trig >= trig_95[0]+i_start and i_max_trig <= trig_95[1]+i_start:
+          i_start_95=trig_95[0]+i_start
+          i_end_95=trig_95[1]+1+i_start
+          x_mean=np.mean(max_x[i_start_95:i_end_95])
+          x_sigma=np.std(max_x[i_start_95:i_end_95])
+          y_mean=np.mean(max_y[i_start_95:i_end_95])
+          y_sigma=np.std(max_y[i_start_95:i_end_95])
+          z_mean=np.mean(max_z[i_start_95:i_end_95])
+          z_sigma=np.std(max_z[i_start_95:i_end_95])
+
+          o_time=i_max_trig*delta
+          o_err_left=(i_max_trig-i_start_95)*delta
+          o_err_right=(i_end_95-i_max_trig)*delta
+
+          locs.append([max_trig,o_time,o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma])
+
+    return locs
+ 
 
 def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
 
@@ -76,36 +112,12 @@ def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
     tr_y=st_y.traces[i_filt]
     tr_z=st_z.traces[i_filt]
 
-    trigs=trigger.triggerOnset(tr_filt.data,left_trig,right_trig)
+    i_locs=trigger_locations_inner(tr_filt.data,tr_x.data,tr_y.data,tr_z.data,left_trig,right_trig,tr_filt.stats.delta)
+    for loc in i_locs:
+      # fix-up the origin time
+      loc[1] = tr_filt.stats.starttime+loc[1]
 
-    df=1/tr_filt.stats.delta
-
-    logging.debug('Found %d triggers.'%len(trigs))
-
-    for trig in trigs:
-
-      i_start=trig[0]
-      i_end=trig[1]+1
-      i_max_trig=np.argmax(tr_filt.data[i_start:i_end])+i_start
-      max_trig=tr_filt.data[i_max_trig]
-      max_trig_95=0.95*max_trig
-      trigs_95=trigger.triggerOnset(tr_filt.data[i_start:i_end],max_trig_95,max_trig_95)
-      for trig_95 in trigs_95:
-        if i_max_trig > trig_95[0]+i_start and i_max_trig < trig_95[1]+i_start:
-          i_start_95=trig_95[0]+i_start
-          i_end_95=trig_95[1]+1+i_start
-          x_mean=np.mean(tr_x[i_start_95:i_end_95])
-          x_sigma=np.sqrt(np.var(tr_x[i_start_95:i_end_95]))
-          y_mean=np.mean(tr_y[i_start_95:i_end_95])
-          y_sigma=np.sqrt(np.var(tr_y[i_start_95:i_end_95]))
-          z_mean=np.mean(tr_z[i_start_95:i_end_95])
-          z_sigma=np.sqrt(np.var(tr_z[i_start_95:i_end_95]))
-
-          o_time=tr_filt.stats.starttime+i_max_trig*tr_filt.stats.delta
-          o_err_left=(i_max_trig-i_start_95)*tr_filt.stats.delta
-          o_err_right=(i_end_95-i_max_trig)*tr_filt.stats.delta
-
-          locs.append((max_trig,o_time,o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma))
+    locs.extend(i_locs)
 
   return locs
    

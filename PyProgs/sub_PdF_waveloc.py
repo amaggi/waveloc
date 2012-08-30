@@ -73,6 +73,8 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
 
   
   # magic matrix manipulations (see relevant inotebook)
+  #ib_max=[stack_grid[:,:,:,it].argmax for it in range(norm_stack_len)]
+  
   max_val=stack_grid.max(0).max(0).max(0)
   max_x=stack_grid.max(2).max(1).argmax(0)
   max_y=stack_grid.max(2).max(0).argmax(0)

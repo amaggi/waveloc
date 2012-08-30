@@ -4,51 +4,31 @@ from options import WavelocOptions
 from OP_waveforms import Waveform
 from migration import do_migration_setup_and_run
 from test_processing import waveforms_to_signature
+from integrate4D import * 
 
-def suite():
-  suite = unittest.TestSuite()
-  suite.addTest(MigrationTests('test_migration'))
-  suite.addTest(MigrationTests('test_migration_fullRes'))
-  suite.addTest(MigrationTests('test_migration_synthetic'))
-  return suite
+def generateSyntheticDirac(wo):
+    # Creates the synthetic dataset for us to work with
 
-    
-class MigrationTests(unittest.TestCase):
-
-  def setUp(self):
-
-    self.wo=WavelocOptions()
-    self.wo.set_test_options()
-    self.wo.verify_migration_options()
-
-  def test_migration_synthetic(self):
     from grids_paths import StationList, ChannelList, QDTimeGrid, migrate_4D_stack
-    from integrate4D import compute_expected_coordinates4D, compute_integral4D, compute_expected_coordinates1D 
-    from plot_mpl import plot_locations_static_matplotlib, plot_test
-    
+
+    wo.verify_migration_options()
+
     #define length and sampling frequency of synthetic data
     s_data_length = 20.0 # seconds
-    s_sample_freq = 10.0 # Hz
+    s_sample_freq = 100.0 # Hz
     s_npts=s_data_length*s_sample_freq
     s_delta=1/s_sample_freq
 
     # define origin time
     s_t0 = 6.0
 
-    # set some options for output - may not be needed
-    self.wo.opdict['outdir'] = 'TEST_Dirac'
-    #self.wo.opdict['load_ttimes_buf'] = False
-    self.wo.opdict['load_ttimes_buf'] = True
 
-    # verify consistency after changing default options
-    self.wo.verify_migration_options()
-    self.wo.verify_location_options()
-   
     # DO NOT SET ANY MORE opdict options after this line
-    opdict=self.wo.opdict
+    opdict=wo.opdict
 
     base_path=opdict['base_path']
     outdir=opdict['outdir']
+    test_grid_file=os.path.join(base_path,'out',opdict['outdir'],'test_grid4D_hires.dat')
 
     fig_path = os.path.join(base_path,'out',outdir,'fig')
 
@@ -88,12 +68,16 @@ class MigrationTests(unittest.TestCase):
     ny=time_grid.ny
     nz=time_grid.nz
 
+    dx=time_grid.dx
+    dy=time_grid.dy
+    dz=time_grid.dz
+
     ix=nx/2
     iy=ny/3
     iz=ny/4
     it=s_t0/s_delta
 
-    logging.debug('True ix, iy, iz, it = %d %d %d %s'%(ix,iy,iz,it))
+    logging.info('True ix, iy, iz, it = %d %d %d %s'%(ix,iy,iz,it))
 
     # retrieve travel times for chosen hypocenter 
     ib= ix*ny*nz + iy*nz + iz
@@ -109,7 +93,6 @@ class MigrationTests(unittest.TestCase):
       s=np.zeros(s_npts)
       atime=s_t0+delay
       i_atime=np.int(atime/s_delta)
-      #s[i_atime-2:i_atime+2]=5.0
       s[i_atime]=50.0
       integer_data[key]=s
       
@@ -117,53 +100,144 @@ class MigrationTests(unittest.TestCase):
     # DO MIGRATION
     (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data,s_delta,search_grid_filename,time_grid)
 
-    print nx,ny,nz,norm_stack_len
-    stack_grid[:,:,:,0:norm_stack_len].tofile('broken_grid.dat')
+    logging.info('Migration outputs : nx,ny,nz,norm_stack_len,stack_shift_time = %d %d %d %d %.3f'%(nx,ny,nz,norm_stack_len,stack_shift_time))
+    stack_grid[:,:,:,0:norm_stack_len].tofile(test_grid_file)
+    logging.info('Saved 4D grid to file %s'%test_grid_file)
+
+    # SETUP information to pass back
+    test_info={}
+    test_info['dat_file']=test_grid_file
+    test_info['grid_shape']=stack_grid[:,:,:,0:norm_stack_len].shape
+    test_info['grid_spacing']=dx,dy,dz,s_delta
+    test_info['true_indexes']=(ix,iy,iz,it)
+
+    return test_info
+    
+ 
+
+def suite():
+  suite = unittest.TestSuite()
+  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
+  suite.addTest(MigrationTests('test_migration'))
+  suite.addTest(MigrationTests('test_migration_fullRes'))
+  return suite
+
+class SyntheticMigrationTests(unittest.TestCase):
+
+  def test_dirac_migration(self):
+    from locations_trigger import trigger_locations_inner
+    from plot_mpl import plot_probloc_mpl
+
+    wo=WavelocOptions()
+    wo.set_test_options()
+
+    wo.opdict['outdir'] = 'TEST_Dirac'
+    wo.opdict['search_grid']='grid.Taisne.search.hdr'
+    wo.opdict['loclevel'] = 300
+    #wo.opdict['load_ttimes_buf'] = False # Expensive in time, but makes sure we've got the right grid for the test
+    wo.opdict['load_ttimes_buf'] = True # Optimized in time, but you must be usre you're reading the right grid for the test
+
+    wo.verify_migration_options()
+    wo.verify_location_options()
+
+    # generate the test case and retrieve necessary information
+#    test_info=generateSyntheticDirac(wo)
+
+    test_info={}
+    test_info['dat_file']='/Users/alessia/Documents/working/waveloc/out/TEST_Dirac/test_grid4D_hires.dat'
+    test_info['grid_shape']=(32, 24, 12, 1338)
+    test_info['true_indexes']=(16, 8, 6, 600)
+    test_info['grid_spacing']=(0.25, 0.25, 0.25, 0.01)
+    print test_info
+    
+   
+    # retrieve info
+    dat_file=test_info['dat_file']
+    nx,ny,nz,nt=test_info['grid_shape']
+    dx,dy,dz,dt=test_info['grid_spacing']
+    ix_true,iy_true,iz_true,it_true=test_info['true_indexes']
+
+    # plot base filename
+    base_path=wo.opdict['base_path']
+    outdir=wo.opdict['outdir']
+    plot_base_filename=os.path.join(base_path,'out',outdir,'fig','fig_synt_st_mpl')
+
+    # loclevel for triggers
+    loclevel=wo.opdict['loclevel']
+
+    # set up x, y, z, t arrays
+    x=np.arange(nx)*dx
+    y=np.arange(ny)*dy
+    z=np.arange(nz)*dz
+    t=np.arange(nt)*dt
+
+    # load grid
+    stack_grid=np.fromfile(dat_file).reshape(nx,ny,nz,nt)
+
+    # normalize grid for first probability density calculation
+    stack_grid_int=compute_integral4D(stack_grid,x,y,z,t)
+    stack_grid_norm=stack_grid / stack_grid_int
+
+ 
+    # integrate normalized grid over all space dimensions to get marginal over time
+    prob_t = si.trapz(si.trapz(si.trapz(stack_grid_norm,x=x,axis=0),x=y,axis=0),x=z,axis=0)
+    exp_t = si.trapz(t*prob_t,x=t,axis=0)
+    var_t = si.trapz((t-exp_t)*(t-exp_t)*prob_t,x=t,axis=0)
+    sigma_t = np.sqrt(var_t)
+    it_exp=int(round(exp_t/dt))
+    nt_sigma=int(round(sigma_t/dt))
+    it_left=it_exp-nt_sigma
+    it_right=it_exp+nt_sigma
+    t_slice=t[it_left:it_right]
+    
+    # simulate locations trigger
+    max_val=stack_grid.max(0).max(0).max(0)
+    max_x=stack_grid.max(2).max(1).argmax(0)*dx
+    max_y=stack_grid.max(2).max(0).argmax(0)*dy
+    max_z=stack_grid.max(1).max(0).argmax(0)*dz
+
+    
+    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,loclevel,loclevel,dt)
+    
+    print locs
+    # This is a dirac test, so only have one element in locs
+    trig_loc=locs[0]
+    trig_max,trig_t,trig_sigma_t_left,trig_sigma_t_right,trig_x,trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z = trig_loc
+
+    logging.info("TRIGGER : Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(trig_max,trig_t,max(trig_sigma_t_left,trig_sigma_t_right), trig_x, trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z))
+  
+    # TODO - send to a plotter
+
+    exp_x,exp_y,exp_z,exp_t,cov_matrix,prob_dict = compute_expected_coordinates4D(stack_grid[:,:,:,it_exp-nt_sigma:it_exp+nt_sigma],x,y,z,t_slice,return_2Dgrids=True)
+    sigma_x=np.sqrt(cov_matrix[0,0])
+    sigma_y=np.sqrt(cov_matrix[1,1])
+    sigma_z=np.sqrt(cov_matrix[2,2])
+    sigma_t=np.sqrt(cov_matrix[3,3])
+
+    logging.info("PROB DENSITY : Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(exp_t,sigma_t, exp_x, sigma_x,exp_y,sigma_y,exp_z,sigma_z))
+
+    plot_probloc_mpl(prob_dict,[x,y,z,t_slice],plot_base_filename)
+
+
+    self.assertTrue(True)
+   
+class MigrationTests(unittest.TestCase):
+
+  def setUp(self):
+
+    self.wo=WavelocOptions()
+    self.wo.set_test_options()
+    self.wo.verify_migration_options()
 
     
 
-    x0=np.arange(nx)*time_grid.dx
-    x1=np.arange(ny)*time_grid.dy
-    x2=np.arange(nz)*time_grid.dz
-    xt=np.arange(norm_stack_len)*s_delta
+ 
 
-    exp_x0,exp_x1,exp_x2,exp_xt,cov_matrix,prob_dict = compute_expected_coordinates4D(stack_grid[0:nx,0:ny,0:nz,0:norm_stack_len],x0,x1,x2,xt,return_2Dgrids=True)
-
-    i_xt = int(round(exp_xt/s_delta)) 
-    ib=np.argmax(stack_grid[:,:,:,i_xt])
-    (ix,iy,iz)=np.unravel_index(ib,(nx,ny,nz))
-    logging.debug('Absolute maximum of stack (%.3f) at ix=%d, iy=%d, iz=%d, it=%d, ib=%d'%(stack_grid[ix,iy,iz,i_xt],ix,iy,iz,i_xt,ib))
-    stack_x=stack_grid[:,iy,iz,i_xt]
-    stack_y=stack_grid[ix,:,iz,i_xt]
-    stack_z=stack_grid[ix,iy,:,i_xt]
-
-    exp_x, var_x = compute_expected_coordinates1D(stack_x,x0)
-    exp_y, var_y = compute_expected_coordinates1D(stack_y,x1)
-    exp_z, var_z = compute_expected_coordinates1D(stack_z,x2)
-
-    sigma_x=np.sqrt(var_x)
-    sigma_y=np.sqrt(var_y)
-    sigma_z=np.sqrt(var_z)
-    
-
-    sigma_x0 = np.sqrt(cov_matrix[0,0])
-    sigma_x1 = np.sqrt(cov_matrix[1,1])
-    sigma_x2 = np.sqrt(cov_matrix[2,2])
-    sigma_xt = np.sqrt(cov_matrix[3,3])
-
-    logging.info("Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(exp_xt,sigma_xt,exp_x,sigma_x, exp_y,sigma_y,exp_z,sigma_z))
-
-    logging.info("Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(stack_grid[0:nx,0:ny,0:nz,0:norm_stack_len].max(),exp_xt,sigma_xt, exp_x0,sigma_x0,exp_x1,sigma_x1,exp_x2,sigma_x2))
-
-    fig_name=os.path.join(fig_path,'fig_synt_st_mpl')
-    #plot_locations_static_matplotlib(prob_dict,[x0,x1,x2,xt],fig_name)
-    plot_test((stack_x, stack_y, stack_z, prob_dict['prob_x3']),(x0,x1,x2,xt),fig_name)
-
-
-
-
-  @unittest.skip('Not running small test')
+#  @unittest.skip('Not running small test')
   def test_migration(self):
+
+    self.wo.opdict['load_ttimes_buf'] = False
+    self.wo.opdict['data_length'] = 300
 
     base_path=self.wo.opdict['base_path']
     test_datadir=self.wo.opdict['test_datadir']
@@ -182,18 +256,18 @@ class MigrationTests(unittest.TestCase):
 
     self.assertSequenceEqual(lines,expected_lines)
 
-  @unittest.skip('Not running full resolution test')
+#  @unittest.skip('Not running full resolution test')
   def test_migration_fullRes(self):
 
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir'] = 'TEST_fullRes'
     self.wo.opdict['load_ttimes_buf'] = False
-    self.wo.opdict['data_length'] = 300
+    self.wo.opdict['data_length'] = 100
+    self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']
     test_datadir=self.wo.opdict['test_datadir']
     outdir=self.wo.opdict['outdir']
-    self.wo.verify_migration_options()
 
     expected_signature_filename = os.path.join(base_path,test_datadir,'test_stack_signature.dat')
     expected_signature_file = open(expected_signature_filename,'r') 
@@ -213,7 +287,7 @@ class MigrationTests(unittest.TestCase):
 if __name__ == '__main__':
 
   import logging
-  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
   unittest.TextTestRunner(verbosity=2).run(suite())
  

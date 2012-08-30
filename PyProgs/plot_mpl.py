@@ -44,7 +44,7 @@ def plot_test(curve_tuple,axes_tuple,filename_base):
   plt.title('Marginal probability density over t (at maximum)')
   plt.savefig(filename_base+'_test_stack_t.pdf')
 
-def plot_locations_static_matplotlib3D(grid_dict,x_list,base_filename):
+def plot_probloc_mpl3D(grid_dict,x_list,base_filename):
 
   print grid_dict.keys()
 
@@ -108,7 +108,7 @@ def plot_locations_static_matplotlib3D(grid_dict,x_list,base_filename):
   plt.savefig(files_dict['prob_x1_x2'])
  
 
-def plot_locations_static_matplotlib(grid_dict,x_list,base_filename):
+def plot_probloc_mpl(grid_dict,x_list,base_filename):
 
   print grid_dict.keys()
 
@@ -213,6 +213,6 @@ if __name__ == '__main__':
 
   base_filename = os.path.join(fig_dir,'testplot_st_mpl')
   grid4D, grid_dict,x_list = setup_test_grid()
-  plot_locations_static_matplotlib(grid_dict,x_list,base_filename)
+  plot_probloc_mpl(grid_dict,x_list,base_filename)
   
 

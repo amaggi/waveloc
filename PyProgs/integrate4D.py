@@ -101,7 +101,6 @@ def compute_expected_coordinates4D(grid,x0,x1,x2,x3,return_2Dgrids=False):
   logging.debug('Integral over raw stuff : %.3f'%grid_integral)
   logging.debug('This integral should be 1.0 : %.3f'%sanity_check)
   logging.debug('Type grid = %s'%grid.dtype)
-  print grid.shape
 
   # get 1D marginals, expected values and variances
   prob_x0=si.trapz(si.trapz(si.trapz(grid,x=x1,axis=1),x=x2,axis=1),x=x3,axis=1)
