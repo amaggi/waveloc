@@ -6,7 +6,7 @@ from migration import do_migration_setup_and_run
 from test_processing import waveforms_to_signature
 from integrate4D import * 
 
-def generateSyntheticDirac(wo):
+def generateSyntheticDirac(wo,add_noise=False):
     # Creates the synthetic dataset for us to work with
 
     from grids_paths import StationList, ChannelList, QDTimeGrid, migrate_4D_stack
@@ -14,10 +14,14 @@ def generateSyntheticDirac(wo):
     wo.verify_migration_options()
 
     #define length and sampling frequency of synthetic data
-    s_data_length = 20.0 # seconds
-    s_sample_freq = 100.0 # Hz
+    s_amplitude   = 1.0 # amplitude on synthetic saveforms
+    s_data_length = 20.0 # length of synthetic waveform in seconds
+    s_sample_freq = 100.0 # frequency of synthetic waveform in Hz
+    s_snr=1.0
     s_npts=s_data_length*s_sample_freq
     s_delta=1/s_sample_freq
+    s_kwidth=0.05
+    s_nkwidth=int(round(s_kwidth*s_sample_freq))
 
     # define origin time
     s_t0 = 6.0
@@ -76,9 +80,7 @@ def generateSyntheticDirac(wo):
     ix=nx/2
     iy=ny/3
     iz=ny/4
-    it=s_t0/s_delta
-
-    logging.info('True ix, iy, iz, it = %d %d %d %s'%(ix,iy,iz,it))
+    it=int(round(s_t0/s_delta))
 
     # retrieve travel times for chosen hypocenter 
     ib= ix*ny*nz + iy*nz + iz
@@ -90,11 +92,13 @@ def generateSyntheticDirac(wo):
     # construct data with these travel times
     integer_data={}
     for key,delay in ttimes.iteritems():
-      #s=np.random.randn(s_npts)
-      s=np.zeros(s_npts)
+      if add_noise:
+        s=np.random.rand(s_npts)*s_amplitude/s_snr
+      else:
+        s=np.zeros(s_npts)
       atime=s_t0+delay
       i_atime=np.int(atime/s_delta)
-      s[i_atime]=50.0
+      s[i_atime:i_atime+s_nkwidth]=s_amplitude-np.arange(s_nkwidth)*(s_amplitude/float(s_nkwidth))
       integer_data[key]=s
       
 
@@ -105,12 +109,17 @@ def generateSyntheticDirac(wo):
     stack_grid[:,:,:,0:norm_stack_len].tofile(test_grid_file)
     logging.info('Saved 4D grid to file %s'%test_grid_file)
 
+    shifted_it=it+int(round(stack_shift_time/s_delta))
+
     # SETUP information to pass back
     test_info={}
     test_info['dat_file']=test_grid_file
     test_info['grid_shape']=stack_grid[:,:,:,0:norm_stack_len].shape
     test_info['grid_spacing']=dx,dy,dz,s_delta
-    test_info['true_indexes']=(ix,iy,iz,it)
+    test_info['true_indexes']=(ix,iy,iz,shifted_it)
+    test_info['stack_shift_time']=stack_shift_time
+
+    logging.info(test_info)
 
     return test_info
     
@@ -132,30 +141,26 @@ class SyntheticMigrationTests(unittest.TestCase):
     wo=WavelocOptions()
     wo.set_test_options()
 
-    wo.opdict['outdir'] = 'TEST_Dirac'
+    wo.opdict['outdir'] = 'TEST_DiracNoisy'
+    #wo.opdict['outdir'] = 'TEST_Dirac'
     wo.opdict['search_grid']='grid.Taisne.search.hdr'
-    wo.opdict['loclevel'] = 300
+    wo.opdict['loclevel'] = 10
     wo.opdict['load_ttimes_buf'] = True # Optimized in time, but you must be usre you're reading the right grid for the test
 
     wo.verify_migration_options()
     wo.verify_location_options()
 
     # generate the test case and retrieve necessary information
-    test_info=generateSyntheticDirac(wo)
+    logging.info('Running synthetic test case generation...')
+    test_info=generateSyntheticDirac(wo,add_noise=True)
+    #test_info=generateSyntheticDirac(wo)
 
-#    test_info={}
-#    test_info['dat_file']='/Users/alessia/Documents/working/waveloc/out/TEST_Dirac/test_grid4D_hires.dat'
-#    test_info['grid_shape']=(32, 24, 12, 1338)
-#    test_info['true_indexes']=(16, 8, 6, 600)
-#    test_info['grid_spacing']=(0.25, 0.25, 0.25, 0.01)
-    print test_info
-    
-   
     # retrieve info
     dat_file=test_info['dat_file']
     nx,ny,nz,nt=test_info['grid_shape']
     dx,dy,dz,dt=test_info['grid_spacing']
     ix_true,iy_true,iz_true,it_true=test_info['true_indexes']
+    stack_shift_time=test_info['stack_shift_time']
 
     # plot base filename
     base_path=wo.opdict['base_path']
@@ -169,7 +174,7 @@ class SyntheticMigrationTests(unittest.TestCase):
     x=np.arange(nx)*dx
     y=np.arange(ny)*dy
     z=np.arange(nz)*dz
-    t=np.arange(nt)*dt
+    t=np.arange(nt)*dt-stack_shift_time
 
     # load grid
     stack_grid=np.fromfile(dat_file).reshape(nx,ny,nz,nt)
@@ -183,7 +188,9 @@ class SyntheticMigrationTests(unittest.TestCase):
     prob_t = si.trapz(si.trapz(si.trapz(stack_grid_norm,x=x,axis=0),x=y,axis=0),x=z,axis=0)
     exp_t = si.trapz(t*prob_t,x=t,axis=0)
     var_t = si.trapz((t-exp_t)*(t-exp_t)*prob_t,x=t,axis=0)
+    logging.debug('var_t = %.3f'%var_t)
     sigma_t = np.sqrt(var_t)
+    logging.debug('sigma_t = %.3f'%sigma_t)
     it_exp=int(round(exp_t/dt))
     nt_sigma=int(round(sigma_t/dt))
     it_left=it_exp-nt_sigma
@@ -199,12 +206,12 @@ class SyntheticMigrationTests(unittest.TestCase):
     
     locs=trigger_locations_inner(max_val,max_x,max_y,max_z,loclevel,loclevel,dt)
     
-    print locs
+    #print locs
     # This is a dirac test, so only have one element in locs
     trig_loc=locs[0]
     trig_max,trig_t,trig_sigma_t_left,trig_sigma_t_right,trig_x,trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z = trig_loc
 
-    logging.info("TRIGGER : Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(trig_max,trig_t,max(trig_sigma_t_left,trig_sigma_t_right), trig_x, trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z))
+    logging.info("TRIGGER : Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(trig_max,trig_t-stack_shift_time,max(trig_sigma_t_left,trig_sigma_t_right), trig_x, trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z))
   
     # TODO - send to a plotter
 
@@ -221,6 +228,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
     self.assertTrue(True)
    
+@unittest.skip('Not running real data migration tests')
 class MigrationTests(unittest.TestCase):
 
   def setUp(self):
