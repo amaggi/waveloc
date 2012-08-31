@@ -7,6 +7,7 @@
 /lib/*.hdr
 !/lib/*search.hdr
 /sphinx/_*
+/PyProgs/*.dat
 *.mat
 *.MAT
 *.pyc
