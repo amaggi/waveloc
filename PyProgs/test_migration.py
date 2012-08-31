@@ -20,7 +20,7 @@ def generateSyntheticDirac(wo,add_noise=False):
     s_snr=3.0
     s_npts=s_data_length*s_sample_freq
     s_delta=1/s_sample_freq
-    s_kwidth=0.05
+    s_kwidth=0.1
     s_nkwidth=int(round(s_kwidth*s_sample_freq))
 
     # define origin time
@@ -141,8 +141,8 @@ class SyntheticMigrationTests(unittest.TestCase):
     wo=WavelocOptions()
     wo.set_test_options()
 
-    wo.opdict['outdir'] = 'TEST_DiracNoisy'
-    #wo.opdict['outdir'] = 'TEST_Dirac'
+    #wo.opdict['outdir'] = 'TEST_DiracNoisy'
+    wo.opdict['outdir'] = 'TEST_Dirac'
     wo.opdict['search_grid']='grid.Taisne.search.hdr'
     wo.opdict['loclevel'] = 10
     wo.opdict['load_ttimes_buf'] = True # Optimized in time, but you must be usre you're reading the right grid for the test
@@ -152,8 +152,8 @@ class SyntheticMigrationTests(unittest.TestCase):
 
     # generate the test case and retrieve necessary information
     logging.info('Running synthetic test case generation...')
-    test_info=generateSyntheticDirac(wo,add_noise=True)
-    #test_info=generateSyntheticDirac(wo)
+    #test_info=generateSyntheticDirac(wo,add_noise=True)
+    test_info=generateSyntheticDirac(wo)
 
     # retrieve info
     dat_file=test_info['dat_file']
