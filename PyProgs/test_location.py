@@ -10,6 +10,7 @@ def suite():
   suite.addTest(IntegrationTests('test_integration'))
   suite.addTest(IntegrationTests('test_expected_values'))
   suite.addTest(LocationTests('test_locations_trigger'))
+  suite.addTest(LocationTests('test_locations_trigger_fullRes'))
   suite.addTest(LocationTests('test_locations_prob'))
   suite.addTest(LocationTests('test_locations_prob_fullRes'))
   return suite
@@ -74,23 +75,96 @@ class LocationTests(unittest.TestCase):
 #  @unittest.skip('Not bothering with trigger test')
   def test_locations_trigger(self):
 
+    self.wo.opdict['outdir']='TEST'
+    self.wo.verify_location_options()
+
+    base_path=self.wo.opdict['base_path']
+    test_datadir=self.wo.opdict['test_datadir']
+    outdir=self.wo.opdict['outdir']
+
+    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_locations.dat')
+    exp_loc_file = open(exp_loc_fname,'r') 
+    exp_lines=exp_loc_file.readlines()
+
     do_locations_trigger_setup_and_run(self.wo.opdict)
-    self.assertTrue(True)
+
+    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
+    loc_file = open(loc_fname,'r') 
+    lines=loc_file.readlines()
+
+    self.assertEquals(lines,exp_lines)
+
+  def test_locations_trigger_fullRes(self):
+
+    self.wo.opdict['outdir']='TEST_fullRes'
+    self.wo.verify_location_options()
+
+    base_path=self.wo.opdict['base_path']
+    test_datadir=self.wo.opdict['test_datadir']
+    outdir=self.wo.opdict['outdir']
+
+    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_fullRes_locations.dat')
+    exp_loc_file = open(exp_loc_fname,'r') 
+    exp_lines=exp_loc_file.readlines()
+
+    do_locations_trigger_setup_and_run(self.wo.opdict)
+
+    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
+    loc_file = open(loc_fname,'r') 
+    lines=loc_file.readlines()
+
+    self.assertEquals(lines,exp_lines)
 
 #  @unittest.skip('Not bothering with low res test')
   def test_locations_prob(self):
 
-    #self.wo.opdict['loclevel']=50
+    self.wo.opdict['search_grid'] = 'test_grid.search.hdr'
+    self.wo.opdict['outdir']='TEST'
+
+    self.wo.verify_location_options()
+    self.wo.verify_migration_options()
+
+    base_path=self.wo.opdict['base_path']
+    test_datadir=self.wo.opdict['test_datadir']
+    outdir=self.wo.opdict['outdir']
+
+    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_locations_prob.dat')
+    exp_loc_file = open(exp_loc_fname,'r') 
+    exp_lines=exp_loc_file.readlines()
+
     do_locations_prob_setup_and_run(self.wo.opdict)
-    self.assertTrue(True)
+
+    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
+    loc_file = open(loc_fname,'r') 
+    lines=loc_file.readlines()
+
+    self.assertEquals(lines,exp_lines)
+
 
 #  @unittest.skip('Not bothering with high res test')
   def test_locations_prob_fullRes(self):
 
+    self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir']='TEST_fullRes'
+
     self.wo.verify_location_options()
+    self.wo.verify_migration_options()
+
+    base_path=self.wo.opdict['base_path']
+    test_datadir=self.wo.opdict['test_datadir']
+    outdir=self.wo.opdict['outdir']
+
+    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_fullRes_locations_prob.dat')
+    exp_loc_file = open(exp_loc_fname,'r') 
+    exp_lines=exp_loc_file.readlines()
+
     do_locations_prob_setup_and_run(self.wo.opdict)
-    self.assertTrue(True)
+
+    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
+    loc_file = open(loc_fname,'r') 
+    lines=loc_file.readlines()
+
+    self.assertEquals(lines,exp_lines)
 
 if __name__ == '__main__':
 

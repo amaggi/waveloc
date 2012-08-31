@@ -97,7 +97,7 @@ def main(options):
 
   time_grid=QDTimeGrid()
   time_grid.read_NLL_hdr_file(search_grid_filename)
-  time_grid.populate_from_time_grids(grid_filename_base,cha)
+  time_grid.populate_from_time_grids(grid_filename_base,output_dir,cha)
 
   if options.time:
     t=time()-t_ref

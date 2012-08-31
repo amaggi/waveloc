@@ -37,6 +37,7 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
   # directories
   lib_path = os.path.join(base_path,'lib')
   data_path= os.path.join(base_path,'data',datadir)
+  out_path = os.path.join(base_path,'out',outdir)
   grid_path= os.path.join(base_path,'out',outdir,'grid')
   loc_path = os.path.join(base_path,'out',outdir,'loc')
   fig_path = os.path.join(base_path,'out',outdir,'fig')
@@ -67,7 +68,7 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
 
   time_grid=QDTimeGrid()
   time_grid.read_NLL_hdr_file(hdr_file)
-  time_grid.populate_from_time_grids(grid_filename_base,cha,load_buf=True)
+  time_grid.populate_from_time_grids(grid_filename_base,cha,out_path,load_buf=True)
 
   max_grid_time=0.0
   for point in time_grid.buf:

@@ -34,6 +34,7 @@ def generateSyntheticDirac(wo):
 
     # data (actual waveforms will not be read - will just use the metadata to set up synthetic problem)
     data_dir=os.path.join(base_path,'data',opdict['datadir'])
+    out_dir=os.path.join(base_path,'out',opdict['outdir'])
     data_glob=opdict['gradglob']
 
     # get filenames for time-grids and search grids 
@@ -56,7 +57,7 @@ def generateSyntheticDirac(wo):
     time_grid=QDTimeGrid()
     time_grid.read_NLL_hdr_file(search_grid_filename)
     load_ttimes_buf=opdict['load_ttimes_buf']
-    time_grid.populate_from_time_grids(grid_filename_base,cha,load_ttimes_buf)
+    time_grid.populate_from_time_grids(grid_filename_base,cha,out_dir,load_ttimes_buf)
 
     
     #################################
@@ -134,20 +135,19 @@ class SyntheticMigrationTests(unittest.TestCase):
     wo.opdict['outdir'] = 'TEST_Dirac'
     wo.opdict['search_grid']='grid.Taisne.search.hdr'
     wo.opdict['loclevel'] = 300
-    #wo.opdict['load_ttimes_buf'] = False # Expensive in time, but makes sure we've got the right grid for the test
     wo.opdict['load_ttimes_buf'] = True # Optimized in time, but you must be usre you're reading the right grid for the test
 
     wo.verify_migration_options()
     wo.verify_location_options()
 
     # generate the test case and retrieve necessary information
-#    test_info=generateSyntheticDirac(wo)
+    test_info=generateSyntheticDirac(wo)
 
-    test_info={}
-    test_info['dat_file']='/Users/alessia/Documents/working/waveloc/out/TEST_Dirac/test_grid4D_hires.dat'
-    test_info['grid_shape']=(32, 24, 12, 1338)
-    test_info['true_indexes']=(16, 8, 6, 600)
-    test_info['grid_spacing']=(0.25, 0.25, 0.25, 0.01)
+#    test_info={}
+#    test_info['dat_file']='/Users/alessia/Documents/working/waveloc/out/TEST_Dirac/test_grid4D_hires.dat'
+#    test_info['grid_shape']=(32, 24, 12, 1338)
+#    test_info['true_indexes']=(16, 8, 6, 600)
+#    test_info['grid_spacing']=(0.25, 0.25, 0.25, 0.01)
     print test_info
     
    
@@ -229,8 +229,6 @@ class MigrationTests(unittest.TestCase):
     self.wo.set_test_options()
     self.wo.verify_migration_options()
 
-    
-
  
 
 #  @unittest.skip('Not running small test')
@@ -243,7 +241,7 @@ class MigrationTests(unittest.TestCase):
     test_datadir=self.wo.opdict['test_datadir']
     outdir=self.wo.opdict['outdir']
 
-    expected_signature_filename = os.path.join(base_path,test_datadir,'test_stack_signature.dat')
+    expected_signature_filename = os.path.join(base_path,test_datadir,'TEST_stack_signature.dat')
     expected_signature_file = open(expected_signature_filename,'r') 
     expected_lines=expected_signature_file.readlines()
 
@@ -261,7 +259,7 @@ class MigrationTests(unittest.TestCase):
 
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir'] = 'TEST_fullRes'
-    self.wo.opdict['load_ttimes_buf'] = False
+    self.wo.opdict['load_ttimes_buf'] = True
     self.wo.opdict['data_length'] = 100
     self.wo.verify_migration_options()
 
@@ -269,7 +267,7 @@ class MigrationTests(unittest.TestCase):
     test_datadir=self.wo.opdict['test_datadir']
     outdir=self.wo.opdict['outdir']
 
-    expected_signature_filename = os.path.join(base_path,test_datadir,'test_stack_signature.dat')
+    expected_signature_filename = os.path.join(base_path,test_datadir,'TEST_fullRes_stack_signature.dat')
     expected_signature_file = open(expected_signature_filename,'r') 
     expected_lines=expected_signature_file.readlines()
 

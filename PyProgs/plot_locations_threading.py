@@ -262,6 +262,7 @@ else:
 lib_path=os.path.join(base_path,'lib')
 stack_path=os.path.join(base_path,'out',options.outdir,'stack')
 grid_path= os.path.join(base_path,'out',options.outdir,'grid')
+out_path=os.path.join(base_path,'out',options.outdir)
 
 stack_file=os.path.join(stack_path,"combined_stack_max_filt.mseed")
 if do_reloc:
@@ -302,7 +303,7 @@ cha.populate_from_station_list_and_data_files(sta,data_files)
 
 time_grid=QDTimeGrid()
 time_grid.read_NLL_hdr_file(hdr_file)
-time_grid.populate_from_time_grids(grid_filename_base,cha,load_buf=True)
+time_grid.populate_from_time_grids(grid_filename_base,cha,out_path,load_buf=True)
 
 
 print "Getting Grid geometry"

@@ -1211,12 +1211,13 @@ class QDTimeGrid(QDGrid):
     self.buf=pickle.load(f)
     f.close()
 
-  def populate_from_time_grids(self,grid_filename_base,channel_list,load_buf=False):
+  def populate_from_time_grids(self,grid_filename_base,channel_list,out_path,load_buf=False):
 
     time_grids={}
 
     #filename for temporary grid file
-    tmp_buf_filename="%s.search.ttimes"%grid_filename_base
+    grid_base=os.path.basename(grid_filename_base)
+    tmp_buf_filename=os.path.join(out_path,"%s.search.ttimes"%grid_base)
 
     # read all the full-resolution NLL time files
     logging.debug('Reading full-resolution NLL time files')
@@ -1244,13 +1245,25 @@ class QDTimeGrid(QDGrid):
     izarray=range(self.nz)
 
 
+    # by default do not calculate grids
+    calculate_grids=False
+
+    # if we've been passed an option to force calculation, then go ahead and calculate
+    if not load_buf : calculate_grids = True
+
+    # Try to load file - if ok, then fine, else force recalculation
     if load_buf :
-      logging.info('Reading travel-time buffer from file %s'%tmp_buf_filename)
-      self.load_buffer_from_file(tmp_buf_filename)
-      logging.debug("Loaded grid keys:")
-      logging.debug(self.buf[0].keys())
-      
-    else:
+      logging.info('Atempting to read travel-time buffer from file %s'%tmp_buf_filename)
+      try:
+        self.load_buffer_from_file(tmp_buf_filename)
+        logging.debug("Loaded grid keys:")
+        logging.debug(self.buf[0].keys())
+      except IOError:
+        logging.info('Cannot load file %s : calculating grid and writing to file.'%tmp_buf_filename)
+        calculate_grids=True
+        
+    # if we need to calculate the grids, just go ahead and do it
+    if calculate_grids:
       self.construct_empty_grid()
       for ix in ixarray:
         logging.debug('In outer loop %d of %d...'%(ix,self.nx))

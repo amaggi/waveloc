@@ -47,7 +47,7 @@ class WavelocOptions(object):
     self.p.add_argument('--stations',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
     self.p.add_argument('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/lib)")
     self.p.add_argument('--time_grid',  action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/lib)")
-    self.p.add_argument('--load_ttimes_buf',action='store_true',default=False,help='load pre-calculated travel-times for the search grid from file')
+    self.p.add_argument('--load_ttimes_buf',action='store_true',default=True,help='load pre-calculated travel-times for the search grid from file')
 
     self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
     self.p.add_argument('--loclevel', action='store', default=50,   type=float,help='trigger stack level for locations (e.g. 50) ')
@@ -217,6 +217,9 @@ class WavelocOptions(object):
     if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
     if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s',grad_names)
+
+    out_path=os.path.join(base_path,'out',self.opdict['outdir'])
+    if not os.path.isdir(out_path): raise UserWarning('Output directory %s does not exist.') 
 
     if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     stackdir=os.path.join(base_path,'out',self.opdict['outdir'],'stack')

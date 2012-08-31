@@ -173,7 +173,7 @@ time_grid.read_NLL_hdr_file(search_grid_filename)
 if options.twoD:
   time_grid.populate_from_2D_time_grids(grid_filename_base,cha)
 else:
-  time_grid.populate_from_time_grids(grid_filename_base,cha,options.load_buf)
+  time_grid.populate_from_time_grids(grid_filename_base,cha,output_dir,options.load_buf)
 
 if options.time:
   t=time()-t_ref

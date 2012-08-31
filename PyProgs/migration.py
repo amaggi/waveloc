@@ -117,7 +117,7 @@ def do_migration_setup_and_run(opdict):
 #    time_grid.populate_from_2D_time_grids(grid_filename_base,cha)
 #  else:
   load_ttimes_buf=opdict['load_ttimes_buf']
-  time_grid.populate_from_time_grids(grid_filename_base,cha,load_ttimes_buf)
+  time_grid.populate_from_time_grids(grid_filename_base,cha,output_dir,load_ttimes_buf)
 
   if runtime:
     t=time()-t_ref
