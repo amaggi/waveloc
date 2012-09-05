@@ -56,6 +56,16 @@ class WavelocOptions(object):
     self.p.add_argument('--n_kurt_min',action='store',default=4,    type=int,  help="min number of good kurtosis traces for a location")
 
     self.p.add_argument('--syn_addnoise',action='store_true',default=False, help="add noise to synthetic tests")
+    self.p.add_argument('--syn_snr',action='store',type=float, help="Signal to  noise ratio for synthetic tests")
+    self.p.add_argument('--syn_amplitude',action='store',type=float, default=1.0, help="amplitude of kurtosis gradient peak on synthetic waveforms")
+    self.p.add_argument('--syn_datalength',action='store',type=float, help="length of synthetic waveforms")
+    self.p.add_argument('--syn_samplefreq',action='store',type=float, help="sample frequency (Hz) of synthetic waveforms")
+    self.p.add_argument('--syn_kwidth',action='store',type=float, default=0.1, help="width of kurtosis gradient pulse on synthetic waveforms")
+    self.p.add_argument('--syn_otime',action='store',type=float, help="origin time for synthetic waveforms (wrt start of waveforms)")
+    self.p.add_argument('--syn_ix',action='store',type=int, help="x grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_iy',action='store',type=int, help="y grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_iz',action='store',type=int, help="z grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_filename',action='store', help="filename for synthetic grid (in $WAVELOC_PATH/out/OUTDIR/grid)")
 
    #self.p.add_argument('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
 
@@ -99,6 +109,17 @@ class WavelocOptions(object):
     self.opdict['snr_limit']=args.snr_limit
     self.opdict['sn_time']=args.sn_time
     self.opdict['n_kurt_min']=args.n_kurt_min
+
+    self.opdict['syn_addnoise']=args.syn_addnoise
+    self.opdict['syn_snr']=args.syn_snr
+    self.opdict['syn_amplitude']=args.syn_amplitude
+    self.opdict['syn_datalength']=args.syn_datalength
+    self.opdict['syn_samplefreq']=args.syn_samplefreq
+    self.opdict['syn_kwidth']=args.syn_kwidth
+    self.opdict['syn_otime']=args.syn_otime
+    self.opdict['syn_ix']=args.syn_ix
+    self.opdict['syn_iy']=args.syn_iy
+    self.opdict['syn_iz']=args.syn_iz
 
   def set_test_options(self):
     self.opdict['time']=True
@@ -264,4 +285,16 @@ class WavelocOptions(object):
     if self.opdict['syn_addnoise'] :
       if self.opdict['syn_snr']==None:	raise UserWarning('No SNR set for synthetic test')
           
-      
+    if self.opdict['syn_amplitude']==None:	raise UserWarning('No synthetic amplitudue set')
+    if self.opdict['syn_datalength']==None:	raise UserWarning('No synthetic datalength set')  
+    if self.opdict['syn_samplefreq']==None:	raise UserWarning('No synthetic samplefreq set')  
+    if self.opdict['syn_kwidth']==None:	raise UserWarning('No synthetic kwidth set')  
+    if self.opdict['syn_otime']==None:	raise UserWarning('No synthetic otime set')  
+    if self.opdict['syn_ix']==None:	raise UserWarning('No synthetic ix set')  
+    if self.opdict['syn_iy']==None:	raise UserWarning('No synthetic iy set')  
+    if self.opdict['syn_iz']==None:	raise UserWarning('No synthetic iz set')  
+    if self.opdict['syn_filename']==None:	raise UserWarning('No filename set for synthetic grid')  
+
+
+    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
+    if not os.path.exists(griddir): os.makedirs(griddir)  

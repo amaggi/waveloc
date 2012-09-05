@@ -22,7 +22,7 @@ from waveloc_funcs import *
 from flexwin_funcs import *
 import logging
 import numpy as np
-import numexpr as ne
+#import numexpr as ne
 
 
 # For debugging reversal problem

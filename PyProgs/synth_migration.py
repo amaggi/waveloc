@@ -1,33 +1,30 @@
 import os, glob, logging
 import numpy as np
 
-def generateSyntheticDirac(wo):
+def generateSyntheticDirac(opdict):
     # Creates the synthetic dataset for us to work with
 
     from grids_paths import StationList, ChannelList, QDTimeGrid, migrate_4D_stack
 
-    opdict=wo.opdict
-
-    wo.verify_migration_options()
-    wo.verify_synthetic_options()
-
     #define length and sampling frequency of synthetic data
-    s_amplitude   = 1.0 # amplitude on synthetic saveforms
-    s_data_length = 20.0 # length of synthetic waveform in seconds
-    s_sample_freq = 100.0 # frequency of synthetic waveform in Hz
+    s_amplitude   = opdict['syn_amplitude']
+    s_data_length = opdict['syn_datalength']
+    s_sample_freq = opdict['syn_samplefreq']
+    s_filename    = opdict['syn_filename']
+
     
     s_npts=s_data_length*s_sample_freq
     s_delta=1/s_sample_freq
-    s_kwidth=0.1
+    s_kwidth=opdict['syn_kwidth']
     s_nkwidth=int(round(s_kwidth*s_sample_freq))
 
     # define origin time
-    s_t0 = 6.0
+    s_t0 = opdict['syn_otime']
 
 
     base_path=opdict['base_path']
     outdir=opdict['outdir']
-    test_grid_file=os.path.join(base_path,'out',opdict['outdir'],'test_grid4D_hires.dat')
+    test_grid_file=os.path.join(base_path,'out',opdict['outdir'],'grid',s_filename)
 
     fig_path = os.path.join(base_path,'out',outdir,'fig')
 
@@ -75,9 +72,9 @@ def generateSyntheticDirac(wo):
     dy=time_grid.dy
     dz=time_grid.dz
 
-    ix=nx/2
-    iy=ny/3
-    iz=ny/4
+    ix=opdict['syn_ix']
+    iy=opdict['syn_iy']
+    iz=opdict['syn_iz']
     it=int(round(s_t0/s_delta))
 
     # retrieve travel times for chosen hypocenter 
@@ -123,3 +120,18 @@ def generateSyntheticDirac(wo):
     return test_info
     
  
+if __name__ == '__main__':
+
+  from options import WavelocOptions
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+
+  wo = WavelocOptions()
+  args=wo.p.parse_args()
+
+  wo.set_all_arguments(args)
+  wo.verify_migration_options()
+  wo.verify_synthetic_options()
+
+  generateSynteticDirac(wo.opdict)
+
+

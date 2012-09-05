@@ -25,20 +25,32 @@ class SyntheticMigrationTests(unittest.TestCase):
     wo=WavelocOptions()
     wo.set_test_options()
 
-    #wo.opdict['outdir'] = 'TEST_DiracNoisy'
     wo.opdict['outdir'] = 'TEST_Dirac'
     wo.opdict['search_grid']='grid.Taisne.search.hdr'
     wo.opdict['loclevel'] = 10
     wo.opdict['load_ttimes_buf'] = True # Optimized in time, but you must be usre you're reading the right grid for the test
     wo.opdict['syn_addnoise']=False
+    wo.opdict['syn_amplitude']=1.0
+    wo.opdict['syn_datalength']=20.0
+    wo.opdict['syn_samplefreq']=100.0
+    wo.opdict['syn_kwidth']=0.1
+    wo.opdict['syn_otime']=6.0
+    wo.opdict['syn_ix']=16
+    wo.opdict['syn_iy']=8
+    wo.opdict['syn_iz']=6
+    wo.opdict['syn_filename']='test_grid4D_hires.dat'
 
     wo.verify_migration_options()
     wo.verify_location_options()
+    wo.verify_synthetic_options()
 
+    ##########################
     # generate the test case and retrieve necessary information
+    ##########################
+
     logging.info('Running synthetic test case generation...')
-    #test_info=generateSyntheticDirac(wo,add_noise=True)
     test_info=generateSyntheticDirac(wo)
+    logging.info(test_info)
 
     # retrieve info
     dat_file=test_info['dat_file']

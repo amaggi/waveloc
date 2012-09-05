@@ -88,9 +88,9 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
   z_orig=time_grid.z_orig
 
   #go from indexes to coordinates
-  max_x=ne.evaluate('max_x*dx+x_orig')
-  max_y=ne.evaluate('max_y*dy+y_orig')
-  max_z=ne.evaluate('max_z*dz+z_orig')
+  max_x=max_x*dx+x_orig
+  max_y=max_y*dy+y_orig
+  max_z=max_z*dz+z_orig
 
   # iterate over stack
 #  for itime in range(norm_stack_len):
