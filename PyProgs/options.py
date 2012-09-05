@@ -1,4 +1,4 @@
-import os, glob, argparse
+import os, glob, argparse, logging
 
 class WavelocOptions(object):
 
@@ -54,6 +54,8 @@ class WavelocOptions(object):
     self.p.add_argument('--snr_limit',action='store', default=10.0, type=float,help="signal_to_noise level for kurtosis acceptance")
     self.p.add_argument('--sn_time',action='store',   default=10.0, type=float,help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
     self.p.add_argument('--n_kurt_min',action='store',default=4,    type=int,  help="min number of good kurtosis traces for a location")
+
+    self.p.add_argument('--syn_addnoise',action='store_true',default=False, help="add noise to synthetic tests")
 
    #self.p.add_argument('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
 
@@ -141,6 +143,8 @@ class WavelocOptions(object):
     self.opdict['snr_limit']=10.0
     self.opdict['sn_time']=10.0
     self.opdict['n_kurt_min']=4
+
+    self.opdict['syn_addnoise']=False
 
   def verify_SDS_processing_options(self):
 
@@ -253,3 +257,11 @@ class WavelocOptions(object):
     if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
 
 
+  def verify_synthetic_options(self):
+
+    base_path=self.opdict['base_path']
+
+    if self.opdict['syn_addnoise'] :
+      if self.opdict['syn_snr']==None:	raise UserWarning('No SNR set for synthetic test')
+          
+      

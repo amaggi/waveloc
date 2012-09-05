@@ -4,8 +4,8 @@
 import os, sys
 
 import numpy as np
-import numexpr as ne
-import carray as ca
+#import numexpr as ne
+#import carray as ca
 
 from OP_waveforms import *
 

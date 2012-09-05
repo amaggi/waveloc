@@ -46,7 +46,7 @@ def plot_test(curve_tuple,axes_tuple,filename_base):
 
 def plot_probloc_mpl3D(grid_dict,x_list,base_filename):
 
-  print grid_dict.keys()
+  #print grid_dict.keys()
 
   x0,x1,x2 = x_list
 
@@ -110,7 +110,7 @@ def plot_probloc_mpl3D(grid_dict,x_list,base_filename):
 
 def plot_probloc_mpl(grid_dict,x_list,base_filename):
 
-  print grid_dict.keys()
+  #print grid_dict.keys()
 
   x0,x1,x2,x3 = x_list
 

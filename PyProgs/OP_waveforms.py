@@ -13,8 +13,8 @@ which most time-series manipulation is carried out.
 """
 import os, sys, glob 
 import numpy as np
-import numexpr as ne
-import carray as ca
+#import numexpr as ne
+#import carray as ca
 import logging
 
 # this fakes the import of plt as it was originally
