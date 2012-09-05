@@ -28,10 +28,11 @@ mkdir -p $WAVELOC_PATH/out/$out_dir/reloc
 
 ./migration.py -t -v --time_grid $time_grid --search_grid $search_grid -s $coord_stations -o $out_dir --datadir=$data_dir --dataglob=*kurt_grad.mseed --starttime=$start_time --endtime=$end_time --data_length=600 --data_overlap=20
 
-#./locations_trigger.py --outdir=$out_dir --loclevel=50 --datadir=$data_dir --dataglob=*kurt.mseed --n_kurt_min=$n_kurt_min --snr_limit=$snr_limit
+./locations_trigger.py --outdir=$out_dir --loclevel=50 --datadir=$data_dir --dataglob=*kurt.mseed --n_kurt_min=$n_kurt_min --snr_limit=$snr_limit
 #./locations_prob.py --outdir=$out_dir --loclevel=50 --datadir=$data_dir --dataglob=*kurt.mseed --n_kurt_min=$n_kurt_min --snr_limit=$snr_limit
 
 #xvfb-run -e err_file.txt --server-args="-screen 0 1024x768x24" ./plot_locations.py --run_mayavi --max_stack=120 --outdir=$out_dir --datadir=$data_dir --search_grid=$search_grid --data_glob=*filt.mseed --kurt_glob=*kurt.mseed --grad_glob=*kurt_grad.mseed --time_grid $time_grid --stations $coord_stations --snr_limit=$snr_limit
+#./plot_locations.py --run_mayavi --max_stack=120 --outdir=$out_dir --datadir=$data_dir --search_grid=$search_grid --data_glob=*filt.mseed --kurt_glob=*kurt.mseed --grad_glob=*kurt_grad.mseed --time_grid $time_grid --stations $coord_stations --snr_limit=$snr_limit
 
 
 
