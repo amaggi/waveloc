@@ -13,7 +13,7 @@ def generateSyntheticDirac(opdict):
     s_filename    = opdict['syn_filename']
 
     
-    s_npts=s_data_length*s_sample_freq
+    s_npts=int(s_data_length*s_sample_freq)
     s_delta=1/s_sample_freq
     s_kwidth=opdict['syn_kwidth']
     s_nkwidth=int(round(s_kwidth*s_sample_freq))
@@ -29,9 +29,17 @@ def generateSyntheticDirac(opdict):
     fig_path = os.path.join(base_path,'out',outdir,'fig')
 
     # data (actual waveforms will not be read - will just use the metadata to set up synthetic problem)
-    data_dir=os.path.join(base_path,'data',opdict['datadir'])
+    # if waveforms exist, then read them, else just use all the stations in the stations file
+    use_data=True
+    try:
+      data_dir=os.path.join(base_path,'data',opdict['datadir'])
+      data_glob=opdict['gradglob']
+    except KeyError:
+      logging.info('No data given, so use all stations in the coord_stations file')
+      use_data=False
+      
+
     out_dir=os.path.join(base_path,'out',opdict['outdir'])
-    data_glob=opdict['gradglob']
 
     # get filenames for time-grids and search grids 
     grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
@@ -48,10 +56,12 @@ def generateSyntheticDirac(opdict):
     sta=StationList()
     sta.read_from_file(stations_filename)
 
-    datafile_list=glob.glob(os.path.join(data_dir,data_glob))
-
     cha=ChannelList()
-    cha.populate_from_station_list_and_data_files(sta,datafile_list)
+    if use_data : 
+      datafile_list=glob.glob(os.path.join(data_dir,data_glob))
+      cha.populate_from_station_list_and_data_files(sta,datafile_list)
+    else : 
+      cha.populate_from_station_list(sta,comp_string=["HHZ"])
 
     time_grid=QDTimeGrid()
     time_grid.read_NLL_hdr_file(search_grid_filename)

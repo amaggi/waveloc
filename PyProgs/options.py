@@ -282,6 +282,19 @@ class WavelocOptions(object):
 
     base_path=self.opdict['base_path']
 
+    try:
+      if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
+    except KeyError: raise UserWarning('Empty time grid base filename') 
+
+    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
+    tg_glob=time_grid+'*'
+    tg_files=glob.glob(tg_glob)
+    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+
+    if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
+    stations=os.path.join(base_path,'lib',self.opdict['stations'])
+    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+
     if self.opdict['syn_addnoise'] :
       if self.opdict['syn_snr']==None:	raise UserWarning('No SNR set for synthetic test')
           
