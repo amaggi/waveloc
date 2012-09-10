@@ -15,4 +15,5 @@
 *.swo
 *.tgz
 *.prof
+/nll/
 .DS_store
