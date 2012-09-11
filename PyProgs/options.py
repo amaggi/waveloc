@@ -311,3 +311,6 @@ class WavelocOptions(object):
 
     griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
     if not os.path.exists(griddir): os.makedirs(griddir)  
+
+    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
+    if not os.path.exists(figdir): os.makedirs(figdir)  

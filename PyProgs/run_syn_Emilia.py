@@ -3,6 +3,8 @@ import numpy as np
 from options import WavelocOptions
 from synth_migration import generateSyntheticDirac
 from grids_paths import QDGrid
+from NllGridLib import *
+from plot_mpl import plotDiracTest
 
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
@@ -28,6 +30,7 @@ wo.opdict['syn_kwidth']=0.1
 wo.opdict['syn_otime']=5.0
 wo.opdict['syn_addnoise']=False
 
+
 # set up basic grid information for test
 grid_filename=os.path.join(base_path,'lib',wo.opdict['search_grid'])
 dummy_grid=QDGrid()
@@ -38,35 +41,41 @@ lines=f.readlines()
 f.close()
 proj_line=lines[1]
 proj_info={}
-proj_info['orig_lat'] = np.float(proj_line.split()[3])
-proj_info['orig_lon'] = np.float(proj_line.split()[5])
+proj_info['orig_lon'] = np.float(proj_line.split()[3])
+proj_info['orig_lat'] = np.float(proj_line.split()[5])
 proj_info['map_rot'] = np.float(proj_line.split()[7])
 
+print proj_info
 
 
-wo.opdict['syn_filename']='test_emilia_0.dat'
-wo.opdict['syn_ix']=16
-wo.opdict['syn_iy']=8
-wo.opdict['syn_iz']=6
+event1ll=(44.9235 , 11.1418)
+event2ll=(44.8833 , 11.1350)
+event3ll=(44.7892 , 11.1705)
+event4ll=(44.5860 , 10.9193)
+event5ll=(44.8562 , 11.4182)
 
+depths=[3.0, 5.0, 10.0]
+events={}
+events['ev1']=event1ll
+events['ev2']=event2ll
+events['ev3']=event3ll
+events['ev4']=event4ll
+events['ev5']=event5ll
 
-#20120603  1154  25.12   44.9235  11.1418   3.0     2.6
-#20120603  1154  25.12   44.9235  11.1418   5.0     2.6
-#20120603  1154  25.12   44.9235  11.1418 10.0     2.6
-#20120603  1154  25.12   44.8833  11.1350   3.0     2.6
-#20120603  1154  25.12   44.8833  11.1350   5.0     2.6
-#20120603  1154  25.12   44.8833  11.1350 10.0     2.6
-#20120603  1154  25.12   44.7892  11.1705   3.0     2.6
-#20120603  1154  25.12   44.7892  11.1705   5.0     2.6
-#20120603  1154  25.12   44.7892  11.1705 10.0     2.6
-#20120603  1154  25.12   44.5860  10.9193   3.0     2.6
-#20120603  1154  25.12   44.5860  10.9193   5.0     2.6
-#20120603  1154  25.12   44.5860  10.9193 10.0     2.6
-#20120603  1154  25.12   44.8562  11.4182   3.0     2.6
-#20120603  1154  25.12   44.8562  11.4182   5.0     2.6
-#20120603  1154  25.12   44.8562  11.4182 10.0     2.6
+for evname,ev in events.iteritems():
+  for dep in depths:
+    x,y=latlon2rect('TRANS_SIMPLE',ev[0],ev[1],proj_info)
+    
+    wo.opdict['syn_ix']=int(round((x-dummy_grid.x_orig)/dummy_grid.dx))
+    wo.opdict['syn_iy']=int(round((y-dummy_grid.y_orig)/dummy_grid.dy))
+    wo.opdict['syn_iz']=int(round((dep-dummy_grid.z_orig)/dummy_grid.dz))
+    wo.opdict['syn_filename']='test_emilia_%s_%.1f.dat'%(evname,dep)
+    #  No noise test
+    wo.verify_synthetic_options()
+    test_info=generateSyntheticDirac(wo.opdict)
+    base_path=os.getenv('WAVELOC_PATH')
+    figdir=os.path.join(base_dir,'out',wo.opdict['outdir'],'fig')
+    plotDiracTest(test_info,figdir)
+    exit()
 
-#  No noise test
-wo.verify_synthetic_options()
-test_info=generateSyntheticDirac(wo.opdict)
-
+    
