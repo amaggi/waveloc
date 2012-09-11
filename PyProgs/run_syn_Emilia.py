@@ -1,4 +1,4 @@
-import os, logging
+import os, logging, glob
 import numpy as np
 from options import WavelocOptions
 from synth_migration import generateSyntheticDirac
@@ -9,6 +9,7 @@ from plot_mpl import plotDiracTest
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
+recalc_grids=False
 
 # set up default parameters
 wo = WavelocOptions()
@@ -62,6 +63,11 @@ events['ev3']=event3ll
 events['ev4']=event4ll
 events['ev5']=event5ll
 
+base_path=os.getenv('WAVELOC_PATH')
+figdir=os.path.join(base_path,'out',wo.opdict['outdir'],'fig')
+griddir=os.path.join(base_path,'out',wo.opdict['outdir'],'grid')
+
+# compute all grids
 for evname,ev in events.iteritems():
   for dep in depths:
     x,y=latlon2rect('TRANS_SIMPLE',ev[0],ev[1],proj_info)
@@ -72,10 +78,15 @@ for evname,ev in events.iteritems():
     wo.opdict['syn_filename']='test_emilia_%s_%.1f.dat'%(evname,dep)
     #  No noise test
     wo.verify_synthetic_options()
-    test_info=generateSyntheticDirac(wo.opdict)
-    base_path=os.getenv('WAVELOC_PATH')
-    figdir=os.path.join(base_dir,'out',wo.opdict['outdir'],'fig')
-    plotDiracTest(test_info,figdir)
-    exit()
+    if recalc_grids : test_info=generateSyntheticDirac(wo.opdict)
+#    plotDiracTest(test_info,figdir)
+#    exit()
 
-    
+
+# make all figures 
+info_files=glob.glob(os.path.join(griddir,'*.info'))
+for info_file in info_files:
+  f=open(info_file,'r')
+  test_info=eval(f.read())
+  logging.info(test_info)
+  plotDiracTest(test_info,figdir)

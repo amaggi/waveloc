@@ -25,6 +25,7 @@ def generateSyntheticDirac(opdict):
     base_path=opdict['base_path']
     outdir=opdict['outdir']
     test_grid_file=os.path.join(base_path,'out',opdict['outdir'],'grid',s_filename)
+    test_info_file=os.path.join(base_path,'out',opdict['outdir'],'grid','%s.info'%s_filename)
 
     fig_path = os.path.join(base_path,'out',outdir,'fig')
 
@@ -82,6 +83,10 @@ def generateSyntheticDirac(opdict):
     dy=time_grid.dy
     dz=time_grid.dz
 
+    x_orig=time_grid.x_orig
+    y_orig=time_grid.y_orig
+    z_orig=time_grid.z_orig
+
     ix=opdict['syn_ix']
     iy=opdict['syn_iy']
     iz=opdict['syn_iz']
@@ -122,10 +127,13 @@ def generateSyntheticDirac(opdict):
     test_info['dat_file']=test_grid_file
     test_info['grid_shape']=stack_grid[:,:,:,0:norm_stack_len].shape
     test_info['grid_spacing']=dx,dy,dz,s_delta
+    test_info['grid_orig']=x_orig,y_orig,z_orig
     test_info['true_indexes']=(ix,iy,iz,shifted_it)
     test_info['stack_shift_time']=stack_shift_time
 
     logging.info(test_info)
+    f=open(test_info_file,'w')
+    f.write(str(test_info))
 
     return test_info
     
