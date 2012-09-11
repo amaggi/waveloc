@@ -49,7 +49,7 @@ class SyntheticMigrationTests(unittest.TestCase):
     ##########################
 
     logging.info('Running synthetic test case generation...')
-    test_info=generateSyntheticDirac(wo)
+    test_info=generateSyntheticDirac(wo.opdict)
     logging.info(test_info)
 
     # retrieve info
@@ -125,7 +125,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
     self.assertTrue(True)
    
-@unittest.skip('Not running real data migration tests')
+#@unittest.skip('Not running real data migration tests')
 class MigrationTests(unittest.TestCase):
 
   def setUp(self):

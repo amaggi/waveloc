@@ -1,10 +1,13 @@
 import os, glob, logging
 import numpy as np
 
-def generateSyntheticDirac(opdict):
+def generateSyntheticDirac(opdict,time_grid=None):
     # Creates the synthetic dataset for us to work with
 
     from grids_paths import StationList, ChannelList, QDTimeGrid, migrate_4D_stack
+
+    load_time_grids = False
+    if time_grid==None : load_time_grids = True
 
     #define length and sampling frequency of synthetic data
     s_amplitude   = opdict['syn_amplitude']
@@ -54,20 +57,21 @@ def generateSyntheticDirac(opdict):
     # start setting up synthetic data
     #################################
 
-    sta=StationList()
-    sta.read_from_file(stations_filename)
+    if load_time_grids:
+      sta=StationList()
+      sta.read_from_file(stations_filename)
 
-    cha=ChannelList()
-    if use_data : 
-      datafile_list=glob.glob(os.path.join(data_dir,data_glob))
-      cha.populate_from_station_list_and_data_files(sta,datafile_list)
-    else : 
-      cha.populate_from_station_list(sta,comp_string=["HHZ"])
+      cha=ChannelList()
+      if use_data : 
+        datafile_list=glob.glob(os.path.join(data_dir,data_glob))
+        cha.populate_from_station_list_and_data_files(sta,datafile_list)
+      else : 
+        cha.populate_from_station_list(sta,comp_string=["HHZ"])
 
-    time_grid=QDTimeGrid()
-    time_grid.read_NLL_hdr_file(search_grid_filename)
-    load_ttimes_buf=opdict['load_ttimes_buf']
-    time_grid.populate_from_time_grids(grid_filename_base,cha,out_dir,load_ttimes_buf)
+      time_grid=QDTimeGrid()
+      time_grid.read_NLL_hdr_file(search_grid_filename)
+      load_ttimes_buf=opdict['load_ttimes_buf']
+      time_grid.populate_from_time_grids(grid_filename_base,cha,out_dir,load_ttimes_buf)
 
     
     #################################

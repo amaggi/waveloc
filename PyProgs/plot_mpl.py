@@ -11,7 +11,8 @@ def plotDiracTest(test_info,fig_dir):
   # set up plot using info from test_info
   nx,ny,nz,nt = test_info['grid_shape']
   dx,dy,dz,dt = test_info['grid_spacing']
-  ix_true, iy_true, iz_true, it_true= test_info['true_indexes']  # manually input from the stdout of creating the grid
+  x_orig,y_orig,z_orig = test_info['grid_orig']
+  ix_true, iy_true, iz_true, it_true= test_info['true_indexes']  
   stack_shift_time=test_info['stack_shift_time']
   grid_filename=test_info['dat_file']
   fig_filename=os.path.join(fig_dir,"%s.pdf"%os.path.basename(grid_filename))
@@ -20,9 +21,9 @@ def plotDiracTest(test_info,fig_dir):
   stack_grid=np.fromfile(grid_filename).reshape(nx,ny,nz,nt)
 
   # set up the 4 axes
-  x=np.arange(nx)*dx
-  y=np.arange(ny)*dy
-  z=np.arange(nz)*dz
+  x=np.arange(nx)*dx+x_orig
+  y=np.arange(ny)*dy+y_orig
+  z=np.arange(nz)*dz+z_orig
   t=np.arange(nt)*dt-stack_shift_time
 
   # cut through the true location at the true time 
@@ -32,9 +33,9 @@ def plotDiracTest(test_info,fig_dir):
 
   # extract the max stacks
   max_val=stack_grid.max(0).max(0).max(0)
-  max_x=stack_grid.max(2).max(1).argmax(0)*dx
-  max_y=stack_grid.max(2).max(0).argmax(0)*dy
-  max_z=stack_grid.max(1).max(0).argmax(0)*dz
+  max_x=stack_grid.max(2).max(1).argmax(0)*dx + x_orig
+  max_y=stack_grid.max(2).max(0).argmax(0)*dy + y_orig
+  max_z=stack_grid.max(1).max(0).argmax(0)*dz + z_orig
 
   plt.clf()
 
@@ -64,19 +65,22 @@ def plotDiracTest(test_info,fig_dir):
   rlim = t[it_true]+2.0
   p=plt.subplot(3,1,2)
   plt.plot(t,max_val)
-  plt.xticks([llim,t[it_true],rlim])
+  #plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('Stack max ')
+  plt.title('Maximum of stack')
   p.set_xlim(llim,rlim)
   p.set_ylim(0,max(max_val))
 #  plt.hlines(loclevel,llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],0,max(max_val),'r',linewidth=2)
+
   # plot max x
   p=plt.subplot(3,3,7)
   plt.plot(t,max_x)
   plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('x (km) ')
+  plt.title('x at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
@@ -86,6 +90,7 @@ def plotDiracTest(test_info,fig_dir):
   plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('y (km) ')
+  plt.title('y at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
@@ -95,13 +100,12 @@ def plotDiracTest(test_info,fig_dir):
   plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('z (km) ')
+  plt.title('z at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
 
   plt.tight_layout()
-  #plt.tight_layout()
-  #plt.show()
   plt.savefig(fig_filename)
 
 

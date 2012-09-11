@@ -2,10 +2,9 @@ import os, logging, glob
 import numpy as np
 from options import WavelocOptions
 from synth_migration import generateSyntheticDirac
-from grids_paths import QDGrid
+from grids_paths import QDGrid, StationList, ChannelList, QDTimeGrid
 from NllGridLib import *
 from plot_mpl import plotDiracTest
-
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
@@ -30,6 +29,24 @@ wo.opdict['syn_samplefreq']=100.0
 wo.opdict['syn_kwidth']=0.1
 wo.opdict['syn_otime']=5.0
 wo.opdict['syn_addnoise']=False
+
+# get filenames for time-grids and search grids 
+out_dir=os.path.join(base_path,'out',wo.opdict['outdir'])
+grid_filename_base=os.path.join(base_path,'lib',wo.opdict['time_grid'])
+search_grid_filename=os.path.join(base_path,'lib',wo.opdict['search_grid'])
+stations_filename=os.path.join(base_path,'lib',wo.opdict['stations'])
+
+# read the time-grid
+sta=StationList()
+sta.read_from_file(stations_filename)
+
+cha=ChannelList()
+cha.populate_from_station_list(sta,comp_string=["HHZ"])
+
+time_grid=QDTimeGrid()
+time_grid.read_NLL_hdr_file(search_grid_filename)
+load_ttimes_buf=wo.opdict['load_ttimes_buf']
+time_grid.populate_from_time_grids(grid_filename_base,cha,out_dir,load_ttimes_buf)
 
 
 # set up basic grid information for test
@@ -78,9 +95,7 @@ for evname,ev in events.iteritems():
     wo.opdict['syn_filename']='test_emilia_%s_%.1f.dat'%(evname,dep)
     #  No noise test
     wo.verify_synthetic_options()
-    if recalc_grids : test_info=generateSyntheticDirac(wo.opdict)
-#    plotDiracTest(test_info,figdir)
-#    exit()
+    if recalc_grids : test_info=generateSyntheticDirac(wo.opdict,time_grid)
 
 
 # make all figures 

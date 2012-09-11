@@ -46,7 +46,7 @@ class ProjectionTests(unittest.TestCase):
     self.assertAlmostEqual(self.true_lat,lat,6)
     self.assertAlmostEqual(self.true_lon,lon,6)
 
-@unittest.skip('Skipping integration tests')
+#@unittest.skip('Skipping integration tests')
 class IntegrationTests(unittest.TestCase):
 
   def test_integration(self):
@@ -95,7 +95,7 @@ class IntegrationTests(unittest.TestCase):
     self.assertAlmostEqual(var_x2,0.0210,4)
     self.assertAlmostEqual(var_x3,0.0,7)
 
-@unittest.skip('Skipping location tests')
+#@unittest.skip('Skipping location tests')
 class LocationTests(unittest.TestCase):
 
   def setUp(self):
