@@ -1,6 +1,7 @@
 import os, logging
 from options import WavelocOptions
 from synth_migration import generateSyntheticDirac
+from plot_mpl import plotDiracTest
 
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
@@ -13,6 +14,7 @@ wo = WavelocOptions()
 # (for tests with other geometries must replicate the set_test_options parameters here)
 wo.set_test_options()
 
+base_path = os.getenv('WAVELOC_PATH')
 wo.opdict['outdir'] = 'TEST_Dirac'
 wo.opdict['search_grid']='grid.Taisne.search.hdr'
 wo.opdict['loclevel'] = 10 
@@ -28,27 +30,26 @@ wo.opdict['syn_iz']=6
 wo.opdict['syn_addnoise']=False
 wo.opdict['syn_filename']='test_grid4D_hires.dat'
 
+figdir=os.path.join(base_path,'out',wo.opdict['outdir'],'fig')
 
 wo.verify_migration_options()
 wo.verify_location_options()
 wo.verify_synthetic_options()
 
 #  No noise test
-#test_info=generateSyntheticDirac(wo.opdict)
+test_info=generateSyntheticDirac(wo.opdict)
+test_info['grid_orig']=(0,0,-2.5)
+plotDiracTest(test_info,figdir)
 
 # Do noise tests
 
+wo.opdict['outdir'] = 'TEST_DiracNoisy'
 wo.opdict['syn_addnoise']=True
+figdir=os.path.join(base_path,'out',wo.opdict['outdir'],'fig')
 
 wo.opdict['syn_snr']=3.0
 wo.opdict['syn_filename']='test_grid4D_hires_snr_3.0.dat'
-#test_info=generateSyntheticDirac(wo.opdict)
-
-
-wo.opdict['syn_snr']=2.0
-wo.opdict['syn_filename']='test_grid4D_hires_snr_2.0.dat'
 test_info=generateSyntheticDirac(wo.opdict)
+test_info['grid_orig']=(0,0,-2.5)
+plotDiracTest(test_info,figdir)
 
-wo.opdict['syn_snr']=1.0
-wo.opdict['syn_filename']='test_grid4D_hires_snr_1.0.dat'
-test_info=generateSyntheticDirac(wo.opdict)
