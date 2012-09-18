@@ -37,8 +37,8 @@ def setUpModule():
     try:
       os.symlink(os.path.join(base_path,'test_data','time_grids',os.path.basename(tfile)),os.path.join(base_path,'lib',os.path.basename(tfile)))
       logging.info("Linked %s"%tfile)
-     except OSError:
-       pass
+    except OSError:
+      pass
 
    
 
