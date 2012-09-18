@@ -1,5 +1,5 @@
 import unittest
-import os
+import os, glob
 import logging
 
 def suite():
@@ -16,16 +16,28 @@ def setUpModule():
   data_dir=os.path.join(base_path,'data','TEST')
   make_SDS_data_links(test_data_dir,'*MSEED',data_dir)
  
-  # make link for test grid file
-  try:
-    os.symlink(os.path.join(base_path,'test_data','test_grid.search.hdr'),os.path.join(base_path,'lib','test_grid.search.hdr'))
-  except OSError:
-    logging.debug("File %s already linked"%'test_grid_search.hdr')
-  try:
-    os.symlink(os.path.join(base_path,'test_data','coord_stations_test'),os.path.join(base_path,'lib','coord_stations_test'))
-  except OSError:
-    logging.debug("File %s already linked"%'coord_stations_test')
-  
+  # make link for test grid file etc
+  test_files=['test_grid.search.hdr', 'coord_stations_test']
+  for tfile in test_files:
+    try:
+      os.symlink(os.path.join(base_path,'test_data',tfile),os.path.join(base_path,'lib',tfile))
+      logging.info("Linked %s"%tfile)
+    except OSError:
+      logging.info("File %s already linked"%'tfile')
+      logging.info("Removing old %s"%tfile)
+      os.remove(os.path.join(base_path,'lib',tfile))
+      os.symlink(os.path.join(base_path,'test_data',tfile),os.path.join(base_path,'lib',tfile))
+      logging.info("Linked %s"%tfile)
+
+  # make links for PDF time grids
+  test_files=glob.glob(os.path.join(base_path,'test_data', 'time_grids', 'Slow*'))
+  if test_files==[]: 
+    logging.error('Dowload https://github.com/downloads/amaggi/waveloc/TEST_time_grids.tgz and unpack it in the %s directory, then re-run'%os.path.join(base_path,'test_data'))
+  for tfile in test_files:
+    os.symlink(os.path.join(base_path,'test_data','time_grids',os.path.basename(tfile)),os.path.join(base_path,'lib',os.path.basename(tfile)))
+    logging.info("Linked %s"%tfile)
+      
+
 
 class SetupTests(unittest.TestCase):
 

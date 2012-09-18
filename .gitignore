@@ -17,3 +17,5 @@
 *.prof
 /nll/
 .DS_store
+/test_data/*.tgz
+/test_data/time_grids/
