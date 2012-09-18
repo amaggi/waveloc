@@ -34,9 +34,13 @@ def setUpModule():
   if test_files==[]: 
     logging.error('Dowload https://github.com/downloads/amaggi/waveloc/TEST_time_grids.tgz and unpack it in the %s directory, then re-run'%os.path.join(base_path,'test_data'))
   for tfile in test_files:
-    os.symlink(os.path.join(base_path,'test_data','time_grids',os.path.basename(tfile)),os.path.join(base_path,'lib',os.path.basename(tfile)))
-    logging.info("Linked %s"%tfile)
-      
+    try:
+      os.symlink(os.path.join(base_path,'test_data','time_grids',os.path.basename(tfile)),os.path.join(base_path,'lib',os.path.basename(tfile)))
+      logging.info("Linked %s"%tfile)
+     except OSError:
+       pass
+
+   
 
 
 class SetupTests(unittest.TestCase):
