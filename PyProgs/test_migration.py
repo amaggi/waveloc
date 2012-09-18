@@ -146,7 +146,7 @@ class MigrationTests(unittest.TestCase):
     test_datadir=self.wo.opdict['test_datadir']
     outdir=self.wo.opdict['outdir']
 
-    expected_signature_filename = os.path.join(base_path,test_datadir,'TEST_stack_signature.dat')
+    expected_signature_filename = os.path.join(base_path,test_datadir,'test_stack_signature.dat')
     expected_signature_file = open(expected_signature_filename,'r') 
     expected_lines=expected_signature_file.readlines()
 
