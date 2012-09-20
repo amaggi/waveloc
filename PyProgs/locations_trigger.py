@@ -130,10 +130,6 @@ def do_locations_trigger_setup_and_run(opdict):
 
   # corner frequency for lowpass filtering of max stack
   corner=1.0 
-  loclevel=opdict['loclevel']
-  left_trig=loclevel
-  right_trig=loclevel
-
   # start logging
   #logfile=base_path + os.sep + 'out'+ os.sep +  outdir + os.sep + 'combine_stacks.log'
 
@@ -207,6 +203,14 @@ def do_locations_trigger_setup_and_run(opdict):
 
 
   # DO TRIGGERING AND LOCATION
+  if opdict['auto_loclevel']:
+    loclevel=4.0*np.median(st_max_filt[0].data)
+    opdict['loclevel']=loclevel
+  else:
+    loclevel=opdict['loclevel']
+  left_trig=loclevel
+  right_trig=loclevel
+
 
   loc_list=trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig)
   logging.info('Found %d initial.'%(len(loc_list)))
@@ -228,6 +232,7 @@ def do_locations_trigger_setup_and_run(opdict):
   loc_file.close()
   logging.info('Wrote %d locations to file %s.'%(n_ok,loc_filename))
 
+  return opdict
  
 if __name__=='__main__':
 
@@ -240,6 +245,6 @@ if __name__=='__main__':
   wo.set_all_arguments(args)
   wo.verify_location_options()
 
-  do_locations_setup_and_run(wo.opdict)
+  do_locations_trigger_setup_and_run(wo.opdict)
 
  
