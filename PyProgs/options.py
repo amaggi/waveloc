@@ -9,6 +9,8 @@ class WavelocOptions(object):
     base_path=os.getenv('WAVELOC_PATH')
     if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
     self.opdict['base_path']=base_path
+    self.opdict['time']=False
+    self.opdict['verbose']=False
 
     # check for existence of lib directory
     lib_path=os.path.join(base_path,'lib')
