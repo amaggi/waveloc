@@ -3,6 +3,7 @@ import numpy as np
 from options import *
 from SDS_processing import do_SDS_processing_setup_and_run
 from migration import do_migration_setup_and_run
+from locations_trigger import do_locations_trigger_setup_and_run
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
@@ -25,7 +26,7 @@ wo.opdict['sta_list']="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV0
 wo.opdict['comp_list']="HHZ"
 
 wo.opdict['starttime']="2010-10-14T00:00:00.0Z"
-wo.opdict['endtime']="2010-10-14T00:10:00.0Z"
+wo.opdict['endtime']="2010-10-14T16:00:00.0Z"
 
 wo.opdict['resample']=False
 wo.opdict['fs']=None
@@ -44,12 +45,20 @@ wo.opdict['dataglob']='*filt.mseed'
 wo.opdict['kurtglob']='*kurt.mseed'
 wo.opdict['gradglob']='*grad.mseed'
 
+wo.opdict['snr_limit']=10.0
+wo.opdict['sn_time']=10.0
+wo.opdict['n_kurt_min']=4.0
+
 
 # check processing options and run processing
 wo.verify_SDS_processing_options()
-#do_SDS_processing_setup_and_run(wo.opdict)
+do_SDS_processing_setup_and_run(wo.opdict)
 
 # check migration options and run migration
 wo.verify_migration_options()
 do_migration_setup_and_run(wo.opdict)
+
+# check migration options and run migration
+wo.verify_location_options()
+updated_opdict=do_locations_trigger_setup_and_run(wo.opdict)
 
