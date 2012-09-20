@@ -8,7 +8,7 @@ from plot_mpl import plotDiracTest
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
-recalc_grids=False
+recalc_grids=True
 
 # set up default parameters
 wo = WavelocOptions()
@@ -22,7 +22,7 @@ wo.opdict['time_grid'] = 'emilia.P'
 wo.opdict['stations'] = 'coord_stations_temp_emilia'
 wo.opdict['search_grid']='grid.emilia.search.hdr'
 wo.opdict['loclevel'] = 10 
-wo.opdict['load_ttimes_buf'] = True # Optimized in time, but you must be usre you're reading the right grid for the test
+wo.opdict['load_ttimes_buf'] = False # Optimized in time, but you must be usre you're reading the right grid for the test
 wo.opdict['syn_amplitude']=1.0
 wo.opdict['syn_datalength']=50.0
 wo.opdict['syn_samplefreq']=100.0
@@ -59,8 +59,8 @@ lines=f.readlines()
 f.close()
 proj_line=lines[1]
 proj_info={}
-proj_info['orig_lon'] = np.float(proj_line.split()[3])
-proj_info['orig_lat'] = np.float(proj_line.split()[5])
+proj_info['orig_lat'] = np.float(proj_line.split()[3])
+proj_info['orig_lon'] = np.float(proj_line.split()[5])
 proj_info['map_rot'] = np.float(proj_line.split()[7])
 
 print proj_info
