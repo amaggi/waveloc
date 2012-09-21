@@ -14,7 +14,7 @@ class WavelocOptions(object):
     self.opdict['time']=False
     self.opdict['verbose']=False
     self.opdict['reloc']=False
-    self.opdict['auto_loclevel']=True
+    self.opdict['auto_loclevel']=False
     self.opdict['snr_loclevel']=10
 
     # check for existence of lib directory
@@ -57,7 +57,7 @@ class WavelocOptions(object):
     self.p.add_argument('--load_ttimes_buf',action='store_true',default=True,help='load pre-calculated travel-times for the search grid from file')
 
     self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
-    self.p.add_argument('--auto_loclevel', action='store', default=True,   type=float,help='automatically set trigger stack level for locations ')
+    self.p.add_argument('--auto_loclevel', action='store', default=False,   type=float,help='automatically set trigger stack level for locations ')
     self.p.add_argument('--loclevel', action='store', default=50,   type=float,help='trigger stack level for locations (e.g. 50) ')
     self.p.add_argument('--snr_loclevel', action='store', default=10,   type=float,help='SNR for automatically setting trigger stack level for locations')
     self.p.add_argument('--snr_limit',action='store', default=10.0, type=float,help="signal_to_noise level for kurtosis acceptance")
@@ -171,6 +171,7 @@ class WavelocOptions(object):
     self.opdict['load_ttimes_buf']=True
 
     self.opdict['reloc']=False
+    self.opdict['auto_loclevel']=False
     self.opdict['loclevel']=50.0
     self.opdict['snr_limit']=10.0
     self.opdict['sn_time']=10.0
