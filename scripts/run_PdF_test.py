@@ -41,15 +41,16 @@ wo.opdict['kwin']=4
 wo.opdict['krec']=True
 wo.opdict['kderiv']=True
 
-wo.opdict['data_length']=60
+wo.opdict['data_length']=130
 wo.opdict['data_overlap']=10
 
 wo.opdict['dataglob']='*filt.mseed'
 wo.opdict['kurtglob']='*kurt.mseed'
 wo.opdict['gradglob']='*grad.mseed'
 
-wo.opdict['auto_loclevel']=True
+wo.opdict['auto_loclevel']=False
 wo.opdict['snr_loclevel']=100
+wo.opdict['loclevel']=50
 wo.opdict['snr_limit']=10.0
 wo.opdict['sn_time']=10.0
 wo.opdict['n_kurt_min']=4.0
