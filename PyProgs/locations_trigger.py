@@ -204,7 +204,7 @@ def do_locations_trigger_setup_and_run(opdict):
 
   # DO TRIGGERING AND LOCATION
   if opdict['auto_loclevel']:
-    loclevel=4.0*np.median(st_max_filt[0].data)
+    loclevel=opdict['snr_loclevel']*np.median(st_max_filt[0].data)
     opdict['loclevel']=loclevel
   else:
     loclevel=opdict['loclevel']

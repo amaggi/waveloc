@@ -15,6 +15,7 @@ class WavelocOptions(object):
     self.opdict['verbose']=False
     self.opdict['reloc']=False
     self.opdict['auto_loclevel']=True
+    self.opdict['snr_loclevel']=10
 
     # check for existence of lib directory
     lib_path=os.path.join(base_path,'lib')
@@ -58,6 +59,7 @@ class WavelocOptions(object):
     self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
     self.p.add_argument('--auto_loclevel', action='store', default=True,   type=float,help='automatically set trigger stack level for locations ')
     self.p.add_argument('--loclevel', action='store', default=50,   type=float,help='trigger stack level for locations (e.g. 50) ')
+    self.p.add_argument('--snr_loclevel', action='store', default=10,   type=float,help='SNR for automatically setting trigger stack level for locations')
     self.p.add_argument('--snr_limit',action='store', default=10.0, type=float,help="signal_to_noise level for kurtosis acceptance")
     self.p.add_argument('--sn_time',action='store',   default=10.0, type=float,help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
     self.p.add_argument('--n_kurt_min',action='store',default=4,    type=int,  help="min number of good kurtosis traces for a location")
@@ -114,6 +116,7 @@ class WavelocOptions(object):
     self.opdict['reloc']=args.reloc
     self.opdict['auto_loclevel']=args.auto_loclevel
     self.opdict['loclevel']=args.loclevel
+    self.opdict['snr_loclevel']=args.snr_loclevel
     self.opdict['snr_limit']=args.snr_limit
     self.opdict['sn_time']=args.sn_time
     self.opdict['n_kurt_min']=args.n_kurt_min
@@ -270,7 +273,9 @@ class WavelocOptions(object):
     figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
     if not os.path.exists(figdir): os.makedirs(figdir)  
 
-    if not self.opdict['auto_loclevel']:
+    if self.opdict['auto_loclevel']: 
+      if self.opdict['snr_loclevel']==None :   raise UserWarning('Empty snr for automatic location threshold') 
+    else :
       if self.opdict['loclevel']==None :   raise UserWarning('Empty location threshold') 
     if self.opdict['snr_limit']==None:   raise UserWarning('Empty threshold for signal to noise ratio') 
     if self.opdict['sn_time']==None:   raise UserWarning('Empty time span for signal to noise ratio computation') 
