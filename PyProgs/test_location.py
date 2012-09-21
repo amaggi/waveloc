@@ -1,10 +1,11 @@
 import os, glob, unittest
 from options import WavelocOptions
 from OP_waveforms import Waveform
-from locations_trigger import do_locations_trigger_setup_and_run
+from locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
 from locations_prob import do_locations_prob_setup_and_run
 from NllGridLib import *
 from integrate4D import *
+import numpy as np
 
 def suite():
   suite = unittest.TestSuite()
@@ -17,7 +18,48 @@ def suite():
   suite.addTest(LocationTests('test_locations_trigger_fullRes'))
   suite.addTest(LocationTests('test_locations_prob'))
   suite.addTest(LocationTests('test_locations_prob_fullRes'))
+  suite.addTest(TriggeringTests('test_simple_trigger'))
+  suite.addTest(TriggeringTests('test_gaussian_trigger'))
   return suite
+
+class TriggeringTests(unittest.TestCase):
+
+  def test_simple_trigger(self):
+
+    max_val=np.random.rand(100)
+    max_x=np.random.rand(100)
+    max_y=np.random.rand(100)
+    max_z=np.random.rand(100)
+
+    max_val[10]=5
+    max_val[20]=7
+    max_val[45]=2
+    max_val[80]=10
+
+    left_trig=right_trig=3
+    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,1.0)
+    self.assertEqual(len(locs),3)
+    self.assertAlmostEqual(locs[0][0],5)
+    self.assertAlmostEqual(locs[1][0],7)
+    self.assertAlmostEqual(locs[2][0],10)
+    self.assertAlmostEqual(locs[0][1],10)
+    self.assertAlmostEqual(locs[1][1],20)
+    self.assertAlmostEqual(locs[2][1],80)
+
+
+  def test_gaussian_trigger(self):
+
+    x=np.arange(100)
+    max_val=10*np.exp(-(x-50)*(x-50)/(10*10))
+    max_x=np.random.rand(100)
+    max_y=np.random.rand(100)
+    max_z=np.random.rand(100)
+
+    left_trig=right_trig=3
+    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,1.0)
+    self.assertAlmostEqual(locs[0][0],10)
+    self.assertAlmostEqual(locs[0][1],50)
+    
 
 class ProjectionTests(unittest.TestCase):
 
@@ -95,7 +137,7 @@ class IntegrationTests(unittest.TestCase):
     self.assertAlmostEqual(var_x2,0.0210,4)
     self.assertAlmostEqual(var_x3,0.0,7)
 
-#@unittest.skip('Skipping location tests')
+@unittest.skip('Skipping location tests')
 class LocationTests(unittest.TestCase):
 
   def setUp(self):
