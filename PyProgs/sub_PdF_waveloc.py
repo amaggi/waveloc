@@ -28,11 +28,11 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
   # create quick and dirty integer versions of the kurtosed data for stacking purposes
   # integer data = data  truncated to integer value and stored in 16 bits
 
-  #logging.info("\nCreating 16 bit integer version of the data for faster stacking...")
+  logging.info("\nCreating 32 bit integer version of the data for faster stacking...")
 
   integer_data={}
   for key,wf in data.iteritems():
-    integer_data[key]=wf.values
+    integer_data[key]=wf.values.astype('int32')
 
   if options_time:
     t=time()-t_ref
