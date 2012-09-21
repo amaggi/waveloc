@@ -62,7 +62,7 @@ wo.verify_SDS_processing_options()
 
 # check migration options and run migration
 wo.verify_migration_options()
-do_migration_setup_and_run(wo.opdict)
+#do_migration_setup_and_run(wo.opdict)
 
 # check migration options and run migration
 wo.verify_location_options()
