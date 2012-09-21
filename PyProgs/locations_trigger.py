@@ -77,7 +77,7 @@ def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,delta
 
       i_start=trig[0]
       i_end=trig[1]+1
-      i_max_trig=np.argmax(max_val.data[i_start:i_end])+i_start
+      i_max_trig=np.argmax(max_val[i_start:i_end])+i_start
       max_trig=max_val[i_max_trig]
       max_trig_95=0.95*max_trig
       logging.debug('Max_trig = %.3f, max_trig_95 = %.3f'%(max_trig,max_trig_95))
