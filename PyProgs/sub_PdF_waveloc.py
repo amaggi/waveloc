@@ -32,7 +32,8 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
 
   integer_data={}
   for key,wf in data.iteritems():
-    integer_data[key]=wf.values.astype('int32')
+    #integer_data[key]=wf.values.astype('int32')
+    integer_data[key]=wf.values
 
   if options_time:
     t=time()-t_ref

@@ -2132,8 +2132,6 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   wf_ids=integer_data.keys()
   time_dict=time_grid.buf[0]
   time_ids=time_dict.keys()
-  #logging.debug('Length of time ids %d, %s'%(len(time_ids),time_ids))
-  #logging.debug('Length of waveform ids %d, %s'%(len(wf_ids),wf_ids))
 
   # save the smallest number of points of all the data streams 
   # this will dimension many of the subsequent arrays
@@ -2141,12 +2139,8 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   logging.debug("Stack max time dimension = %d"%min_npts)
 
   # The stack grid has exactly the same geometry as the time-grid
-  #stack_grid=QDStackGrid(time_grid.nx,time_grid.ny,time_grid.nz,min_npts)
   #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.int32)
-  #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.float)
   stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts))
-  #stack_grid.read_NLL_hdr_file(search_grid_filename)
-  #stack_grid.construct_empty_grid(min_npts)
 
   # Number of geographical points in the stack
   n_buf=time_grid.nx*time_grid.ny*time_grid.nz
@@ -2175,15 +2169,12 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
 
       # initialize the stack
       #stack=numpy.zeros(min_npts,dtype=np.int32)
-      #stack=numpy.zeros(min_npts,dtype=np.float)
       stack=numpy.zeros(min_npts)
 
       for i in range(len(wf_ids)):
         wf_id=wf_ids[i]
-        #stack[0:n_len] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
         stack[0:n_lens[i]] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
 
-      #stack_grid[ix,iy,iz,0:n_len] = stack[0:n_len]
       stack_grid[ix,iy,iz,:] = stack[:]
     
       
@@ -2198,10 +2189,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
 
   # deal with the start of the traces
   # start index for slice = min_itime for the single stack - smallest min_itime for all stacks
-
   logging.debug('Fixing up stack start times')
-#  iextreme_min_times=[int(round(min(time_grid.buf[ib])/delta)) for ib in range(time_grid.npts)]
-#  iextreme_max_times=[int(round(max(time_grid.buf[ib])/delta)) for ib in range(time_grid.npts)]
   iextreme_min_times=[int(round(min([time_grid.buf[ib][wf_id] for wf_id in wf_ids])/delta))  for ib in range(n_buf) ]
   iextreme_max_times=[int(round(max([time_grid.buf[ib][wf_id] for wf_id in wf_ids])/delta))  for ib in range(n_buf) ]
   iextreme_min_time=min(iextreme_min_times)
@@ -2214,14 +2202,10 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   for ib in range(n_buf):
     ix,iy,iz=time_grid.get_ix_iy_iz(ib)
     start_index = iextreme_min_times[ib] - iextreme_min_time
-#    tmp=stack_grid.buf[ib][:]
     tmp=stack_grid[ix,iy,iz,:]
     try:
-      #stack_grid.buf[ib][0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
       stack_grid[ix,iy,iz,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
     except ValueError:
-#      logging.debug('(norm_stack_len,shortest_n_len,iextreme_max_time) = (%s,%s,%s)'%(norm_stack_len,shortest_n_len,iextreme_max_time))
-#      logging.debug("(ib,norm_stack_len,start_index) = (%s,%s,%s)"%(ib,norm_stack_len,start_index))
       logging.error("Length of time slice for migration too short compared with the largest migration time.")
       raise 
    
