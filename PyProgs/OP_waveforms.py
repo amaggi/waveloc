@@ -527,14 +527,14 @@ class Waveform(object):
 
   def get_snr(self,o_time,left_time,right_time):
     """
-    Returns signal-to-noise ratio, where signal = max(abs(signal between left_time and right_time)) and noise = mean(abs(signal between left_time- and otime)).
+    Returns signal-to-noise ratio, where signal = max(abs(signal between left_time and right_time)) and noise = median(abs(signal between left_time- and otime)).
     """
     tr_signal=self.trace.slice(left_time,right_time)
     signal_value=np.max(np.abs(tr_signal.data))
 
 #    signal_var=np.std(tr_signal.data)
     tr_noise=self.trace.slice(left_time,o_time)
-    noise_value=np.mean(np.abs(tr_noise.data))
+    noise_value=np.median(np.abs(tr_noise.data))
 
     if noise_value==0.0:
       snr=0
