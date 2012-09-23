@@ -28,7 +28,7 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
   # create quick and dirty integer versions of the kurtosed data for stacking purposes
   # integer data = data  truncated to integer value and stored in 16 bits
 
-  logging.info("\nCreating 32 bit integer version of the data for faster stacking...")
+  #logging.info("\nCreating 32 bit integer version of the data for faster stacking...")
 
   integer_data={}
   for key,wf in data.iteritems():
@@ -240,7 +240,6 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
 
 def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, search_grid_filename, time_grid):
 
-
   logging.info("Processing time slice %s"%start_time.isoformat())
 
   time_dict=time_grid.buf[0]
@@ -259,19 +258,38 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
     raise UserWarning("File list empty - check --dataglob option")
 
   # DO MIGRATION
-  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
+#  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
+  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)=do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
 
   # WRITE GRID FILES 
 
   logging.info("Writing plot grid...")
+  timestamp=o_time.isoformat()
+  grid_file=os.path.join(grid_dir,"%s_%s.dat"%('plot_grid',timestamp))
+  stack_grid[:,:,:,0:norm_stack_len].tofile(grid_file)
 
-  grid_filename=do_write_grid_at_time(stack_grid,o_time,delta,norm_stack_len,stack_start_time,grid_dir,'plot_grid')
+  # set up information
+  grid_info={}
+  grid_info['dat_file']=grid_file
+  grid_info['grid_shape']=stack_grid[:,:,:,0:norm_stack_len].shape
+  grid_info['grid_spacing']=time_grid.dx,time_grid.dy,time_grid.dz,delta
+  grid_info['grid_orig']=time_grid.x_orig,time_grid.y_orig,time_grid.z_orig
+  grid_info['stack_shift_time']=stack_shift_time
+  grid_info['stack_starttime']=stack_start_time
+  grid_info['stack_otime']=o_time
+ 
+  logging.info(grid_info)
+
+  # WRITE INFO FILE
+  info_file=os.path.join(grid_dir,"%s_%s.info"%('plot_gridinfo',timestamp))
+  f=open(info_file,'w')
+  f.write(str(grid_info))
 
 
   # clean_up big memory
   del(stack_grid)
 
-  return grid_filename
+  return grid_info
 
 def do_write_grid_at_time(stack_grid,o_time,delta,norm_stack_len,stack_start_time,grid_dir,grid_basename):
 
