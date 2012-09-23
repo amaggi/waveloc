@@ -20,7 +20,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
-    from plot_mpl import plot_probloc_mpl
+    from plot_mpl import plot_probloc_mpl, plotDiracTest
 
     wo=WavelocOptions()
     wo.set_test_options()
@@ -52,10 +52,18 @@ class SyntheticMigrationTests(unittest.TestCase):
     test_info=generateSyntheticDirac(wo.opdict)
     logging.info(test_info)
 
+    # plot synthetic tests
+    figdir=os.path.join(wo.opdict['base_path'],'out',wo.opdict['outdir'],'fig')
+    # reset the origin for nice-to-read plots
+    test_info['grid_orig']=(0,0,-2.5)
+    plotDiracTest(test_info,figdir)
+    logging.info(test_info)
+
     # retrieve info
     dat_file=test_info['dat_file']
     nx,ny,nz,nt=test_info['grid_shape']
     dx,dy,dz,dt=test_info['grid_spacing']
+    x_orig,y_orig,z_orig=test_info['grid_orig']
     ix_true,iy_true,iz_true,it_true=test_info['true_indexes']
     stack_shift_time=test_info['stack_shift_time']
 
@@ -76,24 +84,6 @@ class SyntheticMigrationTests(unittest.TestCase):
     # load grid
     stack_grid=np.fromfile(dat_file).reshape(nx,ny,nz,nt)
 
-    # normalize grid for first probability density calculation
-    stack_grid_int=compute_integral4D(stack_grid,x,y,z,t)
-    stack_grid_norm=stack_grid / stack_grid_int
-
- 
-    # integrate normalized grid over all space dimensions to get marginal over time
-    prob_t = si.trapz(si.trapz(si.trapz(stack_grid_norm,x=x,axis=0),x=y,axis=0),x=z,axis=0)
-    exp_t = si.trapz(t*prob_t,x=t,axis=0)
-    var_t = si.trapz((t-exp_t)*(t-exp_t)*prob_t,x=t,axis=0)
-    logging.debug('var_t = %.3f'%var_t)
-    sigma_t = np.sqrt(var_t)
-    logging.debug('sigma_t = %.3f'%sigma_t)
-    it_exp=int(round(exp_t/dt))
-    nt_sigma=int(round(sigma_t/dt))
-    it_left=it_exp-nt_sigma
-    it_right=it_exp+nt_sigma
-    t_slice=t[it_left:it_right]
-    
     # simulate locations trigger
     max_val=stack_grid.max(0).max(0).max(0)
     max_x=stack_grid.max(2).max(1).argmax(0)*dx
@@ -102,30 +92,19 @@ class SyntheticMigrationTests(unittest.TestCase):
 
     
     locs=trigger_locations_inner(max_val,max_x,max_y,max_z,loclevel,loclevel,dt)
+
     
     #print locs
     # This is a dirac test, so only have one element in locs
     trig_loc=locs[0]
     trig_max,trig_t,trig_sigma_t_left,trig_sigma_t_right,trig_x,trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z = trig_loc
+    self.assertAlmostEqual(wo.opdict['syn_otime'],trig_t-stack_shift_time,2)
+    self.assertAlmostEqual(wo.opdict['syn_ix']*dx+x_orig,trig_x)
+    self.assertAlmostEqual(wo.opdict['syn_iy']*dy+y_orig,trig_y)
+    self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,trig_z)
 
-    logging.info("TRIGGER : Max = %.2f, Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(trig_max,trig_t-stack_shift_time,max(trig_sigma_t_left,trig_sigma_t_right), trig_x, trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z))
-  
-    # TODO - send to a plotter
-
-    exp_x,exp_y,exp_z,exp_t,cov_matrix,prob_dict = compute_expected_coordinates4D(stack_grid[:,:,:,it_exp-nt_sigma:it_exp+nt_sigma],x,y,z,t_slice,return_2Dgrids=True)
-    sigma_x=np.sqrt(cov_matrix[0,0])
-    sigma_y=np.sqrt(cov_matrix[1,1])
-    sigma_z=np.sqrt(cov_matrix[2,2])
-    sigma_t=np.sqrt(cov_matrix[3,3])
-
-    logging.info("PROB DENSITY : Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(exp_t,sigma_t, exp_x, sigma_x,exp_y,sigma_y,exp_z,sigma_z))
-
-    plot_probloc_mpl(prob_dict,[x,y,z,t_slice],plot_base_filename)
-
-
-    self.assertTrue(True)
    
-#@unittest.skip('Not running real data migration tests')
+@unittest.skip('Not running real data migration tests')
 class MigrationTests(unittest.TestCase):
 
   def setUp(self):
@@ -190,7 +169,7 @@ class MigrationTests(unittest.TestCase):
 if __name__ == '__main__':
 
   import logging
-  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.WARN, format='%(levelname)s : %(asctime)s : %(message)s')
  
   unittest.TextTestRunner(verbosity=2).run(suite())
  
