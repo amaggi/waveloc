@@ -84,20 +84,23 @@ def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,delta
       trigs_95=trigger.triggerOnset(max_val[i_start:i_end],max_trig_95,max_trig_95)
       for trig_95 in trigs_95:
         if i_max_trig >= trig_95[0]+i_start and i_max_trig <= trig_95[1]+i_start:
+          loc_dict={}
+          loc_dict['max_trig']=max_trig
           i_start_95=trig_95[0]+i_start
           i_end_95=trig_95[1]+1+i_start
-          x_mean=np.mean(max_x[i_start_95:i_end_95])
-          x_sigma=np.std(max_x[i_start_95:i_end_95])
-          y_mean=np.mean(max_y[i_start_95:i_end_95])
-          y_sigma=np.std(max_y[i_start_95:i_end_95])
-          z_mean=np.mean(max_z[i_start_95:i_end_95])
-          z_sigma=np.std(max_z[i_start_95:i_end_95])
+          loc_dict['x_mean']=np.mean(max_x[i_start_95:i_end_95])
+          loc_dict['x_sigma']=np.std(max_x[i_start_95:i_end_95])
+          loc_dict['y_mean']=np.mean(max_y[i_start_95:i_end_95])
+          loc_dict['y_sigma']=np.std(max_y[i_start_95:i_end_95])
+          loc_dict['z_mean']=np.mean(max_z[i_start_95:i_end_95])
+          loc_dict['z_sigma']=np.std(max_z[i_start_95:i_end_95])
 
-          o_time=i_max_trig*delta
-          o_err_left=(i_max_trig-i_start_95)*delta
-          o_err_right=(i_end_95-i_max_trig)*delta
+          loc_dict['o_time']=i_max_trig*delta
+          loc_dict['o_err_left']=(i_max_trig-i_start_95)*delta
+          loc_dict['o_err_right']=(i_end_95-i_max_trig)*delta
 
-          locs.append([max_trig,o_time,o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma])
+          #locs.append([max_trig,o_time,o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma])
+          locs.append(loc_dict)
 
     return locs
  
@@ -115,7 +118,7 @@ def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
     i_locs=trigger_locations_inner(tr_filt.data,tr_x.data,tr_y.data,tr_z.data,left_trig,right_trig,tr_filt.stats.delta)
     for loc in i_locs:
       # fix-up the origin time
-      loc[1] = tr_filt.stats.starttime+loc[1]
+      loc['o_time'] = tr_filt.stats.starttime+loc['o_time']
 
     locs.extend(i_locs)
 
@@ -222,13 +225,13 @@ def do_locations_trigger_setup_and_run(opdict):
   n_kurt_min=opdict['n_kurt_min']
 
   n_ok=0
-  for (max_trig,o_time,o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma) in loc_list:
-    if number_good_kurtosis_for_location(kurt_files,o_time,snr_limit,sn_time) > n_kurt_min:
-      logging.info("Max = %.2f, %s - %.2fs + %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(max_trig,o_time.isoformat(),o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma))
-      loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(max_trig,o_time.isoformat(),o_err_left, o_err_right ,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma))
+  for loc in loc_list:
+    if number_good_kurtosis_for_location(kurt_files,loc['o_time'],snr_limit,sn_time) > n_kurt_min:
+      logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km, y=%.4f pm %.4f km, z=%.4f pm %.4f km"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
+      loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       n_ok=n_ok+1
     else:
-      logging.info("Not enough kurtosis picks for : Max = %.2f, %s - %.2fs + %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(max_trig,o_time.isoformat(),o_err_left, o_err_right,x_mean,x_sigma,y_mean,y_sigma,z_mean,z_sigma))
+      logging.info("Not enough kurtosis picks for : Max = %.2f, %s - %.2fs + %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
   loc_file.close()
   logging.info('Wrote %d locations to file %s.'%(n_ok,loc_filename))
 

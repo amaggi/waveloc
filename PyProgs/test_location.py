@@ -39,12 +39,12 @@ class TriggeringTests(unittest.TestCase):
     left_trig=right_trig=3
     locs=trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,1.0)
     self.assertEqual(len(locs),3)
-    self.assertAlmostEqual(locs[0][0],5)
-    self.assertAlmostEqual(locs[1][0],7)
-    self.assertAlmostEqual(locs[2][0],10)
-    self.assertAlmostEqual(locs[0][1],10)
-    self.assertAlmostEqual(locs[1][1],20)
-    self.assertAlmostEqual(locs[2][1],80)
+    self.assertAlmostEqual(locs[0]['max_trig'],5)
+    self.assertAlmostEqual(locs[1]['max_trig'],7)
+    self.assertAlmostEqual(locs[2]['max_trig'],10)
+    self.assertAlmostEqual(locs[0]['o_time'],10)
+    self.assertAlmostEqual(locs[1]['o_time'],20)
+    self.assertAlmostEqual(locs[2]['o_time'],80)
 
 
   def test_gaussian_trigger(self):
@@ -57,8 +57,8 @@ class TriggeringTests(unittest.TestCase):
 
     left_trig=right_trig=3
     locs=trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,1.0)
-    self.assertAlmostEqual(locs[0][0],10)
-    self.assertAlmostEqual(locs[0][1],50)
+    self.assertAlmostEqual(locs[0]['max_trig'],10)
+    self.assertAlmostEqual(locs[0]['o_time'],50)
     
 
 class ProjectionTests(unittest.TestCase):
