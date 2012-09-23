@@ -118,7 +118,7 @@ class MigrationTests(unittest.TestCase):
 #  @unittest.skip('Not running small test')
   def test_migration(self):
 
-    self.wo.opdict['load_ttimes_buf'] = False
+    self.wo.opdict['load_ttimes_buf'] = True
     self.wo.opdict['data_length'] = 300
 
     base_path=self.wo.opdict['base_path']
