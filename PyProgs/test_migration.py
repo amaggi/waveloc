@@ -98,10 +98,10 @@ class SyntheticMigrationTests(unittest.TestCase):
     # This is a dirac test, so only have one element in locs
     trig_loc=locs[0]
     trig_max,trig_t,trig_sigma_t_left,trig_sigma_t_right,trig_x,trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z = trig_loc
-    self.assertAlmostEqual(wo.opdict['syn_otime'],trig_t-stack_shift_time,2)
-    self.assertAlmostEqual(wo.opdict['syn_ix']*dx+x_orig,trig_x)
-    self.assertAlmostEqual(wo.opdict['syn_iy']*dy+y_orig,trig_y)
-    self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,trig_z)
+    self.assertAlmostEqual(wo.opdict['syn_otime'],trig_loc['o_time']-stack_shift_time,2)
+    self.assertAlmostEqual(wo.opdict['syn_ix']*dx+x_orig,trig_loc['x_mean'])
+    self.assertAlmostEqual(wo.opdict['syn_iy']*dy+y_orig,trig_loc['y_mean'])
+    self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,trig_loc['z_mean'])
 
    
 @unittest.skip('Not running real data migration tests')
