@@ -11,7 +11,6 @@ from OP_waveforms import *
 from grids_paths import *
 from time import time, sleep
 from sub_PdF_waveloc import do_migration_loop_continuous
-import Queue, threading
 import logging
 
 def do_migration_setup_and_run(opdict):
