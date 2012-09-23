@@ -3,7 +3,8 @@ import numpy as np
 from options import *
 from SDS_processing import do_SDS_processing_setup_and_run
 from migration import do_migration_setup_and_run
-from locations_trigger import do_locations_trigger_setup_and_run
+from locations_trigger import do_locations_trigger_setup_and_run 
+from plot_locations2 import do_plotting_setup_and_run
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
@@ -25,11 +26,11 @@ wo.opdict['net_list']='YA'
 wo.opdict['sta_list']="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
 wo.opdict['comp_list']="HHZ"
 
-#wo.opdict['starttime']="2010-10-14T00:00:00.0Z"
-#wo.opdict['endtime']="2010-10-14T16:00:00.0Z"
+wo.opdict['starttime']="2010-10-14T00:00:00.0Z"
+wo.opdict['endtime']="2010-10-14T16:00:00.0Z"
 
-wo.opdict['starttime']="2010-10-14T04:00:00.0Z"
-wo.opdict['endtime']="2010-10-14T05:00:00.0Z"
+#wo.opdict['starttime']="2010-10-14T04:00:00.0Z"
+#wo.opdict['endtime']="2010-10-14T05:00:00.0Z"
 
 wo.opdict['resample']=False
 wo.opdict['fs']=None
@@ -55,6 +56,9 @@ wo.opdict['snr_limit']=10.0
 wo.opdict['sn_time']=10.0
 wo.opdict['n_kurt_min']=4.0
 
+wo.opdict['plot_tbefore']=10.0
+wo.opdict['plot_tafter']=20.0
+
 
 # check processing options and run processing
 wo.verify_SDS_processing_options()
@@ -64,8 +68,11 @@ wo.verify_SDS_processing_options()
 wo.verify_migration_options()
 #do_migration_setup_and_run(wo.opdict)
 
-# check migration options and run migration
+# check location options and run location
 wo.verify_location_options()
-updated_opdict=do_locations_trigger_setup_and_run(wo.opdict)
-print updated_opdict['loclevel']
+#locs=do_locations_trigger_setup_and_run(wo.opdict)
+
+# check plotting options and run plotting
+wo.verify_plotting_options()
+do_plotting_setup_and_run(wo.opdict)
 
