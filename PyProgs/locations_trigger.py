@@ -50,6 +50,7 @@ def filter_max_stack(st_max,corner):
   return st_filt
 
 def number_good_kurtosis_for_location(kurt_files,o_time,snr_limit=10.0,sn_time=10.0):
+  # TODO - Fix this to estimate K-time from o_time and propagation time to station
   n_good_kurt=0
   wf=Waveform()
   start_time=o_time-sn_time
@@ -235,7 +236,35 @@ def do_locations_trigger_setup_and_run(opdict):
   loc_file.close()
   logging.info('Wrote %d locations to file %s.'%(n_ok,loc_filename))
 
-  return opdict
+  return locs
+
+def read_locs_from_file(filename):
+
+  from obspy.core import utcdatetime
+
+  locs=[]
+
+  f=open(filename,'r')
+  lines=f.readlines()
+  f.close()
+
+  for line in lines:
+    loc={}
+
+    loc['max_trig']=np.float(line.split()[2].split(',')[0])
+    loc['o_time']=utcdatetime.UTCDateTime(line.split()[3])
+    loc['o_err_left']=np.float(line.split()[5])
+    loc['o_err_right']=np.float(line.split()[8])
+    loc['x_mean']=np.float(line.split()[11])
+    loc['x_sigma']=np.float(line.split()[13])
+    loc['y_mean']=np.float(line.split()[16])
+    loc['y_sigma']=np.float(line.split()[18])
+    loc['z_mean']=np.float(line.split()[21])
+    loc['z_sigma']=np.float(line.split()[23])
+
+    locs.append(loc)
+
+  return locs
  
 if __name__=='__main__':
 
