@@ -56,11 +56,12 @@ def do_migration_setup_and_run(opdict):
   #                       START PROCESSING 
   #######################################################################
 
-  print ""
-  print "----------------"
-  print "START PROCESSING"
-  print "----------------"
-  print ""
+  if verbose: 
+    print ""
+    print "----------------"
+    print "START PROCESSING"
+    print "----------------"
+    print ""
 
   # Create Obspy streams for output
 
