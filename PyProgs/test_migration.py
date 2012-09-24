@@ -105,7 +105,7 @@ class SyntheticMigrationTests(unittest.TestCase):
     self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,trig_loc['z_mean'])
 
    
-@unittest.skip('Not running real data migration tests')
+#@unittest.skip('Not running real data migration tests')
 class MigrationTests(unittest.TestCase):
 
   def setUp(self):

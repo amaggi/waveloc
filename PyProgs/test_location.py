@@ -156,7 +156,7 @@ class IntegrationTests(unittest.TestCase):
     self.assertAlmostEqual(var_x2,0.0210,4)
     self.assertAlmostEqual(var_x3,0.0,7)
 
-@unittest.skip('Skipping location tests')
+#@unittest.skip('Skipping location tests')
 class LocationTests(unittest.TestCase):
 
   def setUp(self):
