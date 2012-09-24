@@ -21,3 +21,4 @@
 /test_data/time_grids/
 /lib/*test*
 *ijen*
+*hdf5
