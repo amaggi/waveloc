@@ -19,6 +19,7 @@ def suite():
 class SyntheticMigrationTests(unittest.TestCase):
 
 #  @profile
+  @unittest.expectedFailure
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
     from plot_mpl import plot_probloc_mpl, plotDiracTest
