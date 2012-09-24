@@ -1,6 +1,7 @@
 import os, glob, logging
 import numpy as np
 
+#@profile
 def generateSyntheticDirac(opdict,time_grid=None):
     # Creates the synthetic dataset for us to work with
 
@@ -119,6 +120,8 @@ def generateSyntheticDirac(opdict,time_grid=None):
 
     # DO MIGRATION
     (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data,s_delta,search_grid_filename,time_grid)
+    del integer_data
+    del time_grid
 
     logging.info('Migration outputs : nx,ny,nz,norm_stack_len,stack_shift_time = %d %d %d %d %.3f'%(nx,ny,nz,norm_stack_len,stack_shift_time))
     stack_grid[:,:,:,0:norm_stack_len].tofile(test_grid_file)

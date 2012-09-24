@@ -2125,7 +2125,7 @@ def make_movie(timestamp_directory_name,movie_filename):
     os.system("convert -delay 15 %s%s%s %s"%(timestamp_directory_name,os.sep,'*.png.jpg',movie_filename))
 
 
-
+#@profile
 def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
   # save the list of data keys
   # note : keys of integer data are all included in keys of time_grid, but there may be more times than data
@@ -2176,6 +2176,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid):
         stack[0:n_lens[i]] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
 
       stack_grid[ix,iy,iz,:] = stack[:]
+      del stack
     
       
   logging.debug('Stacking done.')
