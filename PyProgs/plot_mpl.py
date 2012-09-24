@@ -28,11 +28,31 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   z=np.arange(nz)*dz+z_orig
   t=np.arange(nt)*dt
 
+  # get location info
+  o_time=loc['o_time']
+  x_mean=loc['x_mean']
+  y_mean=loc['y_mean']
+  z_mean=loc['z_mean']
+  o_err_left=loc['o_err_left']
+  o_err_right=loc['o_err_right']
+  x_sigma=loc['x_sigma']
+  y_sigma=loc['y_sigma']
+  z_sigma=loc['z_sigma']
+
   #get index of origin time 
-  it_true=np.int(np.round((loc['o_time']-stack_starttime)/dt))
-  ix_true=np.int(np.round((loc['x_mean']-x_orig)/dx))
-  iy_true=np.int(np.round((loc['y_mean']-y_orig)/dy))
-  iz_true=np.int(np.round((loc['z_mean']-z_orig)/dz))
+  it_true=np.int(np.round((o_time-stack_starttime)/dt))
+  ix_true=np.int(np.round((x_mean-x_orig)/dx))
+  iy_true=np.int(np.round((y_mean-y_orig)/dy))
+  iz_true=np.int(np.round((z_mean-z_orig)/dz))
+
+  it_left=np.int(np.round((o_time-o_err_left-stack_starttime)/dt))
+  it_right=np.int(np.round((o_time+o_err_right-stack_starttime)/dt))
+  ix_low=np.int(np.round((x_mean-x_sigma-x_orig)/dx))
+  iy_low=np.int(np.round((y_mean-y_sigma-y_orig)/dy))
+  iz_low=np.int(np.round((z_mean-z_sigma-z_orig)/dz))
+  ix_high=np.int(np.round((x_mean+x_sigma-x_orig)/dx))
+  iy_high=np.int(np.round((y_mean+y_sigma-y_orig)/dy))
+  iz_high=np.int(np.round((z_mean+z_sigma-z_orig)/dz))
 
   # cut through the true location at the true time 
   xy_cut=stack_grid[:,:,iz_true,it_true]
@@ -82,6 +102,8 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   p.set_ylim(0,max(max_val))
 #  plt.hlines(loclevel,llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],0,max(max_val),'r',linewidth=2)
+  plt.vlines(t[it_left],0,max(max_val),'r',linewidth=1)
+  plt.vlines(t[it_right],0,max(max_val),'r',linewidth=1)
 
   # plot max x
   p=plt.subplot(3,3,7)
@@ -92,7 +114,11 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   plt.title('x at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
+  plt.hlines(x[ix_low],llim,rlim,'r',linewidth=1)
+  plt.hlines(x[ix_high],llim,rlim,'r',linewidth=1)
   plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
+  plt.vlines(t[it_left],min(max_x),max(max_x),'r',linewidth=1)
+  plt.vlines(t[it_right],min(max_x),max(max_x),'r',linewidth=1)
   # plot max y
   p=plt.subplot(3,3,8)
   plt.plot(t,max_y)
@@ -102,7 +128,11 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   plt.title('y at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
+  plt.hlines(y[iy_low],llim,rlim,'r',linewidth=1)
+  plt.hlines(y[iy_high],llim,rlim,'r',linewidth=1)
   plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
+  plt.vlines(t[it_left],min(max_y),max(max_y),'r',linewidth=1)
+  plt.vlines(t[it_right],min(max_y),max(max_y),'r',linewidth=1)
   # plot max z
   p=plt.subplot(3,3,9)
   plt.plot(t,max_z)
@@ -112,7 +142,11 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   plt.title('z at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
+  plt.hlines(z[iz_low],llim,rlim,'r',linewidth=1)
+  plt.hlines(z[iz_high],llim,rlim,'r',linewidth=1)
   plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
+  plt.vlines(t[it_left],min(max_z),max(max_z),'r',linewidth=1)
+  plt.vlines(t[it_right],min(max_z),max(max_z),'r',linewidth=1)
 
   plt.tight_layout()
   plt.savefig(fig_filename)
