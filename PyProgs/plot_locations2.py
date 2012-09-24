@@ -52,8 +52,8 @@ def do_plotting_setup_and_run(opdict):
   # read locations
   locs=read_locs_from_file(locfile)
   
-  #for loc in locs[0:1]:
-  for loc in locs:
+  for loc in locs[10:11]:
+  #for loc in locs:
     # generate the grids
     print loc
     o_time=loc['o_time']
@@ -90,10 +90,11 @@ def do_plotting_setup_and_run(opdict):
         grad_files_selected.append(filename)
 
     # do migration
-    grid_info=do_migration_loop_plot(start_time_migration,end_time_migration,o_time,grid_dir,grad_files_selected,search_grid,time_grid)
+    grid_info,grid=do_migration_loop_plot(start_time_migration,end_time_migration,o_time,grid_dir,grad_files_selected,search_grid,time_grid)
 
     # plot
-    plotLocationGrid(loc,grid_info,figdir)
+    plotLocationGrid(loc,grid_info,grid,figdir)
+    del(grid)
 
 
 if __name__ == '__main__':

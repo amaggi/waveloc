@@ -238,7 +238,7 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
   del(stack_grid)
 
 
-def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, search_grid_filename, time_grid):
+def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, search_grid_filename, time_grid, write=False):
 
   logging.info("Processing time slice %s"%start_time.isoformat())
 
@@ -260,13 +260,17 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
   # DO MIGRATION
 #  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
   (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)=do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
+  logging.info(o_time)
+  logging.info(stack_start_time)
+  logging.info(stack_shift_time)
 
   # WRITE GRID FILES 
 
   logging.info("Writing plot grid...")
   timestamp=o_time.isoformat()
   grid_file=os.path.join(grid_dir,"%s_%s.dat"%('plot_grid',timestamp))
-  stack_grid[:,:,:,0:norm_stack_len].tofile(grid_file)
+
+  if write : stack_grid[:,:,:,0:norm_stack_len].tofile(grid_file)
 
   # set up information
   grid_info={}
@@ -287,9 +291,9 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
 
 
   # clean_up big memory
-  del(stack_grid)
+#  del(stack_grid)
 
-  return grid_info
+  return grid_info, stack_grid[:,:,:,0:norm_stack_len]
 
 def do_write_grid_at_time(stack_grid,o_time,delta,norm_stack_len,stack_start_time,grid_dir,grid_basename):
 

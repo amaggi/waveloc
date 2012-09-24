@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from visualization import setup_test_grid
 from integrate4D import *
 
-def plotLocationGrid(loc,grid_info,fig_dir):
+def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
 
   # set up plot using info from grid_info
   nx,ny,nz,nt = grid_info['grid_shape']
@@ -19,7 +19,7 @@ def plotLocationGrid(loc,grid_info,fig_dir):
   fig_filename=os.path.join(fig_dir,"%s.pdf"%os.path.basename(grid_filename))
 
   # read the stack file
-  stack_grid=np.fromfile(grid_filename).reshape(nx,ny,nz,nt)
+#  stack_grid=np.fromfile(grid_filename).reshape(nx,ny,nz,nt)
 
   # set up the 4 axes
   x=np.arange(nx)*dx+x_orig
@@ -40,10 +40,12 @@ def plotLocationGrid(loc,grid_info,fig_dir):
 
   # extract the max stacks
   max_val=stack_grid.max(0).max(0).max(0)
+  max_val_smooth=np.smooth(max_val)
   max_x=stack_grid.max(2).max(1).argmax(0)*dx + x_orig
   max_y=stack_grid.max(2).max(0).argmax(0)*dy + y_orig
   max_z=stack_grid.max(1).max(0).argmax(0)*dz + z_orig
 
+  print it_true, np.argmax(max_val)
   plt.clf()
 
   # do plot
@@ -72,6 +74,7 @@ def plotLocationGrid(loc,grid_info,fig_dir):
   rlim = t[it_true]+2.0
   p=plt.subplot(3,1,2)
   plt.plot(t,max_val)
+  plt.plot(t,max_val_smooth,'g')
   #plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('Stack max ')
