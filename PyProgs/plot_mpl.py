@@ -5,6 +5,7 @@ import scipy.integrate as si
 import matplotlib.pyplot as plt
 from visualization import setup_test_grid
 from integrate4D import *
+from filters import smooth
 
 def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
 
@@ -39,8 +40,7 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   yz_cut=stack_grid[ix_true,:,:,it_true]
 
   # extract the max stacks
-  max_val=stack_grid.max(0).max(0).max(0)
-  max_val_smooth=np.smooth(max_val)
+  max_val=smooth(stack_grid.max(0).max(0).max(0))
   max_x=stack_grid.max(2).max(1).argmax(0)*dx + x_orig
   max_y=stack_grid.max(2).max(0).argmax(0)*dy + y_orig
   max_z=stack_grid.max(1).max(0).argmax(0)*dz + z_orig
@@ -74,7 +74,6 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   rlim = t[it_true]+2.0
   p=plt.subplot(3,1,2)
   plt.plot(t,max_val)
-  plt.plot(t,max_val_smooth,'g')
   #plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('Stack max ')
@@ -146,7 +145,7 @@ def plotDiracTest(test_info,fig_dir):
   yz_cut=stack_grid[ix_true,:,:,it_true]
 
   # extract the max stacks
-  max_val=stack_grid.max(0).max(0).max(0)
+  max_val=smooth(stack_grid.max(0).max(0).max(0))
   max_x=stack_grid.max(2).max(1).argmax(0)*dx + x_orig
   max_y=stack_grid.max(2).max(0).argmax(0)*dy + y_orig
   max_z=stack_grid.max(1).max(0).argmax(0)*dz + z_orig

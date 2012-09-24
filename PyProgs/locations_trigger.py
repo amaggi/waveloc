@@ -5,6 +5,7 @@ import os, sys, optparse, glob
 from obspy.core import *
 from obspy.signal import *
 from OP_waveforms import stream_taper, Waveform
+from filters import smooth
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
@@ -40,7 +41,8 @@ def filter_max_stack(st_max,corner):
 
   for tr in st_max.traces:
     tr_filt=tr.copy()
-    x_filt=lowpass(tr_filt.data,corner,1/tr.stats.delta,zerophase=True)
+    #x_filt=lowpass(tr_filt.data,corner,1/tr.stats.delta,zerophase=True)
+    x_filt=smooth(tr_filt.data)
     tr_filt.data=x_filt
     st_filt.append(tr_filt)
 
@@ -226,11 +228,13 @@ def do_locations_trigger_setup_and_run(opdict):
   n_kurt_min=opdict['n_kurt_min']
 
   n_ok=0
+  locs=[]
   for loc in loc_list:
     if number_good_kurtosis_for_location(kurt_files,loc['o_time'],snr_limit,sn_time) > n_kurt_min:
       logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km, y=%.4f pm %.4f km, z=%.4f pm %.4f km"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       n_ok=n_ok+1
+      locs.append(loc)
     else:
       logging.info("Not enough kurtosis picks for : Max = %.2f, %s - %.2fs + %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
   loc_file.close()
