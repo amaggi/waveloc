@@ -19,6 +19,7 @@ def suite():
   suite.addTest(LocationTests('test_locations_prob'))
   suite.addTest(LocationTests('test_locations_prob_fullRes'))
   suite.addTest(TriggeringTests('test_simple_trigger'))
+  suite.addTest(TriggeringTests('test_smoothing'))
   suite.addTest(TriggeringTests('test_gaussian_trigger'))
   return suite
 
@@ -46,11 +47,29 @@ class TriggeringTests(unittest.TestCase):
     self.assertAlmostEqual(locs[1]['o_time'],20)
     self.assertAlmostEqual(locs[2]['o_time'],80)
 
+  def test_smoothing(self):
+
+    from filters import smooth
+
+    x=np.arange(100)
+    max_val=10.*np.exp(-(x-50.)*(x-50.)/(10.*10.))+np.random.rand(100)
+    max_x=np.random.rand(100)
+    max_y=np.random.rand(100)
+    max_z=np.random.rand(100)
+
+    max_val_smooth=smooth(max_val)
+
+    left_trig=right_trig=3
+    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,1.0)
+    locs_smooth=trigger_locations_inner(max_val_smooth,max_x,max_y,max_z,left_trig,right_trig,1.0)
+    self.assertAlmostEqual(locs_smooth[0]['o_time'],locs[0]['o_time'])
+
+
 
   def test_gaussian_trigger(self):
 
     x=np.arange(100)
-    max_val=10*np.exp(-(x-50)*(x-50)/(10*10))
+    max_val=10.*np.exp(-(x-50.)*(x-50.)/(10.*10.))
     max_x=np.random.rand(100)
     max_y=np.random.rand(100)
     max_z=np.random.rand(100)
