@@ -15,7 +15,7 @@ from scipy import weave
 from scipy.weave import converters
 import logging
 
-@profile
+#@profile
 def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose=False, options_time=False):
 
   if options_time:
