@@ -3,6 +3,7 @@
 /out/
 /test_figures/
 *.buf
+!/test_data/*.buf
 *.ttimes
 /lib/*.hdr
 !/lib/*search.hdr
