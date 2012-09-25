@@ -4,6 +4,38 @@ cPI=np.pi		# PI
 cRPD = cPI / 180.0	# radians per degree
 c111 = 10000.0/90.0	# km per degree
 
+def read_hdr_file(filename):
+
+  # read header file
+  f=open(filename)
+  lines=f.readlines()
+  f.close()
+  
+  info={}
+
+  # extract information
+  vals=lines[0].split()
+  info['nx']=int(vals[0])
+  info['ny']=int(vals[1])
+  info['nz']=int(vals[2])
+  info['x_orig']=float(vals[3])
+  info['y_orig']=float(vals[4])
+  info['z_orig']=float(vals[5])
+  info['dx']=float(vals[6])
+  info['dy']=float(vals[7])
+  info['dz']=float(vals[8])
+
+  for line in lines:
+    if line.split()[0]=='TRANSFORM':
+      if line.split()[1]=='NONE': info['proj_name']='TRANS_NONE'
+      if line.split()[1]=='SIMPLE': 
+        info['proj_name']='TRANS_SIMPLE'
+        info['orig_lat']=float(line.split()[3])
+        info['orig_lon']=float(line.split()[5])
+        info['map_rot']=float(line.split()[7])
+
+  return info
+
 def latlon2rect(proj_name,lat,lon,proj_info={}):
 
   try:
