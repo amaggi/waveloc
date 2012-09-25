@@ -9,20 +9,20 @@ import numpy as np
 
 from OP_waveforms import *
 
-from grids_paths import *
+from hdf5_grids import migrate_4D_stack
+from NllGridLib import read_hdr_file
 from time import time, sleep
 from scipy import weave
 from scipy.weave import converters
 import logging
 
 #@profile
-def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose=False, options_time=False):
+def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose=False, options_time=False):
 
   if options_time:
     t_ref=time()  
 
-  time_dict=time_grid.buf[0]
-  time_ids=time_dict.keys()
+  time_ids=time_grids.keys()
 
   data_ids=data.keys()
       
@@ -40,6 +40,8 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
     t=time()-t_ref
     logging.info("Time for reading %d data streams with %d points : %.4f s\n" % (len(data.keys()),wf.npts,t))
 
+
+
  ######### DO THE MIGRATION #############
 
   logging.info("Stacking shifted time series... ")
@@ -47,7 +49,7 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
   if options_time:
     t_ref=time()  
 
-  (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data, delta, search_grid_filename, time_grid)
+  (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids)
   stack_start_time=start_time-stack_shift_time
 
   logging.debug("Stack geographical dimension = %d"%n_buf)
@@ -61,12 +63,23 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, se
  
   return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
 
-def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename, options_verbose=False, options_time=False):
+def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename, options_verbose=False, options_time=False):
 
  
-  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)= do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose, options_time)
+  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)= do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
 
   ###### Extract maximum of stack #######
+
+  search_info=read_hdr_file(search_grid_filename)
+  nx=search_info['nx']
+  ny=search_info['ny']
+  nz=search_info['nz']
+  dx=search_info['dx']
+  dy=search_info['dy']
+  dz=search_info['dz']
+  x_orig=search_info['x_orig']
+  y_orig=search_info['y_orig']
+  z_orig=search_info['z_orig']
 
   logging.info("Extracting maximum of stack")
 
@@ -76,33 +89,24 @@ def do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search
   
   # magic matrix manipulations (see relevant inotebook)
   #ib_max=[stack_grid[:,:,:,it].argmax for it in range(norm_stack_len)]
-  
-  max_val=stack_grid.max(0).max(0).max(0)
-  max_x=stack_grid.max(2).max(1).argmax(0)
-  max_y=stack_grid.max(2).max(0).argmax(0)
-  max_z=stack_grid.max(1).max(0).argmax(0)
 
-  dx=time_grid.dx
-  dy=time_grid.dy
-  dz=time_grid.dz
-  x_orig=time_grid.x_orig
-  y_orig=time_grid.y_orig
-  z_orig=time_grid.z_orig
+  nb,nt=stack_grid.shape
+  numpy_stack_grid=np.zeros((nb,nt))
+  stack_grid.write_direct(numpy_stack_grid)
+  nsg=numpy_stack_grid.reshape(nx,ny,nz,nt)
+  
+  max_val=nsg.max(0).max(0).max(0)
+  max_x=  nsg.max(2).max(1).argmax(0)
+  max_y=  nsg.max(2).max(0).argmax(0)
+  max_z=  nsg.max(1).max(0).argmax(0)
+
+  del numpy_stack_grid
 
   #go from indexes to coordinates
   max_x=max_x*dx+x_orig
   max_y=max_y*dy+y_orig
   max_z=max_z*dz+z_orig
 
-  # iterate over stack
-#  for itime in range(norm_stack_len):
-#    time_slice=stack_grid[:,:,:,itime].flatten()
-#    ib_max=np.argmax(time_slice)
-#    max_val[itime]=time_slice[ib_max]
-#    ix,iy,iz=time_grid.get_ix_iy_iz(ib_max)
-#    max_x[itime]=ix*time_grid.dx+time_grid.x_orig
-#    max_y[itime]=iy*time_grid.dy+time_grid.y_orig
-#    max_z[itime]=iz*time_grid.dz+time_grid.z_orig
 
   if options_time:
     t=time()-t_ref
@@ -159,12 +163,11 @@ def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_tim
     stack_grid.write_grid_timeslice(itime=itime,filename=grid_file)
 
 
-def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, data_glob, search_grid_filename, time_grid, options_verbose, options_time):
+def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, data_glob, search_grid_filename, time_grids, options_verbose, options_time):
 
 
   logging.info("Processing time slice %s"%start_time.isoformat())
 
-  time_dict=time_grid.buf[0]
 
   # read data into a dictionary
 
@@ -175,7 +178,7 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
 
   # Read in the data
   files=glob.glob(os.path.join(data_dir,data_glob))
-  data=read_data_compatible_with_time_dict(files,time_dict,start_time,end_time)
+  data=read_data_compatible_with_time_dict(files,time_grids,start_time,end_time)
 
   # Set the global variable delta (dt for all the seismograms)
   try:
@@ -184,7 +187,7 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
     raise UserWarning("File list empty - check --dataglob option")
 
   # DO MIGRATION
-  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose, options_time)
+  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
 
   # WRITE STACK FILES 
   do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
@@ -196,16 +199,25 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
   #do_write_grids(stack_grid,0.5,delta,norm_stack_len,stack_start_time,output_dir,'grid')
 
 
-  # clean_up big memory
+  # do cleanup
+  h5_file=stack_grid.file
+  h5_filename=h5_file.filename
+  dirname,fname=os.path.split(h5_filename)
+
+  # close the hdf5 file and cleanup 
+  h5_file.close()
+  os.remove(h5_filename)
+  os.rmdir(dirname)
+  
+# clean_up big memory
   del(stack_grid)
 
 
-def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames, search_grid_filename, time_grid, options_verbose, options_time):
+def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames, search_grid_filename, time_grids, options_verbose, options_time):
 
 
   logging.info("Processing time slice %s"%start_time.isoformat())
 
-  time_dict=time_grid.buf[0]
 
   # read data into a dictionary
 
@@ -214,7 +226,7 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
   if options_time:
     t_ref=time()
 
-  data=read_data_compatible_with_time_dict(kurtosis_filenames,time_dict,start_time,end_time)
+  data=read_data_compatible_with_time_dict(kurtosis_filenames,time_grids,start_time,end_time)
 
   # Set the global variable delta (dt for all the seismograms)
   try:
@@ -223,7 +235,7 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
     raise UserWarning("File list empty - check --dataglob option")
 
   # DO MIGRATION
-  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename,options_verbose, options_time)
+  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
 
   # WRITE STACK FILES 
   do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'reloc_stack')
@@ -239,18 +251,17 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
   del(stack_grid)
 
 
-def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, search_grid_filename, time_grid, write=False):
+def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, search_grid_filename, time_grids, write=False):
 
   logging.info("Processing time slice %s"%start_time.isoformat())
 
-  time_dict=time_grid.buf[0]
 
   # read data into a dictionary
 
   logging.info("Reading processed data into dictionary")
 
 
-  data=read_data_compatible_with_time_dict(kurtosis_filenames,time_dict,start_time,end_time)
+  data=read_data_compatible_with_time_dict(kurtosis_filenames,time_grids,start_time,end_time)
 
   # Set the global variable delta (dt for all the seismograms)
   try:
@@ -259,8 +270,8 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
     raise UserWarning("File list empty - check --dataglob option")
 
   # DO MIGRATION
-#  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
-  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)=do_innermost_migration_loop(start_time, end_time, data, time_grid, delta, search_grid_filename)
+#  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename)
+  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)=do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename)
   logging.info(o_time)
   logging.info(stack_start_time)
   logging.info(stack_shift_time)

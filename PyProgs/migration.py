@@ -11,6 +11,8 @@ from OP_waveforms import *
 from grids_paths import *
 from time import time, sleep
 from sub_PdF_waveloc import do_migration_loop_continuous
+from NllGridLib import read_stations_file
+from hdf5_grids import get_interpolated_time_grids
 import logging
 
 def do_migration_setup_and_run(opdict):
@@ -72,17 +74,13 @@ def do_migration_setup_and_run(opdict):
   if runtime:
     t_ref=time()
 
-  sta=StationList()
-  sta.read_from_file(stations_filename)
+  stations=read_stations_file(stations_filename)
 
   if runtime:
     t=time()-t_ref
-    logging.info("Time for reading %d stations from file : %.4f s\n" % (sta.nsta,t))
+    logging.info("Time for reading %d stations from file : %.4f s\n" % (len(stations.keys()),t))
 
   datafile_list=glob.glob(os.path.join(data_dir,data_glob))
-
-  cha=ChannelList()
-  cha.populate_from_station_list_and_data_files(sta,datafile_list)
 
 
   ########### DEAL WITH START AND END TILES ############
@@ -111,18 +109,11 @@ def do_migration_setup_and_run(opdict):
   if runtime:
     t_ref=time()  
 
-  time_grid=QDTimeGrid()
-  time_grid.read_NLL_hdr_file(search_grid_filename)
-#  if twoD:
-#    time_grid.populate_from_2D_time_grids(grid_filename_base,cha)
-#  else:
-  load_ttimes_buf=opdict['load_ttimes_buf']
-  time_grid.populate_from_time_grids(grid_filename_base,cha,output_dir,load_ttimes_buf)
+  time_grids=get_interpolated_time_grids(opdict)
 
   if runtime:
     t=time()-t_ref
-    n_times=time_grid.nx*time_grid.ny*time_grid.nz+cha.ncha
-    logging.info("Time for extracting and saving %dx%dx%dx%d=%d travel-times : %.2f s\n" % (time_grid.nx,time_grid.ny,time_grid.nz,cha.ncha,n_times,t))
+    logging.info("Time for retreiving %d travel time grids : %.2f s\n" % (len(time_grids.keys()),t))
 
 
   # READ DATA
@@ -136,7 +127,7 @@ def do_migration_setup_and_run(opdict):
 
   while (start_time < final_end_time):
 
-    do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, data_glob, search_grid_filename, time_grid, verbose, runtime)
+    do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, data_glob, search_grid_filename, time_grids, verbose, runtime)
 
     # Reset the start and end times to loop again
     start_time=start_time+time_shift_secs
@@ -144,7 +135,6 @@ def do_migration_setup_and_run(opdict):
 
   if runtime:
     t=time()-t_ref
-    n_times=time_grid.nx*time_grid.ny*time_grid.nz+cha.ncha
     logging.info("Time for migrating : %.2f s\n" % (t))
 
 
