@@ -34,6 +34,12 @@ def read_hdr_file(filename):
         info['orig_lon']=float(line.split()[5])
         info['map_rot']=float(line.split()[7])
 
+    if len(line.split())==4:
+        info['station']=line.split()[0]
+        info['sta_x']=float(line.split()[1])
+        info['sta_y']=float(line.split()[2])
+        info['sta_z']=float(line.split()[3])
+
   return info
 
 def latlon2rect(proj_name,lat,lon,proj_info={}):
