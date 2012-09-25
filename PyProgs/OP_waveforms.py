@@ -779,7 +779,7 @@ def read_data_compatible_with_time_dict(filenames, time_dict, starttime, endtime
       # read will return UserWarning if there is no data within start and end time
       # will pad blanks with zeros if required (no tapering applied)
       wf.read_from_file(filename,starttime=starttime,endtime=endtime,pad_value=0)
-      wf_id="%s.%s"%(wf.station,wf.comp)
+      wf_id="%s"%(wf.station)
       # if all is ok, and we have a corresponding time id, add data to dictionary
       if time_dict.has_key(wf_id):
         data[wf_id]=wf
