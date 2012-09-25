@@ -1,4 +1,4 @@
-import h5py,os
+import h5py,os,logging
 import numpy as np
 from NllGridLib import read_hdr_file
 
@@ -208,13 +208,168 @@ class H5NllSingleGrid(H5SingleGrid):
 
     H5SingleGrid.__init__(self,filename,buf,info)
     
+
 ####
-# helper functions
+# HDF5 enabled functions
 ####
+
 
 def nll2hdf5(nll_name,h5_name):
   h5=H5NllSingleGrid(h5_name,nll_name)
   del h5
+
+def get_interpolated_time_grids(opdict):
+  import glob
+  from NllGridLib import read_hdr_file
+
+  base_path=opdict['base_path']
+  full_time_grids=glob.glob(os.path.join(base_path,'lib',opdict['time_grid']+'*.hdf5'))
+  if len(full_time_grids)==0 : raise UserWarning('No .hdf5 time grids found in directory %s'%(os.path.join(base_path,'lib')))
+
+  # read the search grid
+  search_grid=os.path.join(base_path,'lib',opdict['search_grid'])
+  tgrid_dir=os.path.join(base_path,'out',opdict['outdir'],'time_grids')
+  if not os.path.exists(tgrid_dir) : os.makedirs(tgrid_dir)
+  search_info=read_hdr_file(search_grid)
+  
+  time_grids={}
+
+  # for each of the full-length time grids
+  for f_timegrid in full_time_grids:
+    f_basename=os.path.basename(f_timegrid)
+    # get the filename of the corresponding short-length grid (the one for the search grid in particular)
+    tgrid_filename=os.path.join(tgrid_dir,f_basename)
+
+    # if file exists and we want to load it, then open the file and give it to the dictionary
+    if os.path.isfile(tgrid_filename) and opdict['load_ttimes_buf']:    
+      logging.info('Loading %s'%tgrid_filename)
+      grid=H5SingleGrid(tgrid_filename)
+      name=grid.grid_info['station']
+      time_grids[name]=grid
+
+    # if the file does not exist, or want to force re-creation, then create it 
+    if not os.path.isfile(tgrid_filename) or not opdict['load_ttimes_buf']:    
+      logging.info('Creating %s - Please be patient'%tgrid_filename)
+      full_grid=H5SingleGrid(f_timegrid)
+      # copy the common part of the grid info
+      new_info={}
+      for name,value in full_grid.grid_info.iteritems():
+        new_info[name]=value
+      # set the new part of the grid info to correspond to the search grid
+      new_info['x_orig']=search_info['x_orig']
+      new_info['y_orig']=search_info['y_orig']
+      new_info['z_orig']=search_info['z_orig']
+      new_info['nx']=search_info['nx']
+      new_info['ny']=search_info['ny']
+      new_info['nz']=search_info['nz']
+      new_info['dx']=search_info['dx']
+      new_info['dy']=search_info['dy']
+      new_info['dz']=search_info['dz']
+      # do interpolation
+      grid=full_grid.interp_to_newgrid(tgrid_filename,new_info)
+      # add to dictionary
+      name=grid.grid_info['station']
+      time_grids[name]=grid
+      # close full grid safely
+      del full_grid
+
+  return time_grids
+
+
+def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
+  import tempfile
+  from NllGridLib import read_hdr_file
+
+  # save the list of data keys
+  # note : keys of integer data are all included in keys of time_grid, but there may be more times than data
+
+  wf_ids=integer_data.keys()
+  time_ids=time_grids.keys()
+
+  search_info=read_hdr_file(search_grid_filename)
+  nx=search_info['nx']
+  ny=search_info['ny']
+  nz=search_info['nz']
+
+  # Number of geographical points in the stack
+  n_buf=nx*ny*nz
+
+  # save the smallest number of points of all the data streams 
+  # this will dimension many of the subsequent arrays
+  min_npts=min([len(integer_data[key]) for key in wf_ids])
+  logging.debug("Stack max time dimension = %d"%min_npts)
+
+  # The stack grid has exactly the same geometry as the time-grid
+  #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.int32)
+  # initialize the stack file in a safe place
+  tmp_dir=tempfile.mkdtemp()
+  tmp_file=os.path.join(tmp_dir,'tmp_stack_file.hdf5')
+  f=h5py.File(tmp_file,'w')
+  stack_grid=f.create_dataset('stack_grid',(nx*ny*nz,min_npts))
+  
+  
+  # keep information on the shortest length of stack for later
+  shortest_n_len=min_npts
+
+  # set up the stack grid 
+  for ib in xrange(n_buf):
+
+
+      # find the slice indexes
+      i_times=[int(round(time_grids[wf_id].grid_data[ib]/delta)) for wf_id in wf_ids]
+      min_i_time=min(i_times)
+      max_i_time=max(i_times)
+      start_end_indexes=[(i_time-min_i_time, i_time+min_npts-max_i_time) for i_time in i_times]
+      n_lens=[start_end_indexes[i][1]-start_end_indexes[i][0] for i in range(len(wf_ids))]
+      n_len=min(n_lens)
+
+      # keep shortest n_len for later
+      if n_len < shortest_n_len:
+        shortest_n_len=n_len
+
+      # initialize the stack
+      #stack=numpy.zeros(min_npts,dtype=np.int32)
+      stack_grid[ib,:]=0.
+
+      for i in range(len(wf_ids)):
+        wf_id=wf_ids[i]
+        stack_grid[ib,0:n_lens[i]] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
+
+      
+  logging.debug('Stacking done.')
+
+######## FIXUP THE CORR GRID START TIMES #########
+
+
+  # Each stack starts at ref_time - the minimum travel-time and ends at the ref_time + seismogram duration - max travel_time
+  # We need to homogenize, and get everything to start and end at the same time
+
+
+  # deal with the start of the traces
+  # start index for slice = min_itime for the single stack - smallest min_itime for all stacks
+  logging.debug('Fixing up stack start times')
+  iextreme_min_times=[np.int(np.round(np.min([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))  for ib in xrange(n_buf) ]
+  iextreme_max_times=[np.int(np.round(np.max([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))  for ib in xrange(n_buf) ]
+  iextreme_min_time=np.min(iextreme_min_times)
+  iextreme_max_time=np.max(iextreme_max_times)
+
+  # fix the length of the stack to the shortest possible length given all the previous travel time information
+  norm_stack_len=shortest_n_len-iextreme_max_time
+
+  # iterate over the time-arrays in the time_grid to extract the minimum and fix up the stacks
+  for ib in range(n_buf):
+    start_index = iextreme_min_times[ib] - iextreme_min_time
+    tmp=stack_grid[ib,:]
+    try:
+      stack_grid[ib,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
+    except ValueError:
+      logging.error("Length of time slice for migration too short compared with the largest migration time.")
+      raise 
+   
+  logging.debug('Done fixing up stack start times')
+  stack_shift_time=delta*iextreme_min_time
+  return n_buf, norm_stack_len, stack_shift_time, stack_grid
+
 
 if __name__=='__main__' : 
   
