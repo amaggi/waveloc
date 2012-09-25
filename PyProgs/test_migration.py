@@ -146,7 +146,7 @@ class MigrationTests(unittest.TestCase):
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir'] = 'TEST_fullRes'
     self.wo.opdict['load_ttimes_buf'] = True
-    self.wo.opdict['data_length'] = 100
+    self.wo.opdict['data_length'] = 300
     self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']
