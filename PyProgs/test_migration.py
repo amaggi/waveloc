@@ -11,9 +11,9 @@ from synth_migration import generateSyntheticDirac
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
+#  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
   suite.addTest(MigrationTests('test_migration'))
-  suite.addTest(MigrationTests('test_migration_fullRes'))
+#  suite.addTest(MigrationTests('test_migration_fullRes'))
   return suite
 
 class SyntheticMigrationTests(unittest.TestCase):
@@ -171,7 +171,7 @@ class MigrationTests(unittest.TestCase):
 if __name__ == '__main__':
 
   import logging
-  logging.basicConfig(level=logging.WARN, format='%(levelname)s : %(asctime)s : %(message)s')
+  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
   unittest.TextTestRunner(verbosity=2).run(suite())
  
