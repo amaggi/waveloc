@@ -10,6 +10,9 @@ def suite():
   suite.addTest(H5SingleGridTests('test_NllReadHdr'))
   suite.addTest(H5SingleGridTests('test_NllRead'))
   suite.addTest(H5SingleGridTests('test_nll2hdf5'))
+  suite.addTest(H5SingleGridTests('test_interpolation_ones'))
+  suite.addTest(H5SingleGridTests('test_interpolation_sinc'))
+  suite.addTest(H5SingleGridTests('test_interpolation_newgrid'))
   return suite
 
 class H5Tests(unittest.TestCase):
@@ -159,6 +162,138 @@ class H5SingleGridTests(unittest.TestCase):
     nll2hdf5(nll_name,h5_name)
     self.assertTrue(os.path.isfile(h5_name))
 
+  def test_interpolation_ones(self):
+
+    data=np.ones((100,200,50)).flatten()
+    info={}
+    info['nx']=100
+    info['ny']=200
+    info['nz']=50
+    info['dx']=1.
+    info['dy']=0.1
+    info['dz']=0.5
+    info['x_orig']=10.
+    info['y_orig']=30.
+    info['z_orig']=15.
+    
+    x=np.random.rand()*info['nx']*info['dx']+info['x_orig']
+    y=np.random.rand()*info['ny']*info['dy']+info['y_orig']
+    z=np.random.rand()*info['nz']*info['dz']+info['z_orig']
+
+    # put this data in a hdf5 file
+    filename='interpolate.hdf5'
+    if os.path.isfile(filename): os.remove(filename)
+    sg=H5SingleGrid(filename,data,info)
+    interp=sg.value_at_point(x,y,z)
+
+    self.assertAlmostEqual(interp,1.)
+
+    del sg
+    os.remove(filename)
+    
+  def test_interpolation_sinc(self):
+
+    data=np.zeros((100,200,50))
+    info={}
+    info['nx']=100
+    info['ny']=200
+    info['nz']=50
+    info['dx']=1.
+    info['dy']=0.1
+    info['dz']=0.5
+    info['x_orig']=10.
+    info['y_orig']=30.
+    info['z_orig']=15.
+    
+    X=np.arange(info['nx'])*info['dx']+info['x_orig']
+    Y=np.arange(info['ny'])*info['dy']+info['y_orig']
+    Z=np.arange(info['nz'])*info['dz']+info['z_orig']
+
+    xx,yy=np.meshgrid(X,Y)
+    data1=np.sin(xx**2 + yy**2) / (xx**2 + yy**2)
+    data[:,:,0]=data1.T
+    
+
+    x=np.random.rand()*info['nx']*info['dx']+info['x_orig']
+    y=np.random.rand()*info['ny']*info['dy']+info['y_orig']
+    z=info['z_orig']
+
+    true_answer=np.sin(x**2 + y**2) / (x**2 + y**2)
+
+    # put this data in a hdf5 file
+    filename='interpolate.hdf5'
+    if os.path.isfile(filename): os.remove(filename)
+    sg=H5SingleGrid(filename,data.flatten(),info)
+    interp=sg.value_at_point(x,y,z)
+
+    self.assertAlmostEqual(interp,true_answer,3)
+
+    del sg
+    del data
+    os.remove(filename)
+
+  def test_interpolation_newgrid(self):
+
+    data=np.zeros((100,200,50))
+    info={}
+    info['nx']=100
+    info['ny']=200
+    info['nz']=50
+    info['dx']=1.
+    info['dy']=0.1
+    info['dz']=0.5
+    info['x_orig']=10.
+    info['y_orig']=30.
+    info['z_orig']=15.
+    
+    new_info={}
+    new_info['nx']=5
+    new_info['ny']=10
+    new_info['nz']=2
+    new_info['dx']=1.5
+    new_info['dy']=0.15
+    new_info['dz']=0.55
+    new_info['x_orig']=10.5
+    new_info['y_orig']=30.5
+    new_info['z_orig']=15
+
+    X=np.arange(info['nx'])*info['dx']+info['x_orig']
+    Y=np.arange(info['ny'])*info['dy']+info['y_orig']
+    Z=np.arange(info['nz'])*info['dz']+info['z_orig']
+
+    xx,yy=np.meshgrid(X,Y)
+    data1=np.sin(xx**2 + yy**2) / (xx**2 + yy**2)
+    data[:,:,0]=data1.T
+    
+
+    ix=np.random.randint(new_info['nx'])
+    iy=np.random.randint(new_info['ny'])
+    x=ix*new_info['dx']+new_info['x_orig']
+    y=iy*new_info['dy']+new_info['y_orig']
+    z=new_info['z_orig']
+
+    true_answer=np.sin(x**2 + y**2) / (x**2 + y**2)
+
+    # put this data in a hdf5 file
+    filename='interpolate.hdf5'
+    new_filename='interpolate_new.hdf5'
+    if os.path.isfile(filename): os.remove(filename)
+    sg=H5SingleGrid(filename,data.flatten(),info)
+    new_sg=sg.interp_to_newgrid(new_filename,new_info)
+
+
+    interp=sg.value_at_point(x,y,z)
+    new_interp=new_sg.value_at_point(x,y,z)
+
+    self.assertAlmostEqual(interp,true_answer,3)
+    self.assertAlmostEqual(new_interp,true_answer,3)
+
+    del sg
+    del new_sg
+    del data
+    os.remove(filename)
+    os.remove(new_filename)
+ 
 if __name__ == '__main__':
 
   import logging
