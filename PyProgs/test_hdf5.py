@@ -13,6 +13,7 @@ def suite():
 
 class H5Tests(unittest.TestCase):
 
+  #@profile
   def test_RandomRead(self):
 
     # set up some random data
@@ -32,10 +33,12 @@ class H5Tests(unittest.TestCase):
     self.assertEqual(data.shape,dset.shape)
     np.testing.assert_allclose(data,dset)
 
+
     # close and remove the hdf5 file
     f.close()
     os.remove(filename)
 
+  #@profile
   def test_compression(self):
 
     # set up some random data
@@ -57,11 +60,13 @@ class H5Tests(unittest.TestCase):
     size_lzf=os.stat(filename).st_size
     os.remove(filename)
 
+
     # assert statements
     self.assertLess(size_lzf,size_none)
 
 class H5SingleGridTests(unittest.TestCase):
 
+  #@profile
   def test_init_del(self):
 
     data=np.ones((100,200,50))
@@ -93,6 +98,7 @@ class H5SingleGridTests(unittest.TestCase):
     # clean up file
     os.remove(filename)
 
+  #@profile
   def test_NllReadHdr(self):
 
     from NllGridLib import read_hdr_file
@@ -108,6 +114,7 @@ class H5SingleGridTests(unittest.TestCase):
     self.assertAlmostEqual(info['orig_lon'],11.086000)
     self.assertAlmostEqual(info['map_rot'],0.)
 
+  #@profile
   def test_NllRead(self):
     from array import array
 
@@ -129,13 +136,16 @@ class H5SingleGridTests(unittest.TestCase):
 
     b_index=np.random.randint(0,nx)*np.random.randint(0,ny)*np.random.randint(0,nz)
 
-    sg=H5NllSingleGrid('test_nll.hdf5',nll_name)
+    filename='test_nll.hdf5'
+    sg=H5NllSingleGrid(filename,nll_name)
     self.assertEqual(info['ny'],sg.grid_info['ny'])
     self.assertAlmostEqual(info['orig_lat'],sg.grid_info['orig_lat'])
     self.assertEqual(np_buf.shape,sg.grid_data.shape)
     self.assertAlmostEqual(np_buf[b_index],sg.grid_data[b_index])
 
     del sg
+    del buf
+    os.remove(filename)
 
 if __name__ == '__main__':
 
