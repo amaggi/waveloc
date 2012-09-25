@@ -9,6 +9,7 @@ def suite():
   suite.addTest(H5SingleGridTests('test_init_del'))
   suite.addTest(H5SingleGridTests('test_NllReadHdr'))
   suite.addTest(H5SingleGridTests('test_NllRead'))
+  suite.addTest(H5SingleGridTests('test_nll2hdf5'))
   return suite
 
 class H5Tests(unittest.TestCase):
@@ -140,12 +141,23 @@ class H5SingleGridTests(unittest.TestCase):
     sg=H5NllSingleGrid(filename,nll_name)
     self.assertEqual(info['ny'],sg.grid_info['ny'])
     self.assertAlmostEqual(info['orig_lat'],sg.grid_info['orig_lat'])
+    self.assertEqual(info['station'],'FIU')
+    self.assertEqual(info['station'],sg.grid_info['station'])
     self.assertEqual(np_buf.shape,sg.grid_data.shape)
     self.assertAlmostEqual(np_buf[b_index],sg.grid_data[b_index])
 
     del sg
     del buf
     os.remove(filename)
+
+  def test_nll2hdf5(self):
+    base_path=os.getenv('WAVELOC_PATH')
+    nll_name=os.path.join(base_path,'test_data','test.time')
+    h5_name="%s.hdf5"%nll_name
+    
+    if os.path.isfile(h5_name) : os.remove(h5_name)
+    nll2hdf5(nll_name,h5_name)
+    self.assertTrue(os.path.isfile(h5_name))
 
 if __name__ == '__main__':
 

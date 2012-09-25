@@ -50,6 +50,14 @@ class H5NllSingleGrid(H5SingleGrid):
     H5SingleGrid.__init__(self,filename,buf,info)
     
 
+####
+# helper functions
+####
+
+def nll2hdf5(nll_name,h5_name):
+  h5=H5NllSingleGrid(h5_name,nll_name)
+  del h5
+
 if __name__=='__main__' : 
   
   pass
