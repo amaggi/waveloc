@@ -4,6 +4,33 @@ cPI=np.pi		# PI
 cRPD = cPI / 180.0	# radians per degree
 c111 = 10000.0/90.0	# km per degree
 
+def read_stations_file(filename):
+
+  stations={}
+
+  # open and read the file
+  f=open(filename,'r')
+  lines=f.readlines()
+  f.close()
+
+  for line in lines:
+    sta={}
+    words=line.split()
+    sta['station']=words[1]
+    sta['loc_type']=words[2]
+    if sta['loc_type']=='XYZ':
+      sta['x']=np.float(words[3])
+      sta['y']=np.float(words[4])
+    elif sta['loc_type']=='LATLON':
+      sta['lat']=np.float(words[3])
+      sta['lon']=np.float(words[4])
+    else : raise UserWarning('Unknown loc_type %s in file %s'%(words[2],filename))
+    sta['depth']=np.float(words[5])
+    sta['elev']=np.float(words[6])
+    stations[sta['station']]=sta
+
+  return stations
+
 def read_hdr_file(filename):
 
   # read header file
