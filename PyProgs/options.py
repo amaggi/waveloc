@@ -220,6 +220,7 @@ class WavelocOptions(object):
     if not os.path.exists(outdir):  
       os.makedirs(outdir)
       os.makedirs(os.path.join(outdir,'stack'))
+      os.makedirs(os.path.join(outdir,'time_grids'))
 
     if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
