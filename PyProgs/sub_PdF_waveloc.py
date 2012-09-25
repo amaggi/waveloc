@@ -63,6 +63,7 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, s
  
   return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
 
+#@profile
 def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename, options_verbose=False, options_time=False):
 
  
@@ -91,21 +92,32 @@ def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, searc
   #ib_max=[stack_grid[:,:,:,it].argmax for it in range(norm_stack_len)]
 
   nb,nt=stack_grid.shape
-  numpy_stack_grid=np.zeros((nb,nt))
-  stack_grid.write_direct(numpy_stack_grid)
-  nsg=numpy_stack_grid.reshape(nx,ny,nz,nt)
-  
-  max_val=nsg.max(0).max(0).max(0)
-  max_x=  nsg.max(2).max(1).argmax(0)
-  max_y=  nsg.max(2).max(0).argmax(0)
-  max_z=  nsg.max(1).max(0).argmax(0)
+  h5_file=stack_grid.file
+  h5_filename=h5_file.filename
+  max_val=h5_file.create_dataset('max_val',(nt,),'f')
+  max_ib=h5_file.create_dataset('max_ib',(nt,),'i')
+  max_ix=h5_file.create_dataset('max_ix',(nt,),'i')
+  max_iy=h5_file.create_dataset('max_iy',(nt,),'i')
+  max_iz=h5_file.create_dataset('max_iz',(nt,),'i')
+  max_x=h5_file.create_dataset('max_x',(nt,),'f')
+  max_y=h5_file.create_dataset('max_y',(nt,),'f')
+  max_z=h5_file.create_dataset('max_z',(nt,),'f')
 
-  del numpy_stack_grid
+
+  #max_val=np.max(np.max(np.max(nsg,0),0),0)
+  #max_x=  np.argmax(np.max(np.max(nsg,2),1),0)
+  #max_y=  np.argmax(np.max(np.max(nsg,2),0),0)
+  #max_z=  np.argmax(np.max(np.max(nsg,1),0),0)
+
+  max_val=np.max(stack_grid,0)
+  max_ib=np.argmax(stack_grid,0)
+  max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
+
 
   #go from indexes to coordinates
-  max_x=max_x*dx+x_orig
-  max_y=max_y*dy+y_orig
-  max_z=max_z*dz+z_orig
+  max_x=max_ix*dx+x_orig
+  max_y=max_iy*dy+y_orig
+  max_z=max_iz*dz+z_orig
 
 
   if options_time:
