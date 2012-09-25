@@ -46,7 +46,7 @@ cha.populate_from_station_list(sta,comp_string=["HHZ"])
 time_grid=QDTimeGrid()
 time_grid.read_NLL_hdr_file(search_grid_filename)
 load_ttimes_buf=wo.opdict['load_ttimes_buf']
-time_grid.populate_from_time_grids(grid_filename_base,cha,out_dir,load_ttimes_buf)
+if recalc_grids : time_grid.populate_from_time_grids(grid_filename_base,cha,out_dir,load_ttimes_buf)
 
 
 # set up basic grid information for test
