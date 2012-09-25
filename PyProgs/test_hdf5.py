@@ -7,7 +7,6 @@ def suite():
   suite.addTest(H5Tests('test_RandomRead'))
   suite.addTest(H5Tests('test_compression'))
   suite.addTest(H5SingleGridTests('test_init_del'))
-  suite.addTest(H5SingleGridTests('test_NllReadHdr'))
   suite.addTest(H5SingleGridTests('test_NllRead'))
   suite.addTest(H5SingleGridTests('test_nll2hdf5'))
   suite.addTest(H5SingleGridTests('test_interpolation_ones'))
@@ -101,22 +100,6 @@ class H5SingleGridTests(unittest.TestCase):
     del sg1
     # clean up file
     os.remove(filename)
-
-  #@profile
-  def test_NllReadHdr(self):
-
-    from NllGridLib import read_hdr_file
-
-    base_path=os.getenv('WAVELOC_PATH')
-    nll_hdr_file=os.path.join(base_path,'test_data','test_grid.search.geo.hdr')
-    info=read_hdr_file(nll_hdr_file)
-    self.assertEqual(info['nx'],51)
-    self.assertEqual(info['y_orig'],-10.)
-    self.assertEqual(info['dz'],2.)
-    self.assertEqual(info['proj_name'],'TRANS_SIMPLE')
-    self.assertAlmostEqual(info['orig_lat'],44.727000)
-    self.assertAlmostEqual(info['orig_lon'],11.086000)
-    self.assertAlmostEqual(info['map_rot'],0.)
 
   #@profile
   def test_NllRead(self):
