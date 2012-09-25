@@ -9,9 +9,6 @@ import numpy as np
 
 def suite():
   suite = unittest.TestSuite()
-  suite.addTest(ProjectionTests('test_TransUnknown'))
-  suite.addTest(ProjectionTests('test_TransGlobal'))
-  suite.addTest(ProjectionTests('test_TransSimple'))
   suite.addTest(IntegrationTests('test_integration'))
   suite.addTest(IntegrationTests('test_expected_values'))
   suite.addTest(LocationTests('test_locations_trigger'))
@@ -79,33 +76,6 @@ class TriggeringTests(unittest.TestCase):
     self.assertAlmostEqual(locs[0]['max_trig'],10)
     self.assertAlmostEqual(locs[0]['o_time'],50)
     
-
-class ProjectionTests(unittest.TestCase):
-
-  def setUp(self):
-    self.true_lat=-90+np.random.ranf()*180
-    self.true_lon=-180+np.random.ranf()*360
-
-    self.proj_info={}
-    self.proj_info['orig_lat'] = self.true_lat + np.random.ranf()*10.0 - 5.0
-    self.proj_info['orig_lon'] = self.true_lon + np.random.ranf()*10.0 - 5.0
-    self.proj_info['map_rot'] =  np.random.ranf()*36.0 - 180.0
-
-  def test_TransGlobal(self):
-    x,y = latlon2rect('TRANS_GLOBAL',self.true_lat,self.true_lon)
-    lat,lon = rect2latlon('TRANS_GLOBAL',x,y)
-    self.assertAlmostEqual(self.true_lat,lat,6)
-    self.assertAlmostEqual(self.true_lon,lon,6)
-
-  def test_TransUnknown(self):
-    self.assertRaises(UserWarning,latlon2rect,'TRANS_BUG',self.true_lat,self.true_lon)
-    self.assertRaises(UserWarning,rect2latlon,'TRANS_BUG',self.true_lat,self.true_lon)
-
-  def test_TransSimple(self):
-    x,y = latlon2rect('TRANS_SIMPLE',self.true_lat,self.true_lon,self.proj_info)
-    lat,lon = rect2latlon('TRANS_SIMPLE',x,y,self.proj_info)
-    self.assertAlmostEqual(self.true_lat,lat,6)
-    self.assertAlmostEqual(self.true_lon,lon,6)
 
 #@unittest.skip('Skipping integration tests')
 class IntegrationTests(unittest.TestCase):
