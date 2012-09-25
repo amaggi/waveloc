@@ -232,6 +232,7 @@ class H5SingleGridTests(unittest.TestCase):
     del data
     os.remove(filename)
 
+  #@profile
   def test_interpolation_newgrid(self):
 
     data=np.zeros((100,200,50))

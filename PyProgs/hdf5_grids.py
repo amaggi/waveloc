@@ -143,6 +143,7 @@ class H5SingleGrid(object):
 
     return result
 
+  #@profile
   def interp_to_newgrid(self,new_filename,new_grid_info):
 
     nx=new_grid_info['nx']
@@ -157,8 +158,13 @@ class H5SingleGrid(object):
     y_orig=new_grid_info['y_orig']
     z_orig=new_grid_info['z_orig']
     
+    # if you're calling this function, you want any existing file overwritten
+    f=h5py.File(new_filename,'w')
+    buf=f.create_dataset('grid_data',(nx*ny*nz,),'f')
+    for key,value in new_grid_info.iteritems():
+      buf.attrs[key]=value
+
     #initialize new buffer
-    buf=np.zeros(nx*ny*nz,dtype=float)
 
     new_x=np.arange(nx)*dx+x_orig
     new_y=np.arange(ny)*dy+y_orig
@@ -173,11 +179,10 @@ class H5SingleGrid(object):
          z=new_z[iz]
          buf[np.ravel_multi_index((ix,iy,iz),(nx,ny,nz))]=self.value_at_point(x,y,z)
 
-    # if you're calling this function, you want any existing file overwritten
-    if os.path.isfile(new_filename) : os.remove(new_filename)
+    f.close()
 
     # create the new Grid file and object
-    new_grid=H5SingleGrid(new_filename,buf,new_grid_info)
+    new_grid=H5SingleGrid(new_filename)
     return new_grid
 
 
