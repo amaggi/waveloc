@@ -276,6 +276,7 @@ def get_interpolated_time_grids(opdict):
 
   return time_grids
 
+@profile
 def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   import tempfile
   from NllGridLib import read_hdr_file
@@ -293,6 +294,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
 
   # Number of geographical points in the stack
   n_buf=nx*ny*nz
+  n_wf_ids=len(wf_ids)
 
   # save the smallest number of points of all the data streams 
   # this will dimension many of the subsequent arrays
@@ -305,10 +307,18 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   tmp_dir=tempfile.mkdtemp()
   tmp_file=os.path.join(tmp_dir,'tmp_stack_file.hdf5')
   f=h5py.File(tmp_file,'w')
-  stack_grid=f.create_dataset('stack_grid',(nx*ny*nz,min_npts),'f')
-  iextreme_max_times=f.create_dataset('iextreme_max_times',(nx*ny*nz,),'i')
-  iextreme_min_times=f.create_dataset('iextreme_min_times',(nx*ny*nz,),'i')
-  
+
+  stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f')
+  i_max_times=f.create_dataset('iextreme_max_times',(n_buf,),'i')
+  i_min_times=f.create_dataset('iextreme_min_times',(n_buf,),'i')
+  i_times=f.create_dataset('i_times',(n_wf_ids,n_buf),'i')
+
+  for i in xrange(n_wf_ids):
+    wf_id=wf_ids[i]
+    i_times[i,:]=np.round( time_grids[wf_id].grid_data[:] / delta )/1
+
+  i_min_times=np.min(i_times,0)
+  i_max_times=np.max(i_times,0)
   
   # keep information on the shortest length of stack for later
   shortest_n_len=min_npts
@@ -318,14 +328,15 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   for ib in xrange(n_buf):
 
       # find the slice indexes
-      i_times=[int(round(time_grids[wf_id].grid_data[ib]/delta)) for wf_id in wf_ids]
-      iextreme_min_times[ib]=np.int(np.round(np.min([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta)) 
-      iextreme_max_times[ib]=np.int(np.round(np.max([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))
+#      i_times=[int(round(time_grids[wf_id].grid_data[ib]/delta)) for wf_id in wf_ids]
+#      iextreme_min_times[ib]=np.int(np.round(np.min([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta)) 
+#      iextreme_max_times[ib]=np.int(np.round(np.max([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))
 
-      min_i_time=min(i_times)
-      max_i_time=max(i_times)
-      start_end_indexes=[(i_time-min_i_time, i_time+min_npts-max_i_time) for i_time in i_times]
-      n_lens=[start_end_indexes[i][1]-start_end_indexes[i][0] for i in xrange(len(wf_ids))]
+      min_i_time=i_min_times[ib]
+      max_i_time=i_max_times[ib]
+      start_indexes=i_times[:,ib]-min_i_time 
+      end_indexes=i_times[:,ib]+min_npts-max_i_time
+      n_lens=end_indexes-start_indexes
       n_len=min(n_lens)
 
       # keep shortest n_len for later
@@ -336,9 +347,9 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
       #stack=numpy.zeros(min_npts,dtype=np.int32)
       stack_grid[ib,:]=0.
 
-      for i in xrange(len(wf_ids)):
+      for i in xrange(n_wf_ids):
         wf_id=wf_ids[i]
-        stack_grid[ib,0:n_lens[i]] += integer_data[wf_id][start_end_indexes[i][0]:start_end_indexes[i][1]]
+        stack_grid[ib,0:n_lens[i]] += integer_data[wf_id][start_indexes[i]:end_indexes[i]]
 
       
   t=time()-t_ref
@@ -359,8 +370,8 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   #iextreme_min_times=[np.int(np.round(np.min([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))  for ib in xrange(n_buf) ]
   #iextreme_max_times=[np.int(np.round(np.max([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))  for ib in xrange(n_buf) ]
 
-  iextreme_min_time=np.min(iextreme_min_times)
-  iextreme_max_time=np.max(iextreme_max_times)
+  iextreme_min_time=np.min(i_min_times)
+  iextreme_max_time=np.max(i_max_times)
   t=time()-t_ref
   logging.info('Finding extrema done in time %.2fs.'%t)
 
@@ -370,7 +381,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   t_ref=time()
   # iterate over the time-arrays in the time_grid to extract the minimum and fix up the stacks
   for ib in xrange(n_buf):
-    start_index = iextreme_min_times[ib] - iextreme_min_time
+    start_index = i_min_times[ib] - iextreme_min_time
     tmp=stack_grid[ib,:]
     try:
       stack_grid[ib,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
@@ -384,6 +395,42 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   stack_shift_time=delta*iextreme_min_time
   return n_buf, norm_stack_len, stack_shift_time, stack_grid
 
+def extract_max_values(stack_grid,search_info):
+
+  nx=search_info['nx']
+  ny=search_info['ny']
+  nz=search_info['nz']
+  dx=search_info['dx']
+  dy=search_info['dy']
+  dz=search_info['dz']
+  x_orig=search_info['x_orig']
+  y_orig=search_info['y_orig']
+  z_orig=search_info['z_orig']
+
+
+  nb,nt=stack_grid.shape
+  h5_file=stack_grid.file
+  h5_filename=h5_file.filename
+
+  max_val=h5_file.create_dataset('max_val',(nt,),'f')
+  max_ib=h5_file.create_dataset('max_ib',(nt,),'i')
+  max_ix=h5_file.create_dataset('max_ix',(nt,),'i')
+  max_iy=h5_file.create_dataset('max_iy',(nt,),'i')
+  max_iz=h5_file.create_dataset('max_iz',(nt,),'i')
+  max_x=h5_file.create_dataset('max_x',(nt,),'f')
+  max_y=h5_file.create_dataset('max_y',(nt,),'f')
+  max_z=h5_file.create_dataset('max_z',(nt,),'f')
+
+  # extract values
+  max_val=np.max(stack_grid,0)
+  max_ib=np.argmax(stack_grid,0)
+  max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
+
+  max_x=max_ix*dx+x_orig
+  max_y=max_iy*dy+y_orig
+  max_z=max_iz*dz+z_orig
+ 
+  return max_val,max_x,max_y,max_z
 
 if __name__=='__main__' : 
   

@@ -12,8 +12,8 @@ from synth_migration import generateSyntheticDirac
 def suite():
   suite = unittest.TestSuite()
 #  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
-  suite.addTest(MigrationTests('test_migration'))
-#  suite.addTest(MigrationTests('test_migration_fullRes'))
+#  suite.addTest(MigrationTests('test_migration'))
+  suite.addTest(MigrationTests('test_migration_fullRes'))
   return suite
 
 class SyntheticMigrationTests(unittest.TestCase):
@@ -141,12 +141,13 @@ class MigrationTests(unittest.TestCase):
     self.assertSequenceEqual(lines,expected_lines)
 
 #  @unittest.skip('Not running full resolution test')
+  #@profile
   def test_migration_fullRes(self):
 
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir'] = 'TEST_fullRes'
     self.wo.opdict['load_ttimes_buf'] = True
-    self.wo.opdict['data_length'] = 300
+    self.wo.opdict['data_length'] = 150
     self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']

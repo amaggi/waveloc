@@ -9,7 +9,7 @@ import numpy as np
 
 from OP_waveforms import *
 
-from hdf5_grids import migrate_4D_stack
+from hdf5_grids import migrate_4D_stack, extract_max_values
 from NllGridLib import read_hdr_file
 from time import time, sleep
 from scipy import weave
@@ -87,37 +87,7 @@ def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, searc
   if options_time:
     t_ref=time()  
 
-  
-  # magic matrix manipulations (see relevant inotebook)
-  #ib_max=[stack_grid[:,:,:,it].argmax for it in range(norm_stack_len)]
-
-  nb,nt=stack_grid.shape
-  h5_file=stack_grid.file
-  h5_filename=h5_file.filename
-  max_val=h5_file.create_dataset('max_val',(nt,),'f')
-  max_ib=h5_file.create_dataset('max_ib',(nt,),'i')
-  max_ix=h5_file.create_dataset('max_ix',(nt,),'i')
-  max_iy=h5_file.create_dataset('max_iy',(nt,),'i')
-  max_iz=h5_file.create_dataset('max_iz',(nt,),'i')
-  max_x=h5_file.create_dataset('max_x',(nt,),'f')
-  max_y=h5_file.create_dataset('max_y',(nt,),'f')
-  max_z=h5_file.create_dataset('max_z',(nt,),'f')
-
-
-  #max_val=np.max(np.max(np.max(nsg,0),0),0)
-  #max_x=  np.argmax(np.max(np.max(nsg,2),1),0)
-  #max_y=  np.argmax(np.max(np.max(nsg,2),0),0)
-  #max_z=  np.argmax(np.max(np.max(nsg,1),0),0)
-
-  max_val=np.max(stack_grid,0)
-  max_ib=np.argmax(stack_grid,0)
-  max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
-
-
-  #go from indexes to coordinates
-  max_x=max_ix*dx+x_orig
-  max_y=max_iy*dy+y_orig
-  max_z=max_iz*dz+z_orig
+  max_val,max_x,max_y,max_z=extract_max_values(stack_grid,search_info)
 
 
   if options_time:
