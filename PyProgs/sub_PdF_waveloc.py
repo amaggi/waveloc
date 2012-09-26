@@ -17,39 +17,18 @@ from scipy.weave import converters
 import logging
 
 #@profile
-def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose=False, options_time=False):
+def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, grid_info,options_verbose=False, options_time=False):
 
-  if options_time:
-    t_ref=time()  
+  logging.warn('Deprecated - do not use')
 
-  time_ids=time_grids.keys()
-
-  data_ids=data.keys()
-      
-  # create quick and dirty integer versions of the kurtosed data for stacking purposes
-  # integer data = data  truncated to integer value and stored in 16 bits
-
-  #logging.info("\nCreating 32 bit integer version of the data for faster stacking...")
-
-  integer_data={}
-  for key,wf in data.iteritems():
-    #integer_data[key]=wf.values.astype('int32')
-    integer_data[key]=wf.values
-
-  if options_time:
-    t=time()-t_ref
-    logging.info("Time for reading %d data streams with %d points : %.4f s\n" % (len(data.keys()),wf.npts,t))
-
-
-
- ######### DO THE MIGRATION #############
+  ######### DO THE MIGRATION #############
 
   logging.info("Stacking shifted time series... ")
 
   if options_time:
     t_ref=time()  
 
-  (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids)
+  (n_buf, norm_stack_len, stack_shift_time, stack_grid) = migrate_4D_stack(data, delta, grid_info, time_grids)
   stack_start_time=start_time-stack_shift_time
 
   logging.debug("Stack geographical dimension = %d"%n_buf)
@@ -64,21 +43,22 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, s
   return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
 
 #@profile
-def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename, options_verbose=False, options_time=False):
+def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, grid_info, options_verbose=False, options_time=False):
 
+  
+  logging.warn('Deprecated - do not use')
  
-  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)= do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
+  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)= do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, grid_info,options_verbose, options_time)
 
   ###### Extract maximum of stack #######
 
-  search_info=read_hdr_file(search_grid_filename)
 
   logging.info("Extracting maximum of stack")
 
   if options_time:
     t_ref=time()  
 
-  max_val,max_x,max_y,max_z=extract_max_values(stack_grid,search_info)
+  max_val,max_x,max_y,max_z=extract_max_values(stack_grid,grid_info)
 
 
   if options_time:
@@ -165,43 +145,34 @@ def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_tim
     stack_grid.write_grid_timeslice(itime=itime,filename=grid_file)
 
 
-def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, data_glob, search_grid_filename, time_grids, options_verbose, options_time):
+def do_migration_loop_continuous(opdict, data, delta, start_time, end_time, grid_info, time_grids):
 
 
   logging.info("Processing time slice %s"%start_time.isoformat())
 
-
-  # read data into a dictionary
-
-  logging.info("Reading processed data into dictionary")
+  options_verbose=opdict['verbose']
+  options_time=opdict['time']
+  output_dir=os.path.join(opdict['base_path'],'out',opdict['outdir'])
 
   if options_time:
-    t_ref=time()
-
-  # Read in the data
-  files=glob.glob(os.path.join(data_dir,data_glob))
-  data=read_data_compatible_with_time_dict(files,time_grids,start_time,end_time)
-
-  # Set the global variable delta (dt for all the seismograms)
-  try:
-    delta=data.values()[0].delta
-  except IndexError:
-    raise UserWarning("File list empty - check --dataglob option")
+    t_ref=time()  
 
   # DO MIGRATION
-  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
+  #n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid = do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, grid_info, options_verbose, options_time)
+  n_buf, norm_stack_len, stack_shift_time, stack_grid = migrate_4D_stack(data, delta, grid_info, time_grids)
 
-  # WRITE STACK FILES 
-  #do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
+  # extract maxima
+  max_val,max_x,max_y,max_z=extract_max_values(stack_grid,grid_info)
+
+  # write stack files
+  stack_start_time=start_time-stack_shift_time
   do_write_hdf5_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
+  #do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
 
-  # WRITE GRID FILES 
-
-  #logging.info("Writing grids...")
-
-  #do_write_grids(stack_grid,0.5,delta,norm_stack_len,stack_start_time,output_dir,'grid')
-
-
+  if options_time:
+    t=time()-t_ref
+    logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,norm_stack_len,t))
+ 
   # do cleanup
   h5_file=stack_grid.file
   h5_filename=h5_file.filename
@@ -214,11 +185,8 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
   os.remove(h5_filename)
   os.rmdir(dirname)
   
-# clean_up big memory
-  del(stack_grid)
 
-
-def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames, search_grid_filename, time_grids, options_verbose, options_time):
+def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames, grid_info, time_grids, options_verbose, options_time):
 
 
   logging.info("Processing time slice %s"%start_time.isoformat())
@@ -240,7 +208,7 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
     raise UserWarning("File list empty - check --dataglob option")
 
   # DO MIGRATION
-  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
+  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, grid_info,options_verbose, options_time)
 
   # WRITE STACK FILES 
   #do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'reloc_stack')
@@ -257,7 +225,7 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
   del(stack_grid)
 
 
-def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, search_grid_filename, time_grids, write=False):
+def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_filenames, grid_info, time_grids, write=False):
 
   logging.info("Processing time slice %s"%start_time.isoformat())
 
@@ -276,8 +244,7 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
     raise UserWarning("File list empty - check --dataglob option")
 
   # DO MIGRATION
-#  (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename)
-  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)=do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename)
+  (n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid)=do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, grid_info)
   logging.info(o_time)
   logging.info(stack_start_time)
   logging.info(stack_shift_time)
