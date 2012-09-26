@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys, optparse
+import os, sys, optparse, h5py
 
 import numpy as np
-
 
 from OP_waveforms import *
 
@@ -22,13 +21,9 @@ def do_migration_setup_and_run(opdict):
   runtime=opdict['time']
   
 
-  # set variables from command line options
-  # grid
-  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
-  search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
-
   # stations
   stations_filename=os.path.join(base_path,'lib',opdict['stations'])
+  stations=read_stations_file(stations_filename)
 
   # output directory
   output_dir=os.path.join(base_path,'out',opdict['outdir'])
@@ -37,53 +32,14 @@ def do_migration_setup_and_run(opdict):
   # data
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
   data_glob=opdict['gradglob']
-
-
-  if verbose: 
-    print ""
-    print "Input parameters:"
-    print "-----------------"
-    print "Grid        = %s"%(grid_filename_base)
-    print "Stations    = %s"%(stations_filename)
-    print "Data        = %s"%(os.path.join(data_dir,data_glob))
-    print ""
-    print "Output parameters:"
-    print "-----------------"
-    print "Out dir     = %s"%(output_dir)
-  
-
-  #raise UserWarning ('Stop here')
-  #######################################################################
-  #                       START PROCESSING 
-  #######################################################################
-
-  if verbose: 
-    print ""
-    print "----------------"
-    print "START PROCESSING"
-    print "----------------"
-    print ""
-
-  # Create Obspy streams for output
-
-  #  ***** reading station file ******
-
-  if verbose:
-    logging.info("Reading station file")
-
-  if runtime:
-    t_ref=time()
-
-  stations=read_stations_file(stations_filename)
-
-  if runtime:
-    t=time()-t_ref
-    logging.info("Time for reading %d stations from file : %.4f s\n" % (len(stations.keys()),t))
-
   datafile_list=glob.glob(os.path.join(data_dir,data_glob))
 
+  # grids
+  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
+  search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
+  time_grids=get_interpolated_time_grids(opdict)
 
-  ########### DEAL WITH START AND END TILES ############
+  #start and end times
   starttime=opdict['starttime']
   endtime=opdict['endtime']
   data_length=opdict['data_length']
@@ -97,26 +53,7 @@ def do_migration_setup_and_run(opdict):
   time_shift_secs=data_length-data_overlap
 
 
-
-  ######### INTERPOLATE TRAVEL TIMES #############
-
-  # The time grid will contain as array values just the travel-times needed 
-  # (interpolated from the full NLL files) so we can free up the memory as soon as possible
-
-  if verbose:
-    logging.info("Extracting useful travel-times")
-
-  if runtime:
-    t_ref=time()  
-
-  time_grids=get_interpolated_time_grids(opdict)
-
-  if runtime:
-    t=time()-t_ref
-    logging.info("Time for retreiving %d travel time grids : %.2f s\n" % (len(time_grids.keys()),t))
-
-
-  # READ DATA
+  ######### FOR EACH TIME SPAN - DO MIGRATION #############
 
   # start loop over time
   start_time=initial_start_time
