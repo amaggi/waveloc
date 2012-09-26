@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys
+import os, sys, h5py
 
 import numpy as np
 #import numexpr as ne
@@ -72,15 +72,6 @@ def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, searc
   ###### Extract maximum of stack #######
 
   search_info=read_hdr_file(search_grid_filename)
-  nx=search_info['nx']
-  ny=search_info['ny']
-  nz=search_info['nz']
-  dx=search_info['dx']
-  dy=search_info['dy']
-  dz=search_info['dz']
-  x_orig=search_info['x_orig']
-  y_orig=search_info['y_orig']
-  z_orig=search_info['z_orig']
 
   logging.info("Extracting maximum of stack")
 
@@ -132,6 +123,35 @@ def do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_s
   st_y.write(y_file, format='MSEED')
   st_z.write(z_file, format='MSEED')
 
+def do_write_hdf5_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,stack_basename):
+ 
+  ######## Transform results into waveform ###########
+
+  logging.info("Writing stack files as hdf5 files ...")
+
+  # create headers
+  stats_stack={'network': 'UV', 'station' : 'STACK', 'location': '', 'channel': 'STK', 'npts' : norm_stack_len, 'sampling_rate': 1/delta}
+  stats_x={'network': 'UV', 'station' : 'XYZ', 'location': '', 'channel': 'X', 'npts' : norm_stack_len, 'sampling_rate': 1/delta}
+  stats_y={'network': 'UV', 'station' : 'XYZ', 'location': '', 'channel': 'Y', 'npts' : norm_stack_len, 'sampling_rate': 1/delta}
+  stats_z={'network': 'UV', 'station' : 'XYZ', 'location': '', 'channel': 'Z', 'npts' : norm_stack_len, 'sampling_rate': 1/delta}
+
+  # set time
+  stats_stack['starttime']=stack_start_time.isoformat()
+  stats_x['starttime']=stack_start_time.isoformat()
+  stats_y['starttime']=stack_start_time.isoformat()
+  stats_z['starttime']=stack_start_time.isoformat()
+
+  stack_file=os.path.join(output_dir,'stack',"%s_all_%s.hdf5"%(stack_basename,stack_start_time.isoformat()))
+  f=h5py.File(stack_file,'w')
+  f.create_dataset('max_val',data=max_val)
+  f.create_dataset('max_x',data=max_x)
+  f.create_dataset('max_y',data=max_y)
+  f.create_dataset('max_z',data=max_z)
+
+  f.close()
+
+
+
 def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_time,output_dir,grid_basename):
 
   # write grids every time_step_sec seconds
@@ -172,7 +192,8 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
   (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
 
   # WRITE STACK FILES 
-  do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
+  #do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
+  do_write_hdf5_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
 
   # WRITE GRID FILES 
 
@@ -222,7 +243,8 @@ def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames
   (max_val,max_x,max_y,max_z,stack_start_time,norm_stack_len,stack_grid)=do_inner_migration_loop(start_time, end_time, data, time_grids, delta, search_grid_filename,options_verbose, options_time)
 
   # WRITE STACK FILES 
-  do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'reloc_stack')
+  #do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'reloc_stack')
+  do_write_hdf5_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'reloc_stack')
 
   # WRITE GRID FILES 
 
