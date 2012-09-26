@@ -74,7 +74,7 @@ def do_migration_setup_and_run(opdict):
     # do migration if have enough data (3 is bare minimum)
     if len(data.keys())>=3:
       logging.info("Migrating data : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
-      do_migration_loop_continuous(opdict, data, delta, start_time, end_time, grid_info, time_grids)
+      do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, time_grids)
     elif len(data.keys())==0:
       logging.warn('No data found between %s and %s.'%(start_time.isoformat(),end_time.isoformat()))
     else:

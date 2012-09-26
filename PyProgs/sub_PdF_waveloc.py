@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys, h5py
+import os, sys, h5py, tempfile
 
 import numpy as np
 #import numexpr as ne
@@ -71,6 +71,7 @@ def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, grid_
 
 def do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,stack_basename):
  
+  logging.warn('Deprecated - do not use')
   ######## Transform results into waveform ###########
 
   logging.info("Writing stack files as seismograms...")
@@ -134,6 +135,7 @@ def do_write_hdf5_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,n
 
 def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_time,output_dir,grid_basename):
 
+  logging.warn('Deprecated - do not use')
   # write grids every time_step_sec seconds
   time_step=int(floor((time_step_sec/delta)))
   itimes=numpy.arange(0,norm_stack_len,time_step)
@@ -145,7 +147,7 @@ def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_tim
     stack_grid.write_grid_timeslice(itime=itime,filename=grid_file)
 
 
-def do_migration_loop_continuous(opdict, data, delta, start_time, end_time, grid_info, time_grids):
+def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, time_grids, keep_grid=False, keep_stacks=True):
 
 
   logging.info("Processing time slice %s"%start_time.isoformat())
@@ -154,36 +156,53 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, end_time, grid
   options_time=opdict['time']
   output_dir=os.path.join(opdict['base_path'],'out',opdict['outdir'])
 
+  n_buf=grid_info['nx']*grid_info['ny']*grid_info['nz']
+  min_npts=min([len(data[key]) for key in data.keys()])
+
   if options_time:
     t_ref=time()  
 
+  # open hdf5 file for stack_grid
+  grid_filename=os.path.join(output_dir,'grid','stack_grid_%s.hdf5'%start_time)
+  logging.info('Creating grid file %s'%grid_filename)
+  f=h5py.File(grid_filename,'w')
+  stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f',chunks=(1,min_npts))
+  stack_grid[...]=0.
+
   # DO MIGRATION
-  #n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid = do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, grid_info, options_verbose, options_time)
-  n_buf, norm_stack_len, stack_shift_time, stack_grid = migrate_4D_stack(data, delta, grid_info, time_grids)
+  stack_shift_time = migrate_4D_stack(data, delta, time_grids, stack_grid)
+  stack_start_time = start_time-stack_shift_time
+  n_buf,norm_stack_len = stack_grid.shape
 
-  # extract maxima
-  max_val,max_x,max_y,max_z=extract_max_values(stack_grid,grid_info)
+  if keep_stacks:
+    stack_filename=os.path.join(output_dir,'stack','stack_all_%s.hdf5'%start_time)
+    logging.info('Extracting max_val etc. to %s'%stack_filename)
+    f_stack = h5py.File(stack_filename,'w')
+    # extract maxima
+    extract_max_values(stack_grid,grid_info,f_stack)
+    for name in f_stack:
+      f_stack[name].attrs['start_time']=stack_start_time.isoformat()
+      f_stack[name].attrs['dt']=delta
+    f_stack.close()
 
-  # write stack files
-  stack_start_time=start_time-stack_shift_time
-  do_write_hdf5_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
-  #do_write_stack_files(max_val,max_x,max_y,max_z,delta,stack_start_time,norm_stack_len,output_dir,'stack')
 
   if options_time:
     t=time()-t_ref
     logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,norm_stack_len,t))
  
-  # do cleanup
-  h5_file=stack_grid.file
-  h5_filename=h5_file.filename
-  dirname,fname=os.path.split(h5_filename)
+  if keep_grid:
+    # add useful attributes to the hdf5 dataset
+    for key,value in grid_info.iteritems():
+      stack_grid.attrs[key]=value
+    stack_grid.attrs['dt']=delta
+    stack_grid.attrs['start_time']=stack_start_time.isoformat()
 
-  # close the hdf5 file and cleanup 
-  h5_file.close()
-  logging.info('Removing temporary file %s'%h5_filename)
-  logging.info('Removing temporary directory %s'%dirname)
-  os.remove(h5_filename)
-  os.rmdir(dirname)
+  # close the hdf5 file for the grid 
+  f.close()
+  # remove the grid file unless you want to keep it
+  if not keep_grid: 
+    logging.info('Removing grid file %s'%grid_filename)
+    os.remove(grid_filename)
   
 
 def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames, grid_info, time_grids, options_verbose, options_time):
@@ -258,14 +277,14 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
   if write : stack_grid[:,:,:,0:norm_stack_len].tofile(grid_file)
 
   # set up information
-  grid_info={}
-  grid_info['dat_file']=grid_file
-  grid_info['grid_shape']=stack_grid[:,:,:,0:norm_stack_len].shape
-  grid_info['grid_spacing']=time_grid.dx,time_grid.dy,time_grid.dz,delta
-  grid_info['grid_orig']=time_grid.x_orig,time_grid.y_orig,time_grid.z_orig
-  grid_info['stack_shift_time']=stack_shift_time
-  grid_info['stack_starttime']=stack_start_time
-  grid_info['stack_otime']=o_time
+  stack_grid_info={}
+  stack_grid_info['dat_file']=grid_file
+  stack_grid_info['grid_shape']=stack_grid[:,:,:,0:norm_stack_len].shape
+  stack_grid_info['grid_spacing']=time_grid.dx,time_grid.dy,time_grid.dz,delta
+  stack_grid_info['grid_orig']=time_grid.x_orig,time_grid.y_orig,time_grid.z_orig
+  stack_grid_info['stack_shift_time']=stack_shift_time
+  stack_grid_info['stack_starttime']=stack_start_time
+  stack_grid_info['stack_otime']=o_time
  
   logging.info(grid_info)
 
@@ -278,7 +297,7 @@ def do_migration_loop_plot(start_time, end_time, o_time, grid_dir, kurtosis_file
   # clean_up big memory
 #  del(stack_grid)
 
-  return grid_info, stack_grid[:,:,:,0:norm_stack_len]
+  return stack_grid_info, stack_grid[:,:,:,0:norm_stack_len]
 
 def do_write_grid_at_time(stack_grid,o_time,delta,norm_stack_len,stack_start_time,grid_dir,grid_basename):
 

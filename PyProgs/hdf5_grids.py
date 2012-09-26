@@ -1,4 +1,4 @@
-import h5py,os,logging
+import h5py,os,logging, tempfile
 import numpy as np
 from time import time
 from NllGridLib import read_hdr_file
@@ -278,50 +278,39 @@ def get_interpolated_time_grids(opdict):
   return time_grids
 
 #@profile
-def migrate_4D_stack(integer_data, delta, search_info, time_grids):
-  import tempfile
+def migrate_4D_stack(data, delta, time_grids, stack_grid):
   from NllGridLib import read_hdr_file
 
   # save the list of data keys
-  # note : keys of integer data are all included in keys of time_grid, but there may be more times than data
-
-  wf_ids=integer_data.keys()
-  time_ids=time_grids.keys()
-
-  nx=search_info['nx']
-  ny=search_info['ny']
-  nz=search_info['nz']
-
-  # Number of geographical points in the stack
-  n_buf=nx*ny*nz
+  # note : keys of data are all included in keys of time_grid, but there may be more times than data
+  wf_ids=data.keys()
   n_wf_ids=len(wf_ids)
+
+#  nx=search_info['nx']
+#  ny=search_info['ny']
+#  nz=search_info['nz']
+  n_buf,min_npts=stack_grid.shape
+  logging.debug("Stack max dimension = %d x %d"%(n_buf,min_npts))
 
   # save the smallest number of points of all the data streams 
   # this will dimension many of the subsequent arrays
-  min_npts=min([len(integer_data[key]) for key in wf_ids])
-  logging.debug("Stack max time dimension = %d"%min_npts)
 
   # The stack grid has exactly the same geometry as the time-grid
   #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.int32)
   # initialize the stack file in a safe place
   tmp_dir=tempfile.mkdtemp()
   tmp_file=os.path.join(tmp_dir,'tmp_stack_file.hdf5')
-  tmp_file2=os.path.join(tmp_dir,'tmp2_stack_file.hdf5')
   f=h5py.File(tmp_file,'w')
-  f2=h5py.File(tmp_file2,'w')
-  logging.info('Temp file : %s',tmp_file)
-  logging.info('Temp file 2 : %s',tmp_file2)
+  logging.debug('Temp file : %s',tmp_file)
 
-  stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f',chunks=(1,min_npts))
-  stack_grid[...]=0.
-  tmp_stack=f2.create_dataset('tmp_stack',(1,min_npts),'f')
-  i_times=f2.create_dataset('i_times',(n_wf_ids,n_buf),'i')
-  i_max_times=f2.create_dataset('iextreme_max_times',(1,n_buf),'i')
-  i_min_times=f2.create_dataset('iextreme_min_times',(1,n_buf),'i')
-  start_index=f2.create_dataset('start_index',(1,n_buf),'i')
-  start_indexes=f2.create_dataset('start_indexes',(n_wf_ids,n_buf),'i')
-  end_indexes=f2.create_dataset('end_indexes',(n_wf_ids,n_buf),'i')
-  n_lens=f2.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
+  tmp_stack=f.create_dataset('tmp_stack',(1,min_npts),'f')
+  i_times=f.create_dataset('i_times',(n_wf_ids,n_buf),'i')
+  i_max_times=f.create_dataset('iextreme_max_times',(1,n_buf),'i')
+  i_min_times=f.create_dataset('iextreme_min_times',(1,n_buf),'i')
+  start_index=f.create_dataset('start_index',(1,n_buf),'i')
+  start_indexes=f.create_dataset('start_indexes',(n_wf_ids,n_buf),'i')
+  end_indexes=f.create_dataset('end_indexes',(n_wf_ids,n_buf),'i')
+  n_lens=f.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
 
   # construct grid (n_buf x n_sta) grid of time_indexes for migration
   for i in xrange(n_wf_ids):
@@ -362,7 +351,7 @@ def migrate_4D_stack(integer_data, delta, search_info, time_grids):
     # stack shifted data from each station
     for i in xrange(n_wf_ids):
       wf_id=wf_ids[i]
-      stack_grid[ib,0:n_lens[i,ib]] += integer_data[wf_id][start_indexes[i,ib]:end_indexes[i,ib]]
+      stack_grid[ib,0:n_lens[i,ib]] += data[wf_id][start_indexes[i,ib]:end_indexes[i,ib]]
 
     # Each stack starts at ref_time - the minimum travel-time and ends at the ref_time + seismogram duration - max travel_time
     # We need to homogenize, and get everything to start and end at the same time
@@ -370,17 +359,17 @@ def migrate_4D_stack(integer_data, delta, search_info, time_grids):
     stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
 
   # clean up what is no longer needed
-  print stack_grid.shape
   stack_grid.resize(norm_stack_len,axis=1)
-  print stack_grid.shape
-  f2.close()
-  logging.info('Removing temporary file %s'%tmp_file2)
-  os.remove(tmp_file2)
+  f.close()
+  logging.debug('Removing temporary file %s'%tmp_file)
+  os.remove(tmp_file)
+  os.rmdir(tmp_dir)
 
-  return n_buf, norm_stack_len, stack_shift_time, stack_grid
+  return stack_shift_time
 
-def extract_max_values(stack_grid,search_info):
+def extract_max_values(stack_grid,search_info,f_stack):
 
+  # get basic info
   nx=search_info['nx']
   ny=search_info['ny']
   nz=search_info['nz']
@@ -391,19 +380,19 @@ def extract_max_values(stack_grid,search_info):
   y_orig=search_info['y_orig']
   z_orig=search_info['z_orig']
 
-
   nb,nt=stack_grid.shape
-  h5_file=stack_grid.file
-  h5_filename=h5_file.filename
 
-  max_val=h5_file.create_dataset('max_val',(nt,),'f')
-  max_ib=h5_file.create_dataset('max_ib',(nt,),'i')
-  max_ix=h5_file.create_dataset('max_ix',(nt,),'i')
-  max_iy=h5_file.create_dataset('max_iy',(nt,),'i')
-  max_iz=h5_file.create_dataset('max_iz',(nt,),'i')
-  max_x=h5_file.create_dataset('max_x',(nt,),'f')
-  max_y=h5_file.create_dataset('max_y',(nt,),'f')
-  max_z=h5_file.create_dataset('max_z',(nt,),'f')
+  # create datasets to save
+  max_val=f_stack.create_dataset('max_val',(nt,),'f')
+  max_x=f_stack.create_dataset('max_x',(nt,),'f')
+  max_y=f_stack.create_dataset('max_y',(nt,),'f')
+  max_z=f_stack.create_dataset('max_z',(nt,),'f')
+
+  # create temporary datasets
+  max_ib=f_stack.create_dataset('max_ib',(nt,),'i')
+  max_ix=f_stack.create_dataset('max_ix',(nt,),'i')
+  max_iy=f_stack.create_dataset('max_iy',(nt,),'i')
+  max_iz=f_stack.create_dataset('max_iz',(nt,),'i')
 
   # extract values
   max_val=np.max(stack_grid,0)
@@ -413,8 +402,13 @@ def extract_max_values(stack_grid,search_info):
   max_x=max_ix*dx+x_orig
   max_y=max_iy*dy+y_orig
   max_z=max_iz*dz+z_orig
+
+  # clean up temporary datasets
+  del f_stack['max_ib']
+  del f_stack['max_ix']
+  del f_stack['max_iy']
+  del f_stack['max_iz']
  
-  return max_val,max_x,max_y,max_z
 
 if __name__=='__main__' : 
   
