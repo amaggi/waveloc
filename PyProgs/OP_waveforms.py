@@ -772,25 +772,37 @@ def stream_taper(st):
 def read_data_compatible_with_time_dict(filenames, time_dict, starttime, endtime):
 
   data={}
+  deltas=[]
 
   for filename in filenames:
-    wf=Waveform()
-    try:
-      # read will return UserWarning if there is no data within start and end time
-      # will pad blanks with zeros if required (no tapering applied)
-      wf.read_from_file(filename,starttime=starttime,endtime=endtime,pad_value=0)
-      wf_id="%s"%(wf.station)
-      # if all is ok, and we have a corresponding time id, add data to dictionary
-      if time_dict.has_key(wf_id):
-        data[wf_id]=wf
-      else:
-        logging.info('Station %s not present in time_grid.  Ignoring station...'%wf_id)
-    except UserWarning,msg:
-      # for any UserWarning, ignore data
-      logging.error("No data data found between limits for file %s. Ignore station."%filename)
 
+    st=read(filename,headonly=True)
 
-  return data
+    delta=st[0].stats.delta
+    deltas.append(delta)
+
+    wf_id=st[0].stats.station
+    
+    if time_dict.has_key(wf_id):
+      try:
+        wf=Waveform()
+        wf.read_from_file(filename,starttime=starttime,endtime=endtime,pad_value=0)
+        # just put the bare data into the data dictionary
+        data[wf_id]=wf.values
+      except UserWarning,msg:
+        logging.warn("No data data found between limits for file %s. Ignoring station %s."%(filename,wf_id))
+    else:
+      logging.warn('Station %s not present in time_grid.  Ignoring station %s.'%(wf_id,wf_id))
+
+  # cheque uniqueness of delta
+  u=np.unique(np.array(deltas))
+  if len(u) > 1 :
+    logging.error('Sampling frequency differs between stations.  Fix this before migrating.')
+    for i in xrange(len(deltas)):
+      logging.error('Delta %.2f for file %s'%(deltas[i],filenames[i]))
+    raise UserWarning
+  
+  return data, u[0]
 
 def process_all_data_kurtosis(files, start_time, end_time, filter_c1, filter_c2, kurt_window):
   """
@@ -815,32 +827,6 @@ def process_all_data_kurtosis(files, start_time, end_time, filter_c1, filter_c2,
     wf.write_to_file_filled(file_kurtosis, format='SAC')
  
 
-
-
-if __name__ == '__main__':
-
-  from obspy.core import utcdatetime
-
-  #get waveloc path from environment
-  base_path=os.getenv('WAVELOC_PATH')
-
-  data_dir=os.path.join(base_path,'data','2010_266')
-  filename=os.path.join(data_dir,'YA.FLR.00.HHZ.2010.266.mseed.filt.sac')
-  start_time=utcdatetime.UTCDateTime("2010-09-23T22:00:00.0Z")
-  end_time=utcdatetime.UTCDateTime("2010-09-24T00:30:00.0Z")
-
-  wf=Waveform()
-
-  print "Filtered waveform"
-  wf.read_from_file(filename,starttime=start_time, endtime=end_time) 
-  print wf.stream
-  wf.read_from_file(filename,starttime=start_time, endtime=end_time, pad_value=0) 
-  print wf.stream
-  wf.write_to_file('test.sac', format="SAC")
-
-
-
-#########################
 
 
 
