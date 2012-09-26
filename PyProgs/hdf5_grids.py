@@ -2,6 +2,7 @@ import h5py,os,logging
 import numpy as np
 from time import time
 from NllGridLib import read_hdr_file
+from itertools import count, islice
 
 class H5SingleGrid(object):
 
@@ -276,7 +277,7 @@ def get_interpolated_time_grids(opdict):
 
   return time_grids
 
-@profile
+#@profile
 def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   import tempfile
   from NllGridLib import read_hdr_file
@@ -307,92 +308,65 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   tmp_dir=tempfile.mkdtemp()
   tmp_file=os.path.join(tmp_dir,'tmp_stack_file.hdf5')
   f=h5py.File(tmp_file,'w')
+  logging.info('Temp file : %s',tmp_file)
 
   stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f')
-  i_max_times=f.create_dataset('iextreme_max_times',(n_buf,),'i')
-  i_min_times=f.create_dataset('iextreme_min_times',(n_buf,),'i')
+  stack_grid[...]=0.
+  tmp_stack=f.create_dataset('tmp_stack',(1,min_npts),'f')
   i_times=f.create_dataset('i_times',(n_wf_ids,n_buf),'i')
+  i_max_times=f.create_dataset('iextreme_max_times',(1,n_buf),'i')
+  i_min_times=f.create_dataset('iextreme_min_times',(1,n_buf),'i')
+  start_index=f.create_dataset('start_index',(1,n_buf),'i')
+  start_indexes=f.create_dataset('start_indexes',(n_wf_ids,n_buf),'i')
+  end_indexes=f.create_dataset('end_indexes',(n_wf_ids,n_buf),'i')
+  n_lens=f.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
 
+  # construct grid (n_buf x n_sta) grid of time_indexes for migration
   for i in xrange(n_wf_ids):
     wf_id=wf_ids[i]
     i_times[i,:]=np.round( time_grids[wf_id].grid_data[:] / delta )/1
 
+  # find the min and max time indexes for point
   i_min_times=np.min(i_times,0)
   i_max_times=np.max(i_times,0)
-  
+  iextreme_min_time=np.min(i_min_times)
+  iextreme_max_time=np.max(i_max_times)
+  start_index=i_min_times-iextreme_min_time
+  stack_shift_time=delta*iextreme_min_time
+
   # keep information on the shortest length of stack for later
   shortest_n_len=min_npts
 
-  t_ref=time()
-  # set up the stack grid 
-  for ib in xrange(n_buf):
+  # find start indexes, end indexes and lengths for each station and point
+  start_indexes=i_times-i_min_times 
+  end_indexes  =i_times-i_max_times+min_npts
+  n_lens       =end_indexes-start_indexes
+  # keep the shortest length for each point
+  n_len=np.min(n_lens,0)
+  # keep the shortest overall length
+  shortest_n_len=np.min(n_len)
 
-      # find the slice indexes
-#      i_times=[int(round(time_grids[wf_id].grid_data[ib]/delta)) for wf_id in wf_ids]
-#      iextreme_min_times[ib]=np.int(np.round(np.min([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta)) 
-#      iextreme_max_times[ib]=np.int(np.round(np.max([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))
-
-      min_i_time=i_min_times[ib]
-      max_i_time=i_max_times[ib]
-      start_indexes=i_times[:,ib]-min_i_time 
-      end_indexes=i_times[:,ib]+min_npts-max_i_time
-      n_lens=end_indexes-start_indexes
-      n_len=min(n_lens)
-
-      # keep shortest n_len for later
-      if n_len < shortest_n_len:
-        shortest_n_len=n_len
-
-      # initialize the stack
-      #stack=numpy.zeros(min_npts,dtype=np.int32)
-      stack_grid[ib,:]=0.
-
-      for i in xrange(n_wf_ids):
-        wf_id=wf_ids[i]
-        stack_grid[ib,0:n_lens[i]] += integer_data[wf_id][start_indexes[i]:end_indexes[i]]
-
-      
-  t=time()-t_ref
-  logging.debug('Stacking done.')
-  logging.info('Stacking done in time %.2fs.'%t)
-
-######## FIXUP THE CORR GRID START TIMES #########
-
-
-  # Each stack starts at ref_time - the minimum travel-time and ends at the ref_time + seismogram duration - max travel_time
-  # We need to homogenize, and get everything to start and end at the same time
-
-
-  # deal with the start of the traces
-  # start index for slice = min_itime for the single stack - smallest min_itime for all stacks
-  t_ref=time()
-  logging.debug('Fixing up stack start times')
-  #iextreme_min_times=[np.int(np.round(np.min([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))  for ib in xrange(n_buf) ]
-  #iextreme_max_times=[np.int(np.round(np.max([time_grids[wf_id].grid_data[ib] for wf_id in wf_ids])/delta))  for ib in xrange(n_buf) ]
-
-  iextreme_min_time=np.min(i_min_times)
-  iextreme_max_time=np.max(i_max_times)
-  t=time()-t_ref
-  logging.info('Finding extrema done in time %.2fs.'%t)
-
-  # fix the length of the stack to the shortest possible length given all the previous travel time information
+  # sill fix the length of the stack to the shortest possible length given all the previous travel time information
   norm_stack_len=shortest_n_len-iextreme_max_time
 
-  t_ref=time()
-  # iterate over the time-arrays in the time_grid to extract the minimum and fix up the stacks
-  for ib in xrange(n_buf):
-    start_index = i_min_times[ib] - iextreme_min_time
-    tmp=stack_grid[ib,:]
-    try:
-      stack_grid[ib,0:norm_stack_len]=tmp[start_index:start_index+norm_stack_len]
-    except ValueError:
-      logging.error("Length of time slice for migration too short compared with the largest migration time.")
-      raise 
-   
-  logging.debug('Done fixing up stack start times')
-  t=time()-t_ref
-  logging.info('Fixing extrema done in time %.2fs.'%t)
-  stack_shift_time=delta*iextreme_min_time
+
+  # the actual migration loop
+  # cannot seem to vectorize this any more... too bad !!
+
+  # for each point
+  #for ib in xrange(n_buf):
+  for ib in islice(count(0),n_buf):
+
+    # stack shifted data from each station
+    for i in xrange(n_wf_ids):
+      wf_id=wf_ids[i]
+      stack_grid[ib,0:n_lens[i,ib]] += integer_data[wf_id][start_indexes[i,ib]:end_indexes[i,ib]]
+
+    # Each stack starts at ref_time - the minimum travel-time and ends at the ref_time + seismogram duration - max travel_time
+    # We need to homogenize, and get everything to start and end at the same time
+    tmp_stack=stack_grid[ib,:]
+    stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
+
   return n_buf, norm_stack_len, stack_shift_time, stack_grid
 
 def extract_max_values(stack_grid,search_info):
