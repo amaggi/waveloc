@@ -278,7 +278,7 @@ def get_interpolated_time_grids(opdict):
   return time_grids
 
 #@profile
-def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
+def migrate_4D_stack(integer_data, delta, search_info, time_grids):
   import tempfile
   from NllGridLib import read_hdr_file
 
@@ -288,7 +288,6 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   wf_ids=integer_data.keys()
   time_ids=time_grids.keys()
 
-  search_info=read_hdr_file(search_grid_filename)
   nx=search_info['nx']
   ny=search_info['ny']
   nz=search_info['nz']
