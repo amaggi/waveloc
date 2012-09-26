@@ -188,6 +188,8 @@ def do_migration_loop_continuous(start_time, end_time, data_dir, output_dir, dat
 
   # close the hdf5 file and cleanup 
   h5_file.close()
+  logging.info('Removing temporary file %s'%h5_filename)
+  logging.info('Removing temporary directory %s'%dirname)
   os.remove(h5_filename)
   os.rmdir(dirname)
   

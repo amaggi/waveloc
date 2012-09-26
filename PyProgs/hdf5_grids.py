@@ -307,19 +307,22 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   # initialize the stack file in a safe place
   tmp_dir=tempfile.mkdtemp()
   tmp_file=os.path.join(tmp_dir,'tmp_stack_file.hdf5')
+  tmp_file2=os.path.join(tmp_dir,'tmp2_stack_file.hdf5')
   f=h5py.File(tmp_file,'w')
+  f2=h5py.File(tmp_file2,'w')
   logging.info('Temp file : %s',tmp_file)
+  logging.info('Temp file 2 : %s',tmp_file2)
 
   stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f')
   stack_grid[...]=0.
-  tmp_stack=f.create_dataset('tmp_stack',(1,min_npts),'f')
-  i_times=f.create_dataset('i_times',(n_wf_ids,n_buf),'i')
-  i_max_times=f.create_dataset('iextreme_max_times',(1,n_buf),'i')
-  i_min_times=f.create_dataset('iextreme_min_times',(1,n_buf),'i')
-  start_index=f.create_dataset('start_index',(1,n_buf),'i')
-  start_indexes=f.create_dataset('start_indexes',(n_wf_ids,n_buf),'i')
-  end_indexes=f.create_dataset('end_indexes',(n_wf_ids,n_buf),'i')
-  n_lens=f.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
+  tmp_stack=f2.create_dataset('tmp_stack',(1,min_npts),'f')
+  i_times=f2.create_dataset('i_times',(n_wf_ids,n_buf),'i')
+  i_max_times=f2.create_dataset('iextreme_max_times',(1,n_buf),'i')
+  i_min_times=f2.create_dataset('iextreme_min_times',(1,n_buf),'i')
+  start_index=f2.create_dataset('start_index',(1,n_buf),'i')
+  start_indexes=f2.create_dataset('start_indexes',(n_wf_ids,n_buf),'i')
+  end_indexes=f2.create_dataset('end_indexes',(n_wf_ids,n_buf),'i')
+  n_lens=f2.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
 
   # construct grid (n_buf x n_sta) grid of time_indexes for migration
   for i in xrange(n_wf_ids):
@@ -366,6 +369,11 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
     # We need to homogenize, and get everything to start and end at the same time
     tmp_stack=stack_grid[ib,:]
     stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
+
+  # clean up what is no longer needed
+  f2.close()
+  logging.info('Removing temporary file %s'%tmp_file2)
+  os.remove(tmp_file2)
 
   return n_buf, norm_stack_len, stack_shift_time, stack_grid
 
