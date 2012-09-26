@@ -313,7 +313,7 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
   logging.info('Temp file : %s',tmp_file)
   logging.info('Temp file 2 : %s',tmp_file2)
 
-  stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f')
+  stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f',chunks=(1,min_npts))
   stack_grid[...]=0.
   tmp_stack=f2.create_dataset('tmp_stack',(1,min_npts),'f')
   i_times=f2.create_dataset('i_times',(n_wf_ids,n_buf),'i')
@@ -371,6 +371,9 @@ def migrate_4D_stack(integer_data, delta, search_grid_filename, time_grids):
     stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
 
   # clean up what is no longer needed
+  print stack_grid.shape
+  stack_grid.resize(norm_stack_len,axis=1)
+  print stack_grid.shape
   f2.close()
   logging.info('Removing temporary file %s'%tmp_file2)
   os.remove(tmp_file2)
