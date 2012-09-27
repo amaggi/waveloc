@@ -145,7 +145,6 @@ class H5SingleGrid(object):
 
     return result
 
-  #@profile
   def interp_to_newgrid(self,new_filename,new_grid_info):
 
     nx=new_grid_info['nx']
@@ -277,7 +276,6 @@ def get_interpolated_time_grids(opdict):
 
   return time_grids
 
-#@profile
 def migrate_4D_stack(data, delta, time_grids, stack_grid):
   from NllGridLib import read_hdr_file
 
@@ -313,7 +311,7 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
   n_lens=f.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
 
   # construct grid (n_buf x n_sta) grid of time_indexes for migration
-  for i in xrange(n_wf_ids):
+  for i in islice(count(0),n_wf_ids):
     wf_id=wf_ids[i]
     i_times[i,:]=np.round( time_grids[wf_id].grid_data[:] / delta )/1
 
@@ -346,7 +344,7 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
   for ib in islice(count(0),n_buf):
 
     # stack shifted data from each station
-    for i in xrange(n_wf_ids):
+    for i in islice(count(0),n_wf_ids):
       wf_id=wf_ids[i]
       stack_grid[ib,0:n_lens[i,ib]] += data[wf_id][start_indexes[i,ib]:end_indexes[i,ib]]
 
@@ -363,7 +361,7 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
 
   return stack_shift_time
 
-def extract_max_values(stack_grid,search_info,f_stack):
+def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
 
   # get basic info
   nx=search_info['nx']
@@ -390,14 +388,28 @@ def extract_max_values(stack_grid,search_info,f_stack):
   max_iz=f_stack.create_dataset('max_iz',(nt,),'i')
 
   # extract values
-  max_val[:]=np.max(stack_grid,0)
-  logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
-  max_ib[:]=np.argmax(stack_grid,0)
-  max_ix[:],max_iy[:],max_iz[:]=np.unravel_index(max_ib,(nx,ny,nz))
+  dt=int(n_max/nb)
+  if nt <= dt :
+    # do the extraction in one step
+    max_ib[:]=np.argmax(stack_grid,0)
+    max_val[:]=np.max(stack_grid,0)
 
+  else:
+    # do the extraction in steps
+    n=nt/dt
+    logging.debug('Number of values exceeds %d. Doing extraction in %d steps'%(n_max,n))
+    for i in islice(count(0),n):
+      max_ib[i*dt:(i+1)*dt]=np.argmax(stack_grid[:,i*dt:(i+1)*dt],0)
+      max_val[i*dt:(i+1)*dt]=np.max(stack_grid[:,i*dt:(i+1)*dt],0)
+    max_ib[n*dt:nt]=np.argmax(stack_grid[:,n*dt:nt],0)
+    max_val[n*dt:nt]=np.max(stack_grid[:,n*dt:nt],0)
+
+  # find the corresponding x,y,z values
+  max_ix[:],max_iy[:],max_iz[:]=np.unravel_index(max_ib,(nx,ny,nz))
   max_x[:]=max_ix[:]*dx+x_orig
   max_y[:]=max_iy[:]*dy+y_orig
   max_z[:]=max_iz[:]*dz+z_orig
+
   logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
   logging.debug('In extract_max_values, max_x : %f %f'%(np.max(max_x),np.sum(max_x)))
   logging.debug('In extract_max_values, max_y : %f %f'%(np.max(max_y),np.sum(max_y)))

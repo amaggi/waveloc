@@ -16,7 +16,6 @@ from scipy import weave
 from scipy.weave import converters
 import logging
 
-#@profile
 def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, grid_info,options_verbose=False, options_time=False):
 
   logging.warn('Deprecated - do not use')
@@ -42,7 +41,6 @@ def do_innermost_migration_loop(start_time, end_time, data, time_grids, delta, g
  
   return n_buf, norm_stack_len, stack_shift_time, stack_start_time, stack_grid
 
-#@profile
 def do_inner_migration_loop(start_time, end_time, data, time_grids, delta, grid_info, options_verbose=False, options_time=False):
 
   
@@ -145,7 +143,6 @@ def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_tim
     timestamp=slicetime.isoformat()
     grid_file=os.path.join(output_dir,'grid',"%s_%s.dat"%(grid_basename,timestamp))
     stack_grid.write_grid_timeslice(itime=itime,filename=grid_file)
-
 
 def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, time_grids, keep_grid=False, keep_stacks=True):
 

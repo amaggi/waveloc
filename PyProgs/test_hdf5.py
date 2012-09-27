@@ -6,6 +6,7 @@ def suite():
   suite = unittest.TestSuite()
   suite.addTest(H5Tests('test_RandomRead'))
   suite.addTest(H5Tests('test_Persistance'))
+  suite.addTest(H5Tests('test_MemoryPerformance'))
   suite.addTest(H5Tests('test_compression'))
   suite.addTest(H5SingleGridTests('test_init_del'))
   suite.addTest(H5SingleGridTests('test_NllRead'))
@@ -24,6 +25,11 @@ class H5Tests(unittest.TestCase):
     dsum=np.sum(dset)
     return dsum
 
+  def set_random2d(self,f,n0,n1):
+    dset = f.create_dataset('random',(n0,n1),'f',chunks=(1,n1))
+    dset[:,:] = np.random.rand(n0,n1)
+
+
   def test_Persistance(self):
     npts=100
     filename='randomtest2.hdf5'
@@ -34,7 +40,36 @@ class H5Tests(unittest.TestCase):
     f.close()
     os.remove(filename)
 
-  #@profile
+  def test_MemoryPerformance(self):
+    import time
+
+    nb=32*24*12
+    nt=10000
+    filename='memorytest.hdf5'
+    f=h5py.File(filename,'w')
+    self.set_random2d(f,nb,nt)
+    bigdata=f['random']
+    maxdata=f.create_dataset('maxdata',(nt,),'f')
+    imax=f.create_dataset('imax',(nt,),'i')
+    t_slice=int(5e7/nb)
+    print t_slice
+
+    t=time.time()
+    n_slices=nt/t_slice
+    print n_slices
+    for i in range(n_slices):
+      print i*t_slice
+      imax[i*t_slice:(i+1)*t_slice]=np.argmax(bigdata[:,i*t_slice:(i+1)*t_slice],0)
+      maxdata[i*t_slice:(i+1)*t_slice]=np.max(bigdata[:,i*t_slice:(i+1)*t_slice],0)
+    print n_slices*t_slice, nt
+    imax[n_slices*t_slice:nt]=np.argmax(bigdata[:,n_slices*t_slice:nt],0)
+    maxdata[n_slices*t_slice:nt]=np.max(bigdata[:,n_slices*t_slice:nt],0)
+    print time.time()-t
+
+    f.close()
+    os.remove(filename)
+    
+
   def test_RandomRead(self):
 
     # set up some random data
@@ -59,7 +94,6 @@ class H5Tests(unittest.TestCase):
     f.close()
     os.remove(filename)
 
-  #@profile
   def test_compression(self):
 
     # set up some random data
@@ -87,7 +121,6 @@ class H5Tests(unittest.TestCase):
 
 class H5SingleGridTests(unittest.TestCase):
 
-  #@profile
   def test_init_del(self):
 
     data=np.ones((100,200,50))
@@ -119,7 +152,6 @@ class H5SingleGridTests(unittest.TestCase):
     # clean up file
     os.remove(filename)
 
-  #@profile
   def test_NllRead(self):
     from array import array
 
@@ -233,7 +265,6 @@ class H5SingleGridTests(unittest.TestCase):
     del data
     os.remove(filename)
 
-  #@profile
   def test_interpolation_newgrid(self):
 
     data=np.zeros((100,200,50))
@@ -287,8 +318,8 @@ class H5SingleGridTests(unittest.TestCase):
     interp=sg.value_at_point(x,y,z)
     new_interp=new_sg.value_at_point(x,y,z)
 
-    self.assertAlmostEqual(interp,true_answer,3)
-    self.assertAlmostEqual(new_interp,true_answer,3)
+    self.assertAlmostEqual(interp,true_answer,2)
+    self.assertAlmostEqual(new_interp,true_answer,2)
 
     del sg
     del new_sg
