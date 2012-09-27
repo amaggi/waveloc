@@ -325,9 +325,6 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
   start_index=i_min_times-iextreme_min_time
   stack_shift_time=delta*iextreme_min_time
 
-  # keep information on the shortest length of stack for later
-  shortest_n_len=min_npts
-
   # find start indexes, end indexes and lengths for each station and point
   start_indexes=i_times-i_min_times 
   end_indexes  =i_times-i_max_times+min_npts
@@ -353,10 +350,9 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
       wf_id=wf_ids[i]
       stack_grid[ib,0:n_lens[i,ib]] += data[wf_id][start_indexes[i,ib]:end_indexes[i,ib]]
 
-    # Each stack starts at ref_time - the minimum travel-time and ends at the ref_time + seismogram duration - max travel_time
     # We need to homogenize, and get everything to start and end at the same time
-    tmp_stack=stack_grid[ib,:]
-    stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
+    tmp_stack[0,:]=stack_grid[ib,:]
+    stack_grid[ib,0:norm_stack_len]=tmp_stack[0,start_index[ib]:start_index[ib]+norm_stack_len]
 
   # clean up what is no longer needed
   stack_grid.resize(norm_stack_len,axis=1)
@@ -382,7 +378,6 @@ def extract_max_values(stack_grid,search_info,f_stack):
 
   nb,nt=stack_grid.shape
 
-  # create datasets to save
   max_val=f_stack.create_dataset('max_val',(nt,),'f')
   max_x=f_stack.create_dataset('max_x',(nt,),'f')
   max_y=f_stack.create_dataset('max_y',(nt,),'f')
@@ -395,13 +390,18 @@ def extract_max_values(stack_grid,search_info,f_stack):
   max_iz=f_stack.create_dataset('max_iz',(nt,),'i')
 
   # extract values
-  max_val=np.max(stack_grid,0)
-  max_ib=np.argmax(stack_grid,0)
-  max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
+  max_val[:]=np.max(stack_grid,0)
+  logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
+  max_ib[:]=np.argmax(stack_grid,0)
+  max_ix[:],max_iy[:],max_iz[:]=np.unravel_index(max_ib,(nx,ny,nz))
 
-  max_x=max_ix*dx+x_orig
-  max_y=max_iy*dy+y_orig
-  max_z=max_iz*dz+z_orig
+  max_x[:]=max_ix[:]*dx+x_orig
+  max_y[:]=max_iy[:]*dy+y_orig
+  max_z[:]=max_iz[:]*dz+z_orig
+  logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
+  logging.debug('In extract_max_values, max_x : %f %f'%(np.max(max_x),np.sum(max_x)))
+  logging.debug('In extract_max_values, max_y : %f %f'%(np.max(max_y),np.sum(max_y)))
+  logging.debug('In extract_max_values, max_z : %f %f'%(np.max(max_z),np.sum(max_z)))
 
   # clean up temporary datasets
   del f_stack['max_ib']
@@ -409,7 +409,6 @@ def extract_max_values(stack_grid,search_info,f_stack):
   del f_stack['max_iy']
   del f_stack['max_iz']
  
-
 if __name__=='__main__' : 
   
   pass
