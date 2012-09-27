@@ -5,7 +5,8 @@ import numpy as np
 def generateSyntheticDirac(opdict,time_grid=None):
     # Creates the synthetic dataset for us to work with
 
-    from grids_paths import StationList, ChannelList, QDTimeGrid, migrate_4D_stack
+    from grids_paths import StationList, ChannelList, QDTimeGrid
+    from hdf5_grids import migrate_4D_stack
 
     load_time_grids = False
     if time_grid==None : load_time_grids = True

@@ -11,9 +11,9 @@ from synth_migration import generateSyntheticDirac
 
 def suite():
   suite = unittest.TestSuite()
-#  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
+  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
 #  suite.addTest(MigrationTests('test_migration'))
-  suite.addTest(MigrationTests('test_migration_fullRes'))
+#  suite.addTest(MigrationTests('test_migration_fullRes'))
   return suite
 
 def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
@@ -35,7 +35,7 @@ def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
 class SyntheticMigrationTests(unittest.TestCase):
 
 #  @profile
-  @unittest.expectedFailure
+  #@unittest.expectedFailure
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
     from plot_mpl import plot_probloc_mpl, plotDiracTest
