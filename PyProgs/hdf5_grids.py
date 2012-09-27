@@ -276,6 +276,7 @@ def get_interpolated_time_grids(opdict):
 
   return time_grids
 
+#@profile
 def migrate_4D_stack(data, delta, time_grids, stack_grid):
   from NllGridLib import read_hdr_file
 
@@ -284,31 +285,18 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
   wf_ids=data.keys()
   n_wf_ids=len(wf_ids)
 
-#  nx=search_info['nx']
-#  ny=search_info['ny']
-#  nz=search_info['nz']
   n_buf,min_npts=stack_grid.shape
   logging.debug("Stack max dimension = %d x %d"%(n_buf,min_npts))
 
-  # save the smallest number of points of all the data streams 
-  # this will dimension many of the subsequent arrays
-
-  # The stack grid has exactly the same geometry as the time-grid
-  #stack_grid=np.zeros((time_grid.nx,time_grid.ny,time_grid.nz,min_npts),dtype=np.int32)
-  # initialize the stack file in a safe place
-  tmp_dir=tempfile.mkdtemp()
-  tmp_file=os.path.join(tmp_dir,'tmp_stack_file.hdf5')
-  f=h5py.File(tmp_file,'w')
-  logging.debug('Temp file : %s',tmp_file)
-
-  tmp_stack=f.create_dataset('tmp_stack',(1,min_npts),'f')
-  i_times=f.create_dataset('i_times',(n_wf_ids,n_buf),'i')
-  i_max_times=f.create_dataset('iextreme_max_times',(1,n_buf),'i')
-  i_min_times=f.create_dataset('iextreme_min_times',(1,n_buf),'i')
-  start_index=f.create_dataset('start_index',(1,n_buf),'i')
-  start_indexes=f.create_dataset('start_indexes',(n_wf_ids,n_buf),'i')
-  end_indexes=f.create_dataset('end_indexes',(n_wf_ids,n_buf),'i')
-  n_lens=f.create_dataset('n_lens',(n_wf_ids,n_buf),'i')
+  # initialize the arrays we will need
+  tmp_stack=np.zeros(min_npts)
+  i_times=np.zeros((n_wf_ids,n_buf),dtype='int')
+  i_max_times=np.zeros(n_buf,dtype='int')
+  i_min_times=np.zeros(n_buf,dtype='int')
+  start_index=np.zeros(n_buf,dtype='int')
+  start_indexes=np.zeros((n_wf_ids,n_buf),dtype='int')
+  end_indexes=np.zeros((n_wf_ids,n_buf),dtype='int')
+  n_lens=np.zeros((n_wf_ids,n_buf),dtype='int')
 
   # construct grid (n_buf x n_sta) grid of time_indexes for migration
   for i in islice(count(0),n_wf_ids):
@@ -335,29 +323,23 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
   # sill fix the length of the stack to the shortest possible length given all the previous travel time information
   norm_stack_len=shortest_n_len-iextreme_max_time
 
-
   # the actual migration loop
   # cannot seem to vectorize this any more... too bad !!
 
-  # for each point
-  #for ib in xrange(n_buf):
   for ib in islice(count(0),n_buf):
 
+    tmp_stack[:]=0.
     # stack shifted data from each station
     for i in islice(count(0),n_wf_ids):
-      wf_id=wf_ids[i]
-      stack_grid[ib,0:n_lens[i,ib]] += data[wf_id][start_indexes[i,ib]:end_indexes[i,ib]]
+      tmp_stack[0:n_lens[i,ib]] += data[wf_ids[i]][start_indexes[i,ib]:end_indexes[i,ib]]
 
     # We need to homogenize, and get everything to start and end at the same time
-    tmp_stack[0,:]=stack_grid[ib,:]
-    stack_grid[ib,0:norm_stack_len]=tmp_stack[0,start_index[ib]:start_index[ib]+norm_stack_len]
+    stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
 
   # clean up what is no longer needed
+  del tmp_stack,i_times, i_min_times, i_max_times, start_indexes, end_indexes, n_lens
+
   stack_grid.resize(norm_stack_len,axis=1)
-  f.close()
-  logging.debug('Removing temporary file %s'%tmp_file)
-  os.remove(tmp_file)
-  os.rmdir(tmp_dir)
 
   return stack_shift_time
 

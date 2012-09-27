@@ -171,7 +171,14 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
   stack_start_time = start_time-stack_shift_time
   n_buf,nt = stack_grid.shape
 
+  if options_time:
+    t=time()-t_ref
+    logging.info("Time for migrating %d stacks, each of extent %d points : %.2f s\n" % (n_buf,nt,t))
+
   if keep_stacks:
+    if options_time:
+      t_ref=time()  
+
     stack_filename=os.path.join(output_dir,'stack','stack_all_%s.hdf5'%start_time)
     logging.info('Extracting max_val etc. to %s'%stack_filename)
     f_stack = h5py.File(stack_filename,'w')
@@ -184,11 +191,10 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
       dset.attrs['dt']=delta
 
     f_stack.close()
+    if options_time:
+      t=time()-t_ref
+      logging.info("Time for extracting maxima : %.2f s\n" % (t))
 
-
-  if options_time:
-    t=time()-t_ref
-    logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,nt,t))
  
   if keep_grid:
     # add useful attributes to the hdf5 dataset
