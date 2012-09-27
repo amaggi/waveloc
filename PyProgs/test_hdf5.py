@@ -5,6 +5,7 @@ from hdf5_grids import *
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(H5Tests('test_RandomRead'))
+  suite.addTest(H5Tests('test_Persistance'))
   suite.addTest(H5Tests('test_compression'))
   suite.addTest(H5SingleGridTests('test_init_del'))
   suite.addTest(H5SingleGridTests('test_NllRead'))
@@ -15,6 +16,23 @@ def suite():
   return suite
 
 class H5Tests(unittest.TestCase):
+
+  def set_random(self,f,npts):
+    dset = f.create_dataset('random',(npts,),'f')
+    dset[...]=1.
+    dset[:] = np.random.rand(npts)
+    dsum=np.sum(dset)
+    return dsum
+
+  def test_Persistance(self):
+    npts=100
+    filename='randomtest2.hdf5'
+    f=h5py.File(filename,'w')
+    dsum = self.set_random(f,npts)
+    dset=f['random']
+    self.assertAlmostEqual(dsum,np.sum(dset))
+    f.close()
+    os.remove(filename)
 
   #@profile
   def test_RandomRead(self):
@@ -209,7 +227,7 @@ class H5SingleGridTests(unittest.TestCase):
     sg=H5SingleGrid(filename,data.flatten(),info)
     interp=sg.value_at_point(x,y,z)
 
-    self.assertAlmostEqual(interp,true_answer,3)
+    self.assertAlmostEqual(interp,true_answer,2)
 
     del sg
     del data
