@@ -172,7 +172,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
   # DO MIGRATION
   stack_shift_time = migrate_4D_stack(data, delta, time_grids, stack_grid)
   stack_start_time = start_time-stack_shift_time
-  n_buf,norm_stack_len = stack_grid.shape
+  n_buf,nt = stack_grid.shape
 
   if keep_stacks:
     stack_filename=os.path.join(output_dir,'stack','stack_all_%s.hdf5'%start_time)
@@ -181,14 +181,17 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
     # extract maxima
     extract_max_values(stack_grid,grid_info,f_stack)
     for name in f_stack:
-      f_stack[name].attrs['start_time']=stack_start_time.isoformat()
-      f_stack[name].attrs['dt']=delta
+      dset=f_stack[name]
+      logging.debug('After extract_max_values : %s %f %f'%(name,np.max(dset),np.sum(dset)))
+      dset.attrs['start_time']=stack_start_time.isoformat()
+      dset.attrs['dt']=delta
+
     f_stack.close()
 
 
   if options_time:
     t=time()-t_ref
-    logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,norm_stack_len,t))
+    logging.info("Time for stacking and saving %d stacks, each of extent %d points : %.2f s\n" % (n_buf,nt,t))
  
   if keep_grid:
     # add useful attributes to the hdf5 dataset
