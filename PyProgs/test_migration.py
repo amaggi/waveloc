@@ -12,8 +12,8 @@ from synth_migration import generateSyntheticDirac
 def suite():
   suite = unittest.TestSuite()
 #  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
-  suite.addTest(MigrationTests('test_migration'))
-#  suite.addTest(MigrationTests('test_migration_fullRes'))
+#  suite.addTest(MigrationTests('test_migration'))
+  suite.addTest(MigrationTests('test_migration_fullRes'))
   return suite
 
 def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
@@ -177,7 +177,8 @@ class MigrationTests(unittest.TestCase):
 
     do_migration_setup_and_run(self.wo.opdict)
 
-    waveforms_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*mseed','stack_signature.dat')
+    #waveforms_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*mseed','stack_signature.dat')
+    hdf5_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*hdf5','stack_signature.dat')
     signature_filename=os.path.join(base_path,'out',outdir,'stack','stack_signature.dat')
     signature_file = open(signature_filename,'r') 
     lines=signature_file.readlines()
