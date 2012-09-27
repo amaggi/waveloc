@@ -1,4 +1,4 @@
-import os, glob, unittest
+import os, glob, unittest, h5py
 import numpy as np
 from options import WavelocOptions
 from OP_waveforms import Waveform
@@ -15,6 +15,22 @@ def suite():
   suite.addTest(MigrationTests('test_migration'))
 #  suite.addTest(MigrationTests('test_migration_fullRes'))
   return suite
+
+def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
+
+  sig_file=open(os.path.join(base_path,datadir,output_filename),'w')
+  allfiles=glob.glob(os.path.join(base_path,datadir, dataglob))
+  for filename in allfiles :
+    basename=os.path.basename(filename)
+    f=h5py.File(filename,'r')
+    for name in f:
+      logging.debug('Signature for %s %s : '%(basename,name))
+      dset=f[name]
+      maximum=np.max(dset)
+      datasum=np.sum(dset)
+      sig_file.write("%s \t %s \t %.6f \t %.6f\n"%(basename,name,maximum,datasum))
+    f.close()
+
 
 class SyntheticMigrationTests(unittest.TestCase):
 
@@ -133,7 +149,8 @@ class MigrationTests(unittest.TestCase):
 
     do_migration_setup_and_run(self.wo.opdict)
 
-    waveforms_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*mseed','stack_signature.dat')
+    #waveforms_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*mseed','stack_signature.dat')
+    hdf5_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*hdf5','stack_signature.dat')
     signature_filename=os.path.join(base_path,'out',outdir,'stack','stack_signature.dat')
     signature_file = open(signature_filename,'r') 
     lines=signature_file.readlines()
@@ -147,7 +164,7 @@ class MigrationTests(unittest.TestCase):
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir'] = 'TEST_fullRes'
     self.wo.opdict['load_ttimes_buf'] = True
-    self.wo.opdict['data_length'] = 150
+    self.wo.opdict['data_length'] = 300
     self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']
