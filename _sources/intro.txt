@@ -27,7 +27,7 @@ Here is the result of an example run:
   :align: center
 
 
-The method is explained in greater detail below.
+The method is explained in greater detail below, and in a manuscript currently being written.
 
 The kurtosis filter
 ===================
