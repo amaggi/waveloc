@@ -1,10 +1,10 @@
 import os, logging, glob
 import numpy as np
 from options import *
-from SDS_processing import do_SDS_processing_setup_and_run
-from migration import do_migration_setup_and_run
-from locations_trigger import do_locations_trigger_setup_and_run 
-from plot_locations2 import do_plotting_setup_and_run
+from waveloc.SDS_processing import do_SDS_processing_setup_and_run
+from waveloc.migration import do_migration_setup_and_run
+from waveloc.locations_trigger import do_locations_trigger_setup_and_run 
+from waveloc.plot_locations2 import do_plotting_setup_and_run
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 

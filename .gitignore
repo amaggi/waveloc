@@ -23,3 +23,7 @@
 /lib/*test*
 *ijen*
 *hdf5
+MANIFEST
+/build/
+__init__.py
+/dist/

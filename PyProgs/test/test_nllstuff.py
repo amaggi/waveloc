@@ -1,6 +1,6 @@
 import h5py, os, unittest
 import numpy as np
-from NllGridLib import *
+from waveloc.NllGridLib import *
 
 def suite():
   suite = unittest.TestSuite()

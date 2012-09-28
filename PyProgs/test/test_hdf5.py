@@ -1,6 +1,6 @@
 import h5py, os, unittest
 import numpy as np
-from hdf5_grids import *
+from waveloc.hdf5_grids import *
 
 def suite():
   suite = unittest.TestSuite()
@@ -41,7 +41,6 @@ class H5Tests(unittest.TestCase):
     os.remove(filename)
 
   def test_MemoryPerformance(self):
-    import time
 
     nb=32*24*12
     nt=10000
@@ -53,7 +52,6 @@ class H5Tests(unittest.TestCase):
     imax=f.create_dataset('imax',(nt,),'i')
     t_slice=int(5e7/nb)
 
-    t=time.time()
     n_slices=nt/t_slice
     for i in range(n_slices):
       imax[i*t_slice:(i+1)*t_slice]=np.argmax(bigdata[:,i*t_slice:(i+1)*t_slice],0)

@@ -1,11 +1,10 @@
 import os, glob, unittest
-from options import WavelocOptions
-from OP_waveforms import Waveform
-from locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
-#from locations_prob import do_locations_prob_setup_and_run
-from NllGridLib import *
-from integrate4D import *
 import numpy as np
+from waveloc.options import WavelocOptions
+from waveloc.OP_waveforms import Waveform
+from waveloc.locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
+from waveloc.NllGridLib import *
+from waveloc.integrate4D import *
 
 def suite():
   suite = unittest.TestSuite()
@@ -47,7 +46,7 @@ class TriggeringTests(unittest.TestCase):
   #@unittest.expectedFailure
   def test_smoothing(self):
 
-    from filters import smooth
+    from waveloc.filters import smooth
 
     x=np.arange(100)
     max_val=10.*np.exp(-(x-50.)*(x-50.)/(10.*10.))+np.random.rand(100)

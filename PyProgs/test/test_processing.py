@@ -1,8 +1,7 @@
-import unittest
-import os, glob
-from SDS_processing import do_SDS_processing_setup_and_run
-from OP_waveforms import Waveform
-from options import WavelocOptions
+import unittest, os, glob
+from waveloc.SDS_processing import do_SDS_processing_setup_and_run
+from waveloc.OP_waveforms import Waveform
+from waveloc.options import WavelocOptions
 
 def suite():
   suite = unittest.TestSuite()
@@ -14,7 +13,7 @@ def waveforms_to_signature(base_path,datadir,dataglob,output_filename):
 
   sig_file=open(os.path.join(base_path,datadir,output_filename),'w')
   allfiles=glob.glob(os.path.join(base_path,datadir, dataglob))
-  for filename in allfiles :
+  for filename in sorted(allfiles) :
     basename=os.path.basename(filename)
     wf=Waveform()
     wf.read_from_file(filename,format='MSEED')

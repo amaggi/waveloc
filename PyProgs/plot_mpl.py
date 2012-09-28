@@ -64,7 +64,6 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   max_z=stack_grid.max(1).max(0).argmax(0)*dz + z_orig
 
   print it_true, np.argmax(max_val)
-  plt.clf()
 
   # do plot
   plt.subplot(3,3,1)
