@@ -2,7 +2,7 @@ import os, glob, unittest
 from options import WavelocOptions
 from OP_waveforms import Waveform
 from locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
-from locations_prob import do_locations_prob_setup_and_run
+#from locations_prob import do_locations_prob_setup_and_run
 from NllGridLib import *
 from integrate4D import *
 import numpy as np
