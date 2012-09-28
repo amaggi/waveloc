@@ -1,5 +1,4 @@
-import os
-import logging
+import os, h5py, logging
 import numpy as np
 import scipy.integrate as si
 import matplotlib.pyplot as plt
@@ -162,29 +161,35 @@ def plotDiracTest(test_info,fig_dir):
   ix_true, iy_true, iz_true, it_true= test_info['true_indexes']  
   stack_shift_time=test_info['stack_shift_time']
   grid_filename=test_info['dat_file']
+  stack_filename=test_info['stack_file']
   fig_filename=os.path.join(fig_dir,"%s.pdf"%os.path.basename(grid_filename))
 
   # read the stack file
-  stack_grid=np.fromfile(grid_filename).reshape(nx,ny,nz,nt)
+  f=h5py.File(grid_filename,'r')
+  stack_grid=f['stack_grid']
 
-  # set up the 4 axes
-  x=np.arange(nx)*dx+x_orig
-  y=np.arange(ny)*dy+y_orig
-  z=np.arange(nz)*dz+z_orig
-  t=np.arange(nt)*dt-stack_shift_time
+  stack_3D=stack_grid[:,it_true].reshape(nx,ny,nz)
+
 
   # cut through the true location at the true time 
-  xy_cut=stack_grid[:,:,iz_true,it_true]
-  xz_cut=stack_grid[:,iy_true,:,it_true]
-  yz_cut=stack_grid[ix_true,:,:,it_true]
+  xy_cut=stack_3D[:,:,iz_true]
+  xz_cut=stack_3D[:,iy_true,:]
+  yz_cut=stack_3D[ix_true,:,:]
 
   # extract the max stacks
-  max_val=smooth(stack_grid.max(0).max(0).max(0))
-  max_x=stack_grid.max(2).max(1).argmax(0)*dx + x_orig
-  max_y=stack_grid.max(2).max(0).argmax(0)*dy + y_orig
-  max_z=stack_grid.max(1).max(0).argmax(0)*dz + z_orig
-
+  f_stack=h5py.File(stack_filename,'r')
+  max_val=f_stack['max_val']
+  max_x=f_stack['max_x']
+  max_y=f_stack['max_y']
+  max_z=f_stack['max_z']
+  
   plt.clf()
+
+  # set up the 4 axes
+  x=np.arange(nx)*dx
+  y=np.arange(ny)*dy
+  z=np.arange(nz)*dz
+  t=np.arange(nt)*dt-stack_shift_time
 
   # do plot
   plt.subplot(3,3,1)
@@ -221,6 +226,10 @@ def plotDiracTest(test_info,fig_dir):
 #  plt.hlines(loclevel,llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],0,max(max_val),'r',linewidth=2)
 
+  # put the origin back in for the last plots
+  x=np.arange(nx)*dx+x_orig
+  y=np.arange(ny)*dy+y_orig
+  z=np.arange(nz)*dz+z_orig
   # plot max x
   p=plt.subplot(3,3,7)
   plt.plot(t,max_x)
@@ -255,6 +264,8 @@ def plotDiracTest(test_info,fig_dir):
   plt.tight_layout()
   plt.savefig(fig_filename)
 
+  f.close()
+  f_stack.close()
 
 def plot_test(curve_tuple,axes_tuple,filename_base):
   stack_x, stack_y, stack_z, stack_t = curve_tuple

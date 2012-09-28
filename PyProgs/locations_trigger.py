@@ -70,7 +70,7 @@ def number_good_kurtosis_for_location(kurt_files,o_time,snr_limit=10.0,sn_time=1
 def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,delta):    
 
     locs=[]
-    trigs=trigger.triggerOnset(max_val,left_trig,right_trig)
+    trigs=trigger.triggerOnset(np.array(max_val),left_trig,right_trig)
 
     df=1/delta
 

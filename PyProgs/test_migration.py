@@ -35,7 +35,7 @@ def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
 class SyntheticMigrationTests(unittest.TestCase):
 
 #  @profile
-  #@unittest.expectedFailure
+  @unittest.expectedFailure
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
     from plot_mpl import plot_probloc_mpl, plotDiracTest
@@ -56,7 +56,7 @@ class SyntheticMigrationTests(unittest.TestCase):
     wo.opdict['syn_ix']=16
     wo.opdict['syn_iy']=8
     wo.opdict['syn_iz']=6
-    wo.opdict['syn_filename']='test_grid4D_hires.dat'
+    wo.opdict['syn_filename']='test_grid4D_hires.hdf5'
 
     wo.verify_migration_options()
     wo.verify_location_options()
@@ -73,12 +73,13 @@ class SyntheticMigrationTests(unittest.TestCase):
     # plot synthetic tests
     figdir=os.path.join(wo.opdict['base_path'],'out',wo.opdict['outdir'],'fig')
     # reset the origin for nice-to-read plots
-    test_info['grid_orig']=(0,0,-2.5)
+    #test_info['grid_orig']=(0,0,-2.5)
     plotDiracTest(test_info,figdir)
     logging.info(test_info)
 
     # retrieve info
-    dat_file=test_info['dat_file']
+    grid_filename=test_info['dat_file']
+    stack_filename=test_info['stack_file']
     nx,ny,nz,nt=test_info['grid_shape']
     dx,dy,dz,dt=test_info['grid_spacing']
     x_orig,y_orig,z_orig=test_info['grid_orig']
@@ -88,7 +89,6 @@ class SyntheticMigrationTests(unittest.TestCase):
     # plot base filename
     base_path=wo.opdict['base_path']
     outdir=wo.opdict['outdir']
-    plot_base_filename=os.path.join(base_path,'out',outdir,'fig','fig_synt_st_mpl')
 
     # loclevel for triggers
     loclevel=wo.opdict['loclevel']
@@ -99,18 +99,23 @@ class SyntheticMigrationTests(unittest.TestCase):
     z=np.arange(nz)*dz
     t=np.arange(nt)*dt-stack_shift_time
 
-    # load grid
-    stack_grid=np.fromfile(dat_file).reshape(nx,ny,nz,nt)
+    # read the stack file
+    f=h5py.File(grid_filename,'r')
+    stack_grid=f['stack_grid']
 
-    # simulate locations trigger
-    max_val=stack_grid.max(0).max(0).max(0)
-    max_x=stack_grid.max(2).max(1).argmax(0)*dx
-    max_y=stack_grid.max(2).max(0).argmax(0)*dy
-    max_z=stack_grid.max(1).max(0).argmax(0)*dz
+    stack_3D=stack_grid[:,it_true].reshape(nx,ny,nz)
 
-    
+    # extract the max stacks
+    f_stack=h5py.File(stack_filename,'r')
+    max_val=f_stack['max_val']
+    max_x=f_stack['max_x']
+    max_y=f_stack['max_y']
+    max_z=f_stack['max_z']
+
+
     locs=trigger_locations_inner(max_val,max_x,max_y,max_z,loclevel,loclevel,dt)
 
+    self.assertTrue(len(locs)>0)
     
     #print locs
     # This is a dirac test, so only have one element in locs
@@ -120,6 +125,9 @@ class SyntheticMigrationTests(unittest.TestCase):
     self.assertAlmostEqual(wo.opdict['syn_ix']*dx+x_orig,trig_loc['x_mean'])
     self.assertAlmostEqual(wo.opdict['syn_iy']*dy+y_orig,trig_loc['y_mean'])
     self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,trig_loc['z_mean'])
+  
+    f_stacks.close()
+    f.close()
 
    
 #@unittest.skip('Not running real data migration tests')

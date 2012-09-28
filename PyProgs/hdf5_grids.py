@@ -387,7 +387,7 @@ def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
     max_val[n*dt:nt]=np.max(stack_grid[:,n*dt:nt],0)
 
   # find the corresponding x,y,z values
-  max_ix[:],max_iy[:],max_iz[:]=np.unravel_index(max_ib,(nx,ny,nz))
+  max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
   max_x[:]=max_ix[:]*dx+x_orig
   max_y[:]=max_iy[:]*dy+y_orig
   max_z[:]=max_iz[:]*dz+z_orig
