@@ -34,11 +34,10 @@ def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
 
 class SyntheticMigrationTests(unittest.TestCase):
 
-#  @profile
-  @unittest.expectedFailure
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
     from plot_mpl import plot_probloc_mpl, plotDiracTest
+    from filters import smooth
 
     wo=WavelocOptions()
     wo.set_test_options()
@@ -68,14 +67,14 @@ class SyntheticMigrationTests(unittest.TestCase):
 
     logging.info('Running synthetic test case generation...')
     test_info=generateSyntheticDirac(wo.opdict)
-    logging.info(test_info)
+    logging.debug(test_info)
 
     # plot synthetic tests
     figdir=os.path.join(wo.opdict['base_path'],'out',wo.opdict['outdir'],'fig')
     # reset the origin for nice-to-read plots
     #test_info['grid_orig']=(0,0,-2.5)
     plotDiracTest(test_info,figdir)
-    logging.info(test_info)
+    logging.debug(test_info)
 
     # retrieve info
     grid_filename=test_info['dat_file']
@@ -84,7 +83,7 @@ class SyntheticMigrationTests(unittest.TestCase):
     dx,dy,dz,dt=test_info['grid_spacing']
     x_orig,y_orig,z_orig=test_info['grid_orig']
     ix_true,iy_true,iz_true,it_true=test_info['true_indexes']
-    stack_shift_time=test_info['stack_shift_time']
+    stack_start_time=test_info['start_time']
 
     # plot base filename
     base_path=wo.opdict['base_path']
@@ -97,13 +96,7 @@ class SyntheticMigrationTests(unittest.TestCase):
     x=np.arange(nx)*dx
     y=np.arange(ny)*dy
     z=np.arange(nz)*dz
-    t=np.arange(nt)*dt-stack_shift_time
-
-    # read the stack file
-    f=h5py.File(grid_filename,'r')
-    stack_grid=f['stack_grid']
-
-    stack_3D=stack_grid[:,it_true].reshape(nx,ny,nz)
+    t=np.arange(nt)*dt+stack_start_time
 
     # extract the max stacks
     f_stack=h5py.File(stack_filename,'r')
@@ -113,24 +106,22 @@ class SyntheticMigrationTests(unittest.TestCase):
     max_z=f_stack['max_z']
 
 
-    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,loclevel,loclevel,dt)
+    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,loclevel,loclevel,stack_start_time,dt)
 
     self.assertTrue(len(locs)>0)
     
     #print locs
     # This is a dirac test, so only have one element in locs
-    trig_loc=locs[0]
-    trig_max,trig_t,trig_sigma_t_left,trig_sigma_t_right,trig_x,trig_sigma_x,trig_y,trig_sigma_y,trig_z,trig_sigma_z = trig_loc
-    self.assertAlmostEqual(wo.opdict['syn_otime'],trig_loc['o_time']-stack_shift_time,2)
+    imax=np.argmax([loc['max_trig'] for loc in locs])
+    trig_loc=locs[imax]
+    self.assertAlmostEqual(wo.opdict['syn_otime'],trig_loc['o_time'],2)
     self.assertAlmostEqual(wo.opdict['syn_ix']*dx+x_orig,trig_loc['x_mean'])
     self.assertAlmostEqual(wo.opdict['syn_iy']*dy+y_orig,trig_loc['y_mean'])
     self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,trig_loc['z_mean'])
   
-    f_stacks.close()
-    f.close()
+    f_stack.close()
 
    
-#@unittest.skip('Not running real data migration tests')
 class MigrationTests(unittest.TestCase):
 
   def setUp(self):

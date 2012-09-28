@@ -144,72 +144,7 @@ def do_write_grids(stack_grid,time_step_sec,delta,norm_stack_len,stack_start_tim
     grid_file=os.path.join(output_dir,'grid',"%s_%s.dat"%(grid_basename,timestamp))
     stack_grid.write_grid_timeslice(itime=itime,filename=grid_file)
 
-def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, time_grids, keep_grid=False, keep_stacks=True):
-
-
-  logging.info("Processing time slice %s"%start_time.isoformat())
-
-  options_verbose=opdict['verbose']
-  options_time=opdict['time']
-  output_dir=os.path.join(opdict['base_path'],'out',opdict['outdir'])
-
-  n_buf=grid_info['nx']*grid_info['ny']*grid_info['nz']
-  min_npts=min([len(data[key]) for key in data.keys()])
-
-  if options_time:
-    t_ref=time()  
-
-  # open hdf5 file for stack_grid
-  grid_filename=os.path.join(output_dir,'grid','stack_grid_%s.hdf5'%start_time)
-  logging.info('Creating grid file %s'%grid_filename)
-  f=h5py.File(grid_filename,'w')
-  stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f',chunks=(1,min_npts))
-  stack_grid[...]=0.
-
-  # DO MIGRATION
-  stack_shift_time = migrate_4D_stack(data, delta, time_grids, stack_grid)
-  stack_start_time = start_time-stack_shift_time
-  n_buf,nt = stack_grid.shape
-
-  if options_time:
-    t=time()-t_ref
-    logging.info("Time for migrating %d stacks, each of extent %d points : %.2f s\n" % (n_buf,nt,t))
-
-  if keep_stacks:
-    if options_time:
-      t_ref=time()  
-
-    stack_filename=os.path.join(output_dir,'stack','stack_all_%s.hdf5'%start_time)
-    logging.info('Extracting max_val etc. to %s'%stack_filename)
-    f_stack = h5py.File(stack_filename,'w')
-    # extract maxima
-    extract_max_values(stack_grid,grid_info,f_stack)
-    for name in f_stack:
-      dset=f_stack[name]
-      logging.debug('After extract_max_values : %s %f %f'%(name,np.max(dset),np.sum(dset)))
-      dset.attrs['start_time']=stack_start_time.isoformat()
-      dset.attrs['dt']=delta
-
-    f_stack.close()
-    if options_time:
-      t=time()-t_ref
-      logging.info("Time for extracting maxima : %.2f s\n" % (t))
-
  
-  if keep_grid:
-    # add useful attributes to the hdf5 dataset
-    for key,value in grid_info.iteritems():
-      stack_grid.attrs[key]=value
-    stack_grid.attrs['dt']=delta
-    stack_grid.attrs['start_time']=stack_start_time.isoformat()
-
-  # close the hdf5 file for the grid 
-  f.close()
-  # remove the grid file unless you want to keep it
-  if not keep_grid: 
-    logging.info('Removing grid file %s'%grid_filename)
-    os.remove(grid_filename)
-  
 
 def do_migration_loop_reloc(start_time, end_time, output_dir, kurtosis_filenames, grid_info, time_grids, options_verbose, options_time):
 

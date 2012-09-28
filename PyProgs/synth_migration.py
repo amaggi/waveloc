@@ -6,7 +6,8 @@ def generateSyntheticDirac(opdict,time_grids=None):
     # Creates the synthetic dataset for us to work with
 
     from NllGridLib import read_stations_file, read_hdr_file
-    from hdf5_grids import migrate_4D_stack, get_interpolated_time_grids, extract_max_values
+    from migration import migrate_4D_stack, extract_max_values
+    from hdf5_grids import get_interpolated_time_grids
 
     load_time_grids = False
     if time_grids==None : load_time_grids = True
@@ -115,6 +116,7 @@ def generateSyntheticDirac(opdict,time_grids=None):
 
     # DO MIGRATION
     
+    logging.info('Doing migration to %s'%test_grid_file)
     f=h5py.File(test_grid_file,'w')
     stack_grid=f.create_dataset('stack_grid',(n_buf,s_npts),'f',chunks=(1,s_npts))
     stack_shift_time = migrate_4D_stack(data,s_delta,time_grids,stack_grid)
@@ -124,9 +126,7 @@ def generateSyntheticDirac(opdict,time_grids=None):
     for key,value in grid_info.iteritems():
       stack_grid.attrs[key]=value
     stack_grid.attrs['dt']=s_delta
-    stack_grid.attrs['stack_start_time']=-stack_shift_time
-
-    logging.info('Migration outputs : nx,ny,nz,nt,stack_shift_time = %d %d %d %d %.3f'%(nx,ny,nz,nt,stack_shift_time))
+    stack_grid.attrs['start_time']=-stack_shift_time
 
     # extract max-stack
     logging.info('Extracting max_val etc. to %s'%test_stack_file)
@@ -154,9 +154,9 @@ def generateSyntheticDirac(opdict,time_grids=None):
     test_info['grid_spacing']=dx,dy,dz,s_delta
     test_info['grid_orig']=x_orig,y_orig,z_orig
     test_info['true_indexes']=(ix,iy,iz,shifted_it)
-    test_info['stack_shift_time']=stack_shift_time
+    test_info['start_time']=-stack_shift_time
 
-    logging.info(test_info)
+    logging.debug(test_info)
     f=open(test_info_file,'w')
     f.write(str(test_info))
 

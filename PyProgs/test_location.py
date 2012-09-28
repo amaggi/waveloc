@@ -44,7 +44,7 @@ class TriggeringTests(unittest.TestCase):
     self.assertAlmostEqual(locs[1]['o_time'],20)
     self.assertAlmostEqual(locs[2]['o_time'],80)
 
-  @unittest.expectedFailure
+  #@unittest.expectedFailure
   def test_smoothing(self):
 
     from filters import smooth
@@ -58,9 +58,8 @@ class TriggeringTests(unittest.TestCase):
     max_val_smooth=smooth(max_val)
 
     left_trig=right_trig=3
-    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,0.0,0.01)
-    locs_smooth=trigger_locations_inner(max_val_smooth,max_x,max_y,max_z,left_trig,right_trig,0.0,0.01)
-    self.assertAlmostEqual(locs_smooth[0]['o_time'],locs[0]['o_time'],2)
+    locs_smooth=trigger_locations_inner(max_val_smooth,max_x,max_y,max_z,left_trig,right_trig,0.0,1.0)
+    self.assertAlmostEqual(locs_smooth[0]['o_time'],50.,2)
 
 
 

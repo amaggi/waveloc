@@ -12,7 +12,7 @@ def plotLocationGrid(loc,grid_info,stack_grid,fig_dir):
   nx,ny,nz,nt = grid_info['grid_shape']
   dx,dy,dz,dt = grid_info['grid_spacing']
   x_orig,y_orig,z_orig = grid_info['grid_orig']
-  stack_starttime=grid_info['stack_starttime']
+  stack_starttime=grid_info['start_time']
   stack_otime=grid_info['stack_otime']
   grid_filename=grid_info['dat_file']
 
@@ -159,7 +159,7 @@ def plotDiracTest(test_info,fig_dir):
   dx,dy,dz,dt = test_info['grid_spacing']
   x_orig,y_orig,z_orig = test_info['grid_orig']
   ix_true, iy_true, iz_true, it_true= test_info['true_indexes']  
-  stack_shift_time=test_info['stack_shift_time']
+  stack_start_time=test_info['start_time']
   grid_filename=test_info['dat_file']
   stack_filename=test_info['stack_file']
   fig_filename=os.path.join(fig_dir,"%s.pdf"%os.path.basename(grid_filename))
@@ -189,7 +189,7 @@ def plotDiracTest(test_info,fig_dir):
   x=np.arange(nx)*dx
   y=np.arange(ny)*dy
   z=np.arange(nz)*dz
-  t=np.arange(nt)*dt-stack_shift_time
+  t=np.arange(nt)*dt+stack_start_time
 
   # do plot
   plt.subplot(3,3,1)

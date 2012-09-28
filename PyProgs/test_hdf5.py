@@ -52,19 +52,14 @@ class H5Tests(unittest.TestCase):
     maxdata=f.create_dataset('maxdata',(nt,),'f')
     imax=f.create_dataset('imax',(nt,),'i')
     t_slice=int(5e7/nb)
-    print t_slice
 
     t=time.time()
     n_slices=nt/t_slice
-    print n_slices
     for i in range(n_slices):
-      print i*t_slice
       imax[i*t_slice:(i+1)*t_slice]=np.argmax(bigdata[:,i*t_slice:(i+1)*t_slice],0)
       maxdata[i*t_slice:(i+1)*t_slice]=np.max(bigdata[:,i*t_slice:(i+1)*t_slice],0)
-    print n_slices*t_slice, nt
     imax[n_slices*t_slice:nt]=np.argmax(bigdata[:,n_slices*t_slice:nt],0)
     maxdata[n_slices*t_slice:nt]=np.max(bigdata[:,n_slices*t_slice:nt],0)
-    print time.time()-t
 
     f.close()
     os.remove(filename)

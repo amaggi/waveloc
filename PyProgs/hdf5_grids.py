@@ -2,7 +2,6 @@ import h5py,os,logging, tempfile
 import numpy as np
 from time import time
 from NllGridLib import read_hdr_file
-from itertools import count, islice
 
 class H5SingleGrid(object):
 
@@ -236,6 +235,7 @@ def get_interpolated_time_grids(opdict):
   time_grids={}
 
   # for each of the full-length time grids
+  logging.info('Loading time grids ... ')
   for f_timegrid in full_time_grids:
     f_basename=os.path.basename(f_timegrid)
     # get the filename of the corresponding short-length grid (the one for the search grid in particular)
@@ -243,7 +243,7 @@ def get_interpolated_time_grids(opdict):
 
     # if file exists and we want to load it, then open the file and give it to the dictionary
     if os.path.isfile(tgrid_filename) and opdict['load_ttimes_buf']:    
-      logging.info('Loading %s'%tgrid_filename)
+      logging.debug('Loading %s'%tgrid_filename)
       grid=H5SingleGrid(tgrid_filename)
       name=grid.grid_info['station']
       time_grids[name]=grid
@@ -276,144 +276,7 @@ def get_interpolated_time_grids(opdict):
 
   return time_grids
 
-#@profile
-def migrate_4D_stack(data, delta, time_grids, stack_grid):
-  from NllGridLib import read_hdr_file
 
-  # save the list of data keys
-  # note : keys of data are all included in keys of time_grid, but there may be more times than data
-  wf_ids=data.keys()
-  n_wf_ids=len(wf_ids)
-
-  n_buf,min_npts=stack_grid.shape
-  logging.debug("Stack max dimension = %d x %d"%(n_buf,min_npts))
-
-  # initialize the arrays we will need
-  tmp_stack=np.zeros(min_npts)
-  i_times=np.zeros((n_wf_ids,n_buf),dtype='int')
-  i_max_times=np.zeros(n_buf,dtype='int')
-  i_min_times=np.zeros(n_buf,dtype='int')
-  start_index=np.zeros(n_buf,dtype='int')
-  start_indexes=np.zeros((n_wf_ids,n_buf),dtype='int')
-  end_indexes=np.zeros((n_wf_ids,n_buf),dtype='int')
-  n_lens=np.zeros((n_wf_ids,n_buf),dtype='int')
-
-  # construct grid (n_buf x n_sta) grid of time_indexes for migration
-  for i in islice(count(0),n_wf_ids):
-    wf_id=wf_ids[i]
-    i_times[i,:]=np.round( time_grids[wf_id].grid_data[:] / delta )/1
-
-  # find the min and max time indexes for point
-  i_min_times=np.min(i_times,0)
-  i_max_times=np.max(i_times,0)
-  iextreme_min_time=np.min(i_min_times)
-  iextreme_max_time=np.max(i_max_times)
-  start_index=i_min_times-iextreme_min_time
-  stack_shift_time=delta*iextreme_min_time
-
-  # find start indexes, end indexes and lengths for each station and point
-  start_indexes=i_times-i_min_times 
-  end_indexes  =i_times-i_max_times+min_npts
-  n_lens       =end_indexes-start_indexes
-  # keep the shortest length for each point
-  n_len=np.min(n_lens,0)
-  # keep the shortest overall length
-  shortest_n_len=np.min(n_len)
-
-  # sill fix the length of the stack to the shortest possible length given all the previous travel time information
-  norm_stack_len=shortest_n_len-iextreme_max_time
-
-  # the actual migration loop
-  # cannot seem to vectorize this any more... too bad !!
-
-  for ib in islice(count(0),n_buf):
-
-    # This is ugly, but necessary to avoid memory leak from inner loop
-    _do_stack(ib,n_wf_ids,wf_ids,stack_grid,data,min_npts,n_lens,start_indexes,end_indexes,start_index,norm_stack_len)
-
-  # clean up what is no longer needed
-  del i_times, i_min_times, i_max_times, start_indexes, end_indexes, n_lens, start_index
-
-  # resize stack_grid
-  stack_grid.resize(norm_stack_len,axis=1)
-
-  # end
-  return stack_shift_time
-
-def _do_stack(ib,n_wf_ids,wf_ids,stack_grid,data,min_npts,n_lens,start_indexes,end_indexes,start_index,norm_stack_len):
-
-    tmp_stack=np.zeros(min_npts)
-    # stack shifted data from each station
-    for i in islice(count(0),n_wf_ids):
-      tmp_stack[0:n_lens[i,ib]] += data[wf_ids[i]][start_indexes[i,ib]:end_indexes[i,ib]]
-
-    # We need to homogenize, and get everything to start and end at the same time
-    stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
-
-    # cleanup
-    del tmp_stack
-
-
-def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
-
-  # get basic info
-  nx=search_info['nx']
-  ny=search_info['ny']
-  nz=search_info['nz']
-  dx=search_info['dx']
-  dy=search_info['dy']
-  dz=search_info['dz']
-  x_orig=search_info['x_orig']
-  y_orig=search_info['y_orig']
-  z_orig=search_info['z_orig']
-
-  nb,nt=stack_grid.shape
-
-  max_val=f_stack.create_dataset('max_val',(nt,),'f')
-  max_x=f_stack.create_dataset('max_x',(nt,),'f')
-  max_y=f_stack.create_dataset('max_y',(nt,),'f')
-  max_z=f_stack.create_dataset('max_z',(nt,),'f')
-
-  # create temporary datasets
-  max_ib=f_stack.create_dataset('max_ib',(nt,),'i')
-  max_ix=f_stack.create_dataset('max_ix',(nt,),'i')
-  max_iy=f_stack.create_dataset('max_iy',(nt,),'i')
-  max_iz=f_stack.create_dataset('max_iz',(nt,),'i')
-
-  # extract values
-  dt=int(n_max/nb)
-  if nt <= dt :
-    # do the extraction in one step
-    max_ib[:]=np.argmax(stack_grid,0)
-    max_val[:]=np.max(stack_grid,0)
-
-  else:
-    # do the extraction in steps
-    n=nt/dt
-    logging.debug('Number of values exceeds %d. Doing extraction in %d steps'%(n_max,n))
-    for i in islice(count(0),n):
-      max_ib[i*dt:(i+1)*dt]=np.argmax(stack_grid[:,i*dt:(i+1)*dt],0)
-      max_val[i*dt:(i+1)*dt]=np.max(stack_grid[:,i*dt:(i+1)*dt],0)
-    max_ib[n*dt:nt]=np.argmax(stack_grid[:,n*dt:nt],0)
-    max_val[n*dt:nt]=np.max(stack_grid[:,n*dt:nt],0)
-
-  # find the corresponding x,y,z values
-  max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
-  max_x[:]=max_ix[:]*dx+x_orig
-  max_y[:]=max_iy[:]*dy+y_orig
-  max_z[:]=max_iz[:]*dz+z_orig
-
-  logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
-  logging.debug('In extract_max_values, max_x : %f %f'%(np.max(max_x),np.sum(max_x)))
-  logging.debug('In extract_max_values, max_y : %f %f'%(np.max(max_y),np.sum(max_y)))
-  logging.debug('In extract_max_values, max_z : %f %f'%(np.max(max_z),np.sum(max_z)))
-
-  # clean up temporary datasets
-  del f_stack['max_ib']
-  del f_stack['max_ix']
-  del f_stack['max_iy']
-  del f_stack['max_iz']
- 
 if __name__=='__main__' : 
   
   pass
