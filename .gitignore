@@ -25,5 +25,5 @@
 *hdf5
 MANIFEST
 /build/
-__init__.py
 /dist/
+_build
