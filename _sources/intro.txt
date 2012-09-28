@@ -1,7 +1,5 @@
 .. Introduction to Waveloc stuff
 
-Test
-
 ============
 Introduction
 ============
