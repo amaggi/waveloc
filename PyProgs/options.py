@@ -219,6 +219,7 @@ class WavelocOptions(object):
     outdir=os.path.join(base_path,'out',self.opdict['outdir'])
     if not os.path.exists(outdir):  
       os.makedirs(outdir)
+      os.makedirs(os.path.join(outdir,'grid'))
       os.makedirs(os.path.join(outdir,'stack'))
       os.makedirs(os.path.join(outdir,'time_grids'))
 
