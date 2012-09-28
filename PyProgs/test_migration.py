@@ -11,8 +11,8 @@ from synth_migration import generateSyntheticDirac
 
 def suite():
   suite = unittest.TestSuite()
-#  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
-#  suite.addTest(MigrationTests('test_migration'))
+  suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
+  suite.addTest(MigrationTests('test_migration'))
   suite.addTest(MigrationTests('test_migration_fullRes'))
   return suite
 
