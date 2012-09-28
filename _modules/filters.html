@@ -1,0 +1,460 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>filters &mdash; waveLoc 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveLoc 0.1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveLoc 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for filters</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions for timeseries filtering.</span>
+
+<span class="sd">Created by Alessia Maggi and Alberto Michelini.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">ones</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">linalg</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">dot</span><span class="p">,</span> <span class="n">append</span><span class="p">,</span> <span class="nb">abs</span><span class="p">,</span> <span class="n">arange</span><span class="p">,</span> <span class="n">mean</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">lfilter</span><span class="p">,</span> <span class="n">hilbert</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">power</span>
+
+<span class="c">#from statlib import stats</span>
+<span class="c"># changed routine for the kurtosis (from scipy.stats)</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">ss</span>
+
+   
+<div class="viewcode-block" id="lfilter_zi"><a class="viewcode-back" href="../api.html#filters.lfilter_zi">[docs]</a><span class="k">def</span> <span class="nf">lfilter_zi</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the zi state from the filter parameters. See [Gust96].</span>
+<span class="sd">    </span>
+<span class="sd">    Based on:</span>
+<span class="sd">    [Gust96] Fredrik Gustafsson, Determining the initial states in forward-backward </span>
+<span class="sd">    filtering, IEEE Transactions on Signal Processing, pp. 988--992, April 1996, </span>
+<span class="sd">    Volume 44, Issue 4</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">n</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    
+    <span class="n">zin</span> <span class="o">=</span> <span class="p">(</span>  <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span> <span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> 
+                                 <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span> <span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">))))))</span> 
+    
+    <span class="n">zid</span><span class="o">=</span>  <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">n</span><span class="p">]</span><span class="o">*</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> 
+    
+    <span class="n">zi_matrix</span><span class="o">=</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">zin</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="n">zid</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
+    <span class="n">zi_return</span><span class="o">=</span><span class="p">[]</span>
+
+    <span class="c">#convert the result into a regular array (not a matrix)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">zi_matrix</span><span class="p">)):</span>
+      <span class="n">zi_return</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">zi_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+    
+    <span class="k">return</span> <span class="n">array</span><span class="p">(</span><span class="n">zi_return</span><span class="p">)</span>
+
+
+
+    </div>
+<div class="viewcode-block" id="filtfilt"><a class="viewcode-back" href="../api.html#filters.filtfilt">[docs]</a><span class="k">def</span> <span class="nf">filtfilt</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    What does this function do?  Alberto??</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c">#For now only accepting 1d arrays</span>
+    <span class="n">ntaps</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">edge</span><span class="o">=</span><span class="n">ntaps</span><span class="o">*</span><span class="mi">3</span>
+        
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;Filiflit is only accepting 1 dimension arrays.&quot;</span>
+
+    <span class="c">#x must be bigger than edge</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">edge</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;Input vector needs to be bigger than 3 * max(len(a),len(b).&quot;</span>
+        
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ntaps</span><span class="p">:</span>
+	<span class="n">a</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">a</span><span class="p">,</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ntaps</span><span class="p">:</span>
+	<span class="n">b</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">b</span><span class="p">,</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))]</span>         
+    
+    <span class="n">zi</span><span class="o">=</span><span class="n">lfilter_zi</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">)</span>
+    
+    <span class="c">#Grow the signal to have edges for stabilizing </span>
+    <span class="c">#the filter with inverted replicas of the signal</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="n">edge</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="n">edge</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="c">#in the case of one go we only need one of the extrems </span>
+    <span class="c"># both are needed for filtfilt</span>
+    
+    <span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">zf</span><span class="p">)</span><span class="o">=</span><span class="n">lfilter</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">s</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">zi</span><span class="o">*</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">zf</span><span class="p">)</span><span class="o">=</span><span class="n">lfilter</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">zi</span><span class="o">*</span><span class="n">y</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">edge</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="n">edge</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+  
+  
+    </div>
+<div class="viewcode-block" id="envelope"><a class="viewcode-back" href="../api.html#filters.envelope">[docs]</a><span class="k">def</span> <span class="nf">envelope</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">N</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Determines the envelope of a signal using the Hilbert transform.</span>
+<span class="sd">	</span>
+<span class="sd">	Uses scipy.signal.hilbert() to do the Hilbert transform.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">Hx</span><span class="o">=</span><span class="n">hilbert</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">N</span><span class="p">)</span>
+	
+	<span class="c"># determine the analytic function as f(t) -iFhi(t)</span>
+	<span class="n">xana</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">Hx</span>
+
+    <span class="c"># determine the envelope</span>
+	<span class="n">Henv</span><span class="o">=</span><span class="n">sqrt</span><span class="p">((</span><span class="n">xana</span> <span class="o">*</span> <span class="n">xana</span><span class="o">.</span><span class="n">conjugate</span><span class="p">())</span><span class="o">.</span><span class="n">real</span><span class="p">)</span>
+	<span class="k">return</span><span class="p">(</span><span class="n">Henv</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="stalta"><a class="viewcode-back" href="../api.html#filters.stalta">[docs]</a><span class="k">def</span> <span class="nf">stalta</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">STAwin</span><span class="p">,</span><span class="n">LTAwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the short to long time average ratio of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    STAwin = short time average window in seconds.</span>
+<span class="sd">    LTAwin = long time average in seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nSTA</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">STAwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">nLTA</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LTAwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    
+    <span class="n">xabs</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">ratio</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLTA</span> <span class="o">-</span> <span class="n">nSTA</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">LTA</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">xabs</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLTA</span><span class="p">)])</span>
+        <span class="n">STA</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">xabs</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="n">nLTA</span><span class="p">):(</span><span class="n">i</span><span class="o">+</span><span class="n">nLTA</span><span class="o">+</span><span class="n">nSTA</span><span class="p">)])</span>
+        <span class="n">ratio</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">STA</span><span class="o">/</span><span class="n">LTA</span><span class="p">)</span>
+        
+    <span class="k">return</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="allens_stalta"><a class="viewcode-back" href="../api.html#filters.allens_stalta">[docs]</a><span class="k">def</span> <span class="nf">allens_stalta</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">STAwin</span><span class="p">,</span><span class="n">LTAwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the short to long time average ratio of a timeseries. </span>
+<span class="sd">    using Allen (1978) caracteristic function (see report)</span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    STAwin = short time average window in seconds.</span>
+<span class="sd">    LTAwin = long time average in seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dx</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">E</span><span class="o">=</span><span class="n">x</span><span class="o">*</span><span class="n">x</span><span class="o">+</span><span class="n">dx</span><span class="o">*</span><span class="n">dx</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nSTA</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">STAwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">nLTA</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LTAwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    
+    <span class="n">Eabs</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+
+    <span class="n">ratio</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLTA</span> <span class="o">-</span> <span class="n">nSTA</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">LTA</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">Eabs</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLTA</span><span class="p">)])</span>
+        <span class="n">STA</span><span class="o">=</span><span class="n">mean</span><span class="p">(</span><span class="n">Eabs</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="n">nLTA</span><span class="p">):(</span><span class="n">i</span><span class="o">+</span><span class="n">nLTA</span><span class="o">+</span><span class="n">nSTA</span><span class="p">)])</span>
+        <span class="n">ratio</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">STA</span><span class="o">/</span><span class="n">LTA</span><span class="p">)</span>
+        
+    <span class="k">return</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="skewness"><a class="viewcode-back" href="../api.html#filters.skewness">[docs]</a><span class="k">def</span> <span class="nf">skewness</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">LENwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the absolute value of the skewness of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    LENwin =  time window (in secs) over which the skewness is determined </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nLEN</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LENwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="c">#xabs=abs(x)</span>
+
+    <span class="n">absskew</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLEN</span> <span class="o">+</span><span class="mi">1</span> <span class="p">):</span>
+        <span class="n">a</span><span class="o">=</span><span class="n">ss</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)])</span>
+        <span class="n">absskew</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">absskew</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="kurto"><a class="viewcode-back" href="../api.html#filters.kurto">[docs]</a><span class="k">def</span> <span class="nf">kurto</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">LENwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the kurtosis of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    LENwin =  time window (in secs) over which the kurtosis is determined </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nLEN</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LENwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="c">#xabs=abs(x)</span>
+
+   
+    <span class="n">kurtos</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLEN</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c">#a=stats.lkurtosis(x[i:(i+nLEN)])</span>
+        <span class="c"># changed routine for kurtosis</span>
+        <span class="n">a</span><span class="o">=</span><span class="n">ss</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)],</span><span class="n">fisher</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">kurtos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">kurtos</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="kurto_improved"><a class="viewcode-back" href="../api.html#filters.kurto_improved">[docs]</a><span class="k">def</span> <span class="nf">kurto_improved</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">LENwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the kurtosis of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    LENwin =  time window (in secs) over which the skewness is determined </span>
+
+<span class="sd">    described by kuperkoch et al. 2010: calculate the kurtosis recursively</span>
+<span class="sd">    Results are not satisfying, but one may want to improve this... it might</span>
+<span class="sd">    save some time!</span>
+<span class="sd">   </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nLEN</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LENwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="c">#xabs=abs(x)</span>
+    <span class="n">kurtos</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">first_window</span><span class="o">=</span><span class="n">ss</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">:(</span><span class="mi">0</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)],</span><span class="n">fisher</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">kurtos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">first_window</span><span class="p">)</span>
+    <span class="n">i</span><span class="o">=</span><span class="mi">1</span>
+    <span class="k">while</span> <span class="n">i</span><span class="o">&lt;</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLEN</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+      <span class="n">new_value</span><span class="o">=</span><span class="n">kurtos</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">4</span><span class="o">+</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="o">+</span><span class="n">nLEN</span><span class="p">])</span><span class="o">**</span><span class="mi">4</span>
+      <span class="n">kurtos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_value</span><span class="p">)</span>
+      <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">kurtos</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="variance"><a class="viewcode-back" href="../api.html#filters.variance">[docs]</a><span class="k">def</span> <span class="nf">variance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">LENwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the variance of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    LENwin =  time window (in secs) over which the variance is determined </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nLEN</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LENwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="c">#xabs=abs(x)</span>
+
+    <span class="n">vari</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLEN</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">a</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)])</span>
+        <span class="n">vari</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">vari</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="gradient"><a class="viewcode-back" href="../api.html#filters.gradient">[docs]</a><span class="k">def</span> <span class="nf">gradient</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">LENwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the gradient of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    LENwin =  time window (in secs) over which the gradient is determined </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nLEN</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LENwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="c">#xabs=abs(x)</span>
+    <span class="n">grad</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLEN</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">a</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)],</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">b</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">grad</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">grad</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="variance_under_rotation"><a class="viewcode-back" href="../api.html#filters.variance_under_rotation">[docs]</a><span class="k">def</span> <span class="nf">variance_under_rotation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">LENwin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the variance under rotation of a timeseries. </span>
+<span class="sd">    </span>
+<span class="sd">    dt = sampling interval in seconds. </span>
+<span class="sd">    LENwin =  time window (in secs) over which the variance under rotation is determined </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># find number of samples in averaging windows</span>
+    <span class="n">nLEN</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">LENwin</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+    <span class="c">#xabs=abs(x)</span>
+
+    <span class="n">var</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">nLEN</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">a</span><span class="o">=</span><span class="n">varrot</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)],</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="n">nLEN</span><span class="p">)])</span>
+        <span class="n">var</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="varrot"><a class="viewcode-back" href="../api.html#filters.varrot">[docs]</a><span class="k">def</span> <span class="nf">varrot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">  for each angle, calculates the mean of the projection over the whole array</span>
+<span class="sd">  then calculates the mean over each angle.</span>
+
+<span class="sd">  Then, for each angle, calculates the variance, and then the mean over each angle</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">av</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">av</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">projection</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">theta</span><span class="p">)))</span>
+  <span class="n">varrot_mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">av</span><span class="p">)</span>
+
+  <span class="n">val_av</span><span class="o">=</span><span class="p">[]</span>
+  <span class="k">for</span> <span class="n">theta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">val_av</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">projection</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">theta</span><span class="p">)))</span>
+  <span class="n">val</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">val_av</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="projection"><a class="viewcode-back" href="../api.html#filters.projection">[docs]</a><span class="k">def</span> <span class="nf">projection</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">theta</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   return an array</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="n">t</span><span class="o">=</span><span class="n">radians</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+  <span class="n">a</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+  <span class="n">b</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+  <span class="n">proj</span><span class="o">=</span><span class="n">a</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">+</span><span class="n">b</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+
+  
+  
+
+
+</div>
+<div class="viewcode-block" id="smooth"><a class="viewcode-back" href="../api.html#filters.smooth">[docs]</a><span class="k">def</span> <span class="nf">smooth</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">window_len</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span><span class="n">window</span><span class="o">=</span><span class="s">&#39;hanning&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;smooth the data using a window with requested size.</span>
+<span class="sd">    </span>
+<span class="sd">    This method is based on the convolution of a scaled window with the signal.</span>
+<span class="sd">    The signal is prepared by introducing reflected copies of the signal </span>
+<span class="sd">    (with the window size) in both ends so that transient parts are minimized</span>
+<span class="sd">    in the begining and end part of the output signal.</span>
+<span class="sd">    </span>
+<span class="sd">    input:</span>
+<span class="sd">        x: the input signal </span>
+<span class="sd">        window_len: the dimension of the smoothing window; should be an odd integer</span>
+<span class="sd">        window: the type of window from &#39;flat&#39;, &#39;hanning&#39;, &#39;hamming&#39;, &#39;bartlett&#39;, &#39;blackman&#39;</span>
+<span class="sd">            flat window will produce a moving average smoothing.</span>
+
+<span class="sd">    output:</span>
+<span class="sd">        the smoothed signal</span>
+<span class="sd">        </span>
+<span class="sd">    example:</span>
+
+<span class="sd">    t=linspace(-2,2,0.1)</span>
+<span class="sd">    x=sin(t)+randn(len(t))*0.1</span>
+<span class="sd">    y=smooth(x)</span>
+<span class="sd">    </span>
+<span class="sd">    see also: </span>
+<span class="sd">    </span>
+<span class="sd">    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve</span>
+<span class="sd">    scipy.signal.lfilter</span>
+<span class="sd"> </span>
+<span class="sd">    TODO: the window parameter could be the window itself if an array instead of a string</span>
+<span class="sd">    NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;smooth only accepts 1 dimension arrays.&quot;</span>
+
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">window_len</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;Input vector needs to be bigger than window size.&quot;</span>
+
+
+    <span class="k">if</span> <span class="n">window_len</span><span class="o">&lt;</span><span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">window</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;flat&#39;</span><span class="p">,</span> <span class="s">&#39;hanning&#39;</span><span class="p">,</span> <span class="s">&#39;hamming&#39;</span><span class="p">,</span> <span class="s">&#39;bartlett&#39;</span><span class="p">,</span> <span class="s">&#39;blackman&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s">&quot;Window is on of &#39;flat&#39;, &#39;hanning&#39;, &#39;hamming&#39;, &#39;bartlett&#39;, &#39;blackman&#39;&quot;</span>
+
+
+    <span class="n">s</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="n">window_len</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="n">window_len</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+    <span class="c">#print(len(s))</span>
+    <span class="k">if</span> <span class="n">window</span> <span class="o">==</span> <span class="s">&#39;flat&#39;</span><span class="p">:</span> <span class="c">#moving average</span>
+        <span class="n">w</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">window_len</span><span class="p">,</span><span class="s">&#39;d&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w</span><span class="o">=</span><span class="nb">eval</span><span class="p">(</span><span class="s">&#39;np.&#39;</span><span class="o">+</span><span class="n">window</span><span class="o">+</span><span class="s">&#39;(window_len)&#39;</span><span class="p">)</span>
+
+    <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span><span class="n">s</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s">&#39;valid&#39;</span><span class="p">)</span>
+    <span class="c">#return y</span>
+    <span class="c">#return y[(window_len/2-1):-(window_len/2)]</span>
+    <span class="k">return</span> <span class="n">y</span><span class="p">[(</span><span class="n">window_len</span><span class="o">/</span><span class="mi">2</span><span class="p">):</span><span class="o">-</span><span class="p">(</span><span class="n">window_len</span><span class="o">/</span><span class="mi">2</span><span class="p">)]</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveLoc 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Alessia Maggi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

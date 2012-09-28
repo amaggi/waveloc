@@ -1,0 +1,119 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>obspyaux &mdash; waveLoc 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveLoc 0.1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveLoc 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for obspyaux</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="time2nztimesac"><a class="viewcode-back" href="../api.html#obspyaux.time2nztimesac">[docs]</a><span class="k">def</span> <span class="nf">time2nztimesac</span><span class="p">(</span><span class="n">stringa</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    this function converts the onbspy strings stats.starttime and stats.endtime </span>
+<span class="sd">    (eg, &#39;2009-04-06T01:29:59.840000Z&#39;) into</span>
+<span class="sd">    nzyear, month, day, hour, minute, seconds and milliseconds</span>
+<span class="sd">    It returns the latter values as integers in a tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">starttime_tuple</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">stringa</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;T&quot;</span><span class="p">)</span>
+    <span class="c">#print starttime_tuple</span>
+    <span class="p">(</span><span class="n">nzyear</span><span class="p">,</span><span class="n">month</span><span class="p">,</span><span class="n">day</span><span class="p">)</span><span class="o">=</span><span class="n">starttime_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;-&quot;</span><span class="p">)</span>
+    <span class="c">#print int(nzyear),int(month),int(day)</span>
+    <span class="c">#</span>
+    <span class="n">starttime_homisec</span><span class="o">=</span><span class="n">starttime_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c"># remove the last character</span>
+    <span class="k">if</span> <span class="n">starttime_homisec</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span><span class="o">==</span><span class="s">&#39;Z&#39;</span><span class="p">:</span>
+       <span class="n">starttime_homisec</span><span class="o">=</span><span class="n">starttime_homisec</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c">#determine the milliseconds</span>
+    <span class="n">tmp</span><span class="o">=</span><span class="n">starttime_homisec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)</span>
+    <span class="n">msec</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">msec</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">msec</span><span class="o">/</span><span class="mf">1.0e3</span><span class="p">)</span>
+    <span class="c"># determine the hour, minute and seconds</span>
+    <span class="p">(</span><span class="n">ho</span><span class="p">,</span><span class="n">mi</span><span class="p">,</span><span class="n">sec</span><span class="p">)</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+    <span class="c">#print ho,mi,sec</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">nzyear</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">month</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">ho</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">mi</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">sec</span><span class="p">),</span><span class="n">msec</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveLoc 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Alessia Maggi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
