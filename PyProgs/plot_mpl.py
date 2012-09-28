@@ -2,7 +2,6 @@ import os, h5py, logging
 import numpy as np
 import scipy.integrate as si
 import matplotlib.pyplot as plt
-from visualization import setup_test_grid
 from integrate4D import *
 from filters import smooth
 
@@ -463,17 +462,3 @@ def plot_probloc_mpl(grid_dict,x_list,base_filename):
   plt.title('Marginal probability density over y and z')
   plt.savefig(files_dict['prob_x1_x2'])
  
-if __name__ == '__main__':
-
-  import logging
-  logging.basicConfig(level=logging.DEBUG, format='%(levelname)s : %(asctime)s : %(message)s')
-
-  base_name=os.getenv('WAVELOC_PATH')
-  fig_dir = os.path.join(base_name,'test_figures')
-  if not os.path.exists(fig_dir): os.makedirs(fig_dir)
-
-  base_filename = os.path.join(fig_dir,'testplot_st_mpl')
-  grid4D, grid_dict,x_list = setup_test_grid()
-  plot_probloc_mpl(grid_dict,x_list,base_filename)
-  
-
