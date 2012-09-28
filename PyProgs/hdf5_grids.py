@@ -328,7 +328,21 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
 
   for ib in islice(count(0),n_buf):
 
-    tmp_stack[:]=0.
+    # This is ugly, but necessary to avoid memory leak from inner loop
+    _do_stack(ib,n_wf_ids,wf_ids,stack_grid,data,min_npts,n_lens,start_indexes,end_indexes,start_index,norm_stack_len)
+
+  # clean up what is no longer needed
+  del i_times, i_min_times, i_max_times, start_indexes, end_indexes, n_lens, start_index
+
+  # resize stack_grid
+  stack_grid.resize(norm_stack_len,axis=1)
+
+  # end
+  return stack_shift_time
+
+def _do_stack(ib,n_wf_ids,wf_ids,stack_grid,data,min_npts,n_lens,start_indexes,end_indexes,start_index,norm_stack_len):
+
+    tmp_stack=np.zeros(min_npts)
     # stack shifted data from each station
     for i in islice(count(0),n_wf_ids):
       tmp_stack[0:n_lens[i,ib]] += data[wf_ids[i]][start_indexes[i,ib]:end_indexes[i,ib]]
@@ -336,12 +350,9 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
     # We need to homogenize, and get everything to start and end at the same time
     stack_grid[ib,0:norm_stack_len]=tmp_stack[start_index[ib]:start_index[ib]+norm_stack_len]
 
-  # clean up what is no longer needed
-  del tmp_stack,i_times, i_min_times, i_max_times, start_indexes, end_indexes, n_lens
+    # cleanup
+    del tmp_stack
 
-  stack_grid.resize(norm_stack_len,axis=1)
-
-  return stack_shift_time
 
 def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
 
