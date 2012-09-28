@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; WaveLoc 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="WaveLoc 2.0 documentation" href="index.html" />
+    <link rel="next" title="WaveLoc API" href="api.html" />
+    <link rel="prev" title="Introduction" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="WaveLoc API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">WaveLoc 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This is a simple tutorial for getting started with WaveLoc.</p>
+<div class="section" id="download-and-installation">
+<h2>Download and installation<a class="headerlink" href="#download-and-installation" title="Permalink to this headline">¶</a></h2>
+<p>WaveLoc can be obtained <strong>here</strong>.</p>
+<p>System requirements :</p>
+<ul class="simple">
+<li>python (works well with the Enthought python, available here)</li>
+<li>obspy (available here)</li>
+<li>xvbf on linux / mac (available here)</li>
+<li>NonLinLoc for time grid calculation (not strictly required)</li>
+<li>other stuff I&#8217;ve surelly fogotten about...</li>
+</ul>
+<div class="section" id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<p>Untar the distribution.  Set the environment variable <tt class="docutils literal"><span class="pre">WAVELOC_PATH</span></tt> to point to
+the root of the distribution.  Add <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/PyProgs</span></tt> to your <tt class="docutils literal"><span class="pre">PYTHON_PATH</span></tt> if you
+want to run the codes from any directory.</p>
+<p>Expected directory strucutre:</p>
+<div class="highlight-python"><pre>waveloc
+|-- aux
+|-- data
+|-- nll
+|-- out
+|-- PyProgs</pre>
+</div>
+<p>Install <tt class="docutils literal"><span class="pre">NonLinLoc</span></tt> where you prefer.  You just need to be able to call
+<tt class="docutils literal"><span class="pre">Vel2Grid</span></tt> and <tt class="docutils literal"><span class="pre">Grid2Time</span></tt> correctly if you want to use NLL to construct
+your time grids from your 2D or 3D starting model and not provide these grids
+yourself.</p>
+</div>
+</div>
+<div class="section" id="preprocess-the-data">
+<h2>Preprocess the data<a class="headerlink" href="#preprocess-the-data" title="Permalink to this headline">¶</a></h2>
+<p>Raw data can be provided in any format that obspy is capable of reading (tested
+formats : <tt class="docutils literal"><span class="pre">MSEED</span></tt> and <tt class="docutils literal"><span class="pre">SAC</span></tt> for now).  Preferred data structure are SDS archives,
+but other structures are acceptable so long as a siutable io interface is coded
+into the processing code.  As an alternative to re-programming the processing
+code, a helper script, <tt class="docutils literal"><span class="pre">make_SDS_data_links.py</span></tt>, is provided to create SDS
+archives from flat files using soft links.</p>
+<p>The processing code will look for data in the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/data/SOME_NAME</span></tt>
+directory, where the <tt class="docutils literal"><span class="pre">SOME_NAME</span></tt> subdirectory contains the SDS archive(s) and will
+also contain the processed waveforms.  Data for the tutorial are in the
+<tt class="docutils literal"><span class="pre">Tutorial</span></tt> subdirectory.</p>
+<p>The preprocessing code is run using the script
+<tt class="xref py py-mod docutils literal"><span class="pre">run_SDS_processing_threading.py</span></tt>, which uses a multi-threaded architecture
+to process multiple data streams simultaneously.</p>
+<p>To see the command-line options for the processing code type:</p>
+<div class="highlight-python"><pre>&gt; run_SDS_processing_threading.py --help</pre>
+</div>
+<div class="highlight-python"><pre>Usage: run_SDS_processing_threading.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  --datadir=DATADIR     data subdirectory
+  --net_list=NET_LIST   list of network codes (e.g. "BE,G")
+  --sta_list=STA_LIST   list of station names (e.g. "STA1,STA2")
+  --comp_list=COMP_LIST
+                        list of component names (e.g. "HHZ,LHZ")
+  --starttime=STARTTIME
+                        start time for data e.g. 2010-10-14T00:00:00.0Z
+  --endtime=ENDTIME     end time for data e.g. 2010-10-14T10:00:00.0Z
+  --resample            resample data
+  --fs=FS               resample frequency
+  --c1=C1               low frequency corner of band pass filter
+  --c2=C2               high frequency corner of band pass filter
+  --kwin=KWIN           length of kurtosis window (seconds)
+  --krec                use recursive kurtosis calculation (faster but less precise)
+  --kderiv              also calculate the gradient of the kurtosis</pre>
+</div>
+<p>Most of the options are self-explanatory.  The choice of the frequency ranges
+will influence the ability of the kurtosis to detect a non-stationary signal
+(i.e. a first arrival).  We provide a helper-code <tt class="docutils literal"><span class="pre">run_kurtogram.py</span></tt> that may
+help you find the best frequency range for your data by plotting the power in
+the kurtosis as a function of central frequency and of width of frequency band.
+Run this on several examples of data to get an idea of the best frequency range
+for the rest of the analysis.</p>
+<p>We suggest you use the recursive
+kurtosis calculation given the considerable increase in speed it offers.  The
+window for the recursive calculation should be long enough to smooth over the
+S-P arrival time, in order to avoid double peaks in the kurtosis.
+We also suggest you calculate the gradient of the kurtosis, as using this for
+migration will give more precise results.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The option to chose recursive kurtosis and kurtosis gradient calculations may
+soon disappear from the code, as they will likely become the default options.</p>
+</div>
+<p>We provide an example run-script <tt class="docutils literal"><span class="pre">run_tutorial.sh</span></tt> to show how to run the
+processing scripts and the following migration and location scripts.  Feel free
+to modify this run-script for your own data.</p>
+<div class="highlight-python"><pre>Add file here</pre>
+</div>
+<p>Show figure for output.</p>
+</div>
+<div class="section" id="prepare-the-time-and-search-grids">
+<h2>Prepare the time and search grids<a class="headerlink" href="#prepare-the-time-and-search-grids" title="Permalink to this headline">¶</a></h2>
+<p>WaveLoc works on the basis of pre-determined grids.  For programming
+convenience, these grids are regularly spaced, and based on the grid format
+used by NonLinLoc.  Details of the format can be found by reading the NLL
+documentation at <a class="reference external" href="http://alomax.free.fr/nlloc">http://alomax.free.fr/nlloc</a> or the relevant routines of the
+WaveLoc code <tt class="xref py py-mod docutils literal"><span class="pre">grids_paths</span></tt>.</p>
+<p>Setting up one of these grids using the NLL utilities requires first of all
+setting up an input file for NLL.  The example file <tt class="docutils literal"><span class="pre">nll_tutorial.in</span></tt> in the
+<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/nll/TUTORIAL</span></tt> directory contains
+all the relevant statements, with lots of comments to explain what they are
+for, but here is the short story for a 3-D representation of a 1-D velocity model:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="89%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Statement</th>
+<th class="head">Comment</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>TRANS</td>
+<td>Choice of geographical transformation to use.
+All subsequent grids will be locked to this
+transformation, and counted from its center.</td>
+</tr>
+<tr class="row-odd"><td>VGOUT</td>
+<td>Root name for the output files containing the
+velocity grid.</td>
+</tr>
+<tr class="row-even"><td>VGTYPE</td>
+<td>Wave-type for the velocity grids (P or S).</td>
+</tr>
+<tr class="row-odd"><td>VGGRID</td>
+<td>Definition of the extent and grid-step for the
+velocity grid in 3D (relative to the geographical
+projection</td>
+</tr>
+<tr class="row-even"><td>LAYER</td>
+<td>Multiple statements to describe the 1D layered velocity model</td>
+</tr>
+<tr class="row-odd"><td>GTFILES</td>
+<td>Root name for the output files containing the time grids (one per station).</td>
+</tr>
+<tr class="row-even"><td>GTMODE</td>
+<td>Defines the mode of the time grids (2D/3D, with or without angles).</td>
+</tr>
+<tr class="row-odd"><td>GTSRCE</td>
+<td>Multiple lines containing the station coordinates.</td>
+</tr>
+</tbody>
+</table>
+<p>Make sure that your velocity/time grids are large enough to contain the stations. If a station is within the grid, you should get this sort of output:</p>
+<div class="highlight-python"><pre>&gt; Vel2Grid nll_tutorial.in
+
+Calculating travel times for source: BLS1  X 33.5463  Y -31.7444  Z -0.1000 ...
+Source:  Velocity: 3.400000 km/sec  GridLoc: ix=103.546295 iy=38.255554 iz=2.900000
+
+Recursive initialization: level 1
+Homogeneous region: x[13-&gt;16] y[15-&gt;18] z[0-&gt;7]
+
+Starting F.D. computation...
+Starting F.D. computation...
+time_3d: Computations terminated normally.
+Finished calculation, time grid output files: ./tutorial.P.BLS1.*</pre>
+</div>
+<p>If a station is outside the grid, you will get this sort of error message:</p>
+<div class="highlight-python"><pre>&gt; Vel2Grid nll_tutorial.in
+Calculating travel times for source: OBO2  X 117.5147  Y 12.2111  Z -0.0450 ...
+Grid2Time: ERROR: Source point is not inside model grid.
+Source:  GridLoc: ix=187.514709 iy=82.211113 iz=2.955000
+Grid2Time: ERROR: calculating travel times.</pre>
+</div>
+<p>Having stations outside of the time grid will not make WaveLoc crash, but you
+will not be able to use data from those stations (WaveLoc will tell you and
+keep going for the other stations).</p>
+<p>Create a separate text file containing only the GTSRCE lines, which will be
+read by other scripts that need the station coordinates.  Copy this file to
+the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/aux</span></tt> directory.</p>
+<p>Creating the grid files requires running two NonLinLoc commands (NLL must be installed first, of course):</p>
+<div class="highlight-python"><pre>&gt; Vel2Grid nll_tutorial.in
+&gt; Grid2Time nll_tutorial.in</pre>
+</div>
+<p>You will also need a search grid, centered around the region (within your
+velocity/time grid) in which you expect to find events.  This grid can be finer
+than the previous one, in which case travel-times for intermediate points will
+be calculated by linear interpolation of the time grids.  However, the
+geographical transformation and its center should be the same as for the time
+grids. Hint: start with an identical grid, by copying the <tt class="docutils literal"><span class="pre">.mod.hdr</span></tt> file,
+then modify this grid, making it smaller or denser as you prefer.</p>
+<dl class="docutils">
+<dt>..warning::</dt>
+<dd>Computation time for WaveLoc increasces linearly with the total number of
+points in the search grid, so make the grid as small as you can, and no denser
+than you need.</dd>
+</dl>
+<p>Copy, move or make symbolic links to the .hdr and .buf files in the
+<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/aux</span></tt> directory, and you should be set to go, e.g.:</p>
+<div class="highlight-python"><pre>aux
+├── coord_stations_tutorial -&gt; ../nll/TUTORIAL/coord_stations_tutorial
+├── grid.tutorial.search.hdr -&gt; ../nll/TUTORIAL/grid.tutorial.search.hdr
+├── tutorial.P.AIR.time.buf -&gt; ../nll/TUTORIAL/tutorial.P.AIR.time.buf
+├── tutorial.P.AIR.time.hdr -&gt; ../nll/TUTORIAL/tutorial.P.AIR.time.hdr
+...</pre>
+</div>
+</div>
+<div class="section" id="run-migration">
+<h2>Run migration<a class="headerlink" href="#run-migration" title="Permalink to this headline">¶</a></h2>
+<p>The migration code is run using the script
+<tt class="xref py py-mod docutils literal"><span class="pre">run_waveloc_threading.py</span></tt>, which uses a multi-threaded architecture
+to process multiple data streams simultaneously.</p>
+<p>To see the command-line options for the processing code type:</p>
+<div class="highlight-python"><pre>&gt; run_waveloc_threading.py --help</pre>
+</div>
+<div class="highlight-python"><pre>Output of help run</pre>
+</div>
+<p>The migration code performs three steps :</p>
+<p># Calculates travel-times for the search grid by interpolating the time-grids for each station (this operation takes some time).
+#</p>
+<p>If your data directory contains data from stations which were outside the time grid, you will get</p>
+<p>Run migration code.  Give example.</p>
+</div>
+<div class="section" id="run-location">
+<h2>Run location<a class="headerlink" href="#run-location" title="Permalink to this headline">¶</a></h2>
+<p>Run location code.</p>
+</div>
+<div class="section" id="optionnal-run-plots">
+<h2>Optionnal run plots<a class="headerlink" href="#optionnal-run-plots" title="Permalink to this headline">¶</a></h2>
+<p>Make pretty pictures</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#download-and-installation">Download and installation</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#preprocess-the-data">Preprocess the data</a></li>
+<li><a class="reference internal" href="#prepare-the-time-and-search-grids">Prepare the time and search grids</a></li>
+<li><a class="reference internal" href="#run-migration">Run migration</a></li>
+<li><a class="reference internal" href="#run-location">Run location</a></li>
+<li><a class="reference internal" href="#optionnal-run-plots">Optionnal run plots</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="api.html"
+                        title="next chapter">WaveLoc API</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tutorial.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="api.html" title="WaveLoc API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="index.html">WaveLoc 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Alessia Maggi.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
