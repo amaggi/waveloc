@@ -39,7 +39,7 @@ def do_SDS_processing_setup_and_run(opdict):
         if os.path.exists(full_path):
 
           filt_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt.mseed"%(start_time.isoformat(),net,sta,comp))
-          logging.info("Processing to create %s" % (filt_filename))
+          logging.debug("Processing to create %s" % (filt_filename))
           wf=Waveform()
           try:
             wf.read_from_SDS(data_dir,net,sta,comp, starttime=start_time, endtime=end_time)
@@ -49,13 +49,13 @@ def do_SDS_processing_setup_and_run(opdict):
             wf.write_to_file_filled(filt_filename,format='MSEED',fill_value=0)
 
             kurt_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt.mseed"%(start_time.isoformat(),net,sta,comp))
-            logging.info("Processing to create %s " % (kurt_filename))
+            logging.debug("Processing to create %s" % (kurt_filename))
             wf.process_kurtosis(kurt_window,recursive=opdict['krec'],pre_taper=True, post_taper=True)
             wf.write_to_file_filled(kurt_filename,format='MSEED',fill_value=0)
 
             if opdict['kderiv']:
               kurt_grad_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt_grad.mseed"%(start_time.isoformat(),net,sta,comp))
-              logging.info("Processing to create %s " % (kurt_grad_filename))
+              logging.debug("Processing to create %s" % (kurt_grad_filename))
               wf.take_positive_derivative(pre_taper=True,post_taper=True)
               wf.write_to_file_filled(kurt_grad_filename,format='MSEED',fill_value=0)
   
