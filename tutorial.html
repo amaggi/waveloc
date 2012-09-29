@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="WaveLoc 2.0 documentation" href="index.html" />
     <link rel="next" title="WaveLoc API" href="api.html" />
-    <link rel="prev" title="Introduction" href="intro.html" /> 
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="api.html" title="WaveLoc API"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="intro.html" title="Introduction"
+          <a href="getting_started.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">WaveLoc 2.0 documentation</a> &raquo;</li> 
       </ul>
@@ -56,39 +56,11 @@
             
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<p>This is a simple tutorial for getting started with WaveLoc.</p>
-<div class="section" id="download-and-installation">
-<h2>Download and installation<a class="headerlink" href="#download-and-installation" title="Permalink to this headline">¶</a></h2>
-<p>WaveLoc can be obtained <strong>here</strong>.</p>
-<p>System requirements :</p>
-<ul class="simple">
-<li>python (works well with the Enthought python, available here)</li>
-<li>obspy (available here)</li>
-<li>xvbf on linux / mac (available here)</li>
-<li>NonLinLoc for time grid calculation (not strictly required)</li>
-<li>other stuff I&#8217;ve surelly fogotten about...</li>
-</ul>
-<div class="section" id="installation">
-<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
-<p>Untar the distribution.  Set the environment variable <tt class="docutils literal"><span class="pre">WAVELOC_PATH</span></tt> to point to
-the root of the distribution.  Add <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/PyProgs</span></tt> to your <tt class="docutils literal"><span class="pre">PYTHON_PATH</span></tt> if you
-want to run the codes from any directory.</p>
-<p>Expected directory strucutre:</p>
-<div class="highlight-python"><pre>waveloc
-|-- aux
-|-- data
-|-- nll
-|-- out
-|-- PyProgs</pre>
+<div class="section" id="waveloc-options">
+<h2>Waveloc options<a class="headerlink" href="#waveloc-options" title="Permalink to this headline">¶</a></h2>
 </div>
-<p>Install <tt class="docutils literal"><span class="pre">NonLinLoc</span></tt> where you prefer.  You just need to be able to call
-<tt class="docutils literal"><span class="pre">Vel2Grid</span></tt> and <tt class="docutils literal"><span class="pre">Grid2Time</span></tt> correctly if you want to use NLL to construct
-your time grids from your 2D or 3D starting model and not provide these grids
-yourself.</p>
-</div>
-</div>
-<div class="section" id="preprocess-the-data">
-<h2>Preprocess the data<a class="headerlink" href="#preprocess-the-data" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="preprocess-your-data">
+<h2>Preprocess your data<a class="headerlink" href="#preprocess-your-data" title="Permalink to this headline">¶</a></h2>
 <p>Raw data can be provided in any format that obspy is capable of reading (tested
 formats : <tt class="docutils literal"><span class="pre">MSEED</span></tt> and <tt class="docutils literal"><span class="pre">SAC</span></tt> for now).  Preferred data structure are SDS archives,
 but other structures are acceptable so long as a siutable io interface is coded
@@ -97,34 +69,7 @@ code, a helper script, <tt class="docutils literal"><span class="pre">make_SDS_d
 archives from flat files using soft links.</p>
 <p>The processing code will look for data in the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/data/SOME_NAME</span></tt>
 directory, where the <tt class="docutils literal"><span class="pre">SOME_NAME</span></tt> subdirectory contains the SDS archive(s) and will
-also contain the processed waveforms.  Data for the tutorial are in the
-<tt class="docutils literal"><span class="pre">Tutorial</span></tt> subdirectory.</p>
-<p>The preprocessing code is run using the script
-<tt class="xref py py-mod docutils literal"><span class="pre">run_SDS_processing_threading.py</span></tt>, which uses a multi-threaded architecture
-to process multiple data streams simultaneously.</p>
-<p>To see the command-line options for the processing code type:</p>
-<div class="highlight-python"><pre>&gt; run_SDS_processing_threading.py --help</pre>
-</div>
-<div class="highlight-python"><pre>Usage: run_SDS_processing_threading.py [options]
-
-Options:
-  -h, --help            show this help message and exit
-  --datadir=DATADIR     data subdirectory
-  --net_list=NET_LIST   list of network codes (e.g. "BE,G")
-  --sta_list=STA_LIST   list of station names (e.g. "STA1,STA2")
-  --comp_list=COMP_LIST
-                        list of component names (e.g. "HHZ,LHZ")
-  --starttime=STARTTIME
-                        start time for data e.g. 2010-10-14T00:00:00.0Z
-  --endtime=ENDTIME     end time for data e.g. 2010-10-14T10:00:00.0Z
-  --resample            resample data
-  --fs=FS               resample frequency
-  --c1=C1               low frequency corner of band pass filter
-  --c2=C2               high frequency corner of band pass filter
-  --kwin=KWIN           length of kurtosis window (seconds)
-  --krec                use recursive kurtosis calculation (faster but less precise)
-  --kderiv              also calculate the gradient of the kurtosis</pre>
-</div>
+also contain the processed waveforms.</p>
 <p>Most of the options are self-explanatory.  The choice of the frequency ranges
 will influence the ability of the kurtosis to detect a non-stationary signal
 (i.e. a first arrival).  We provide a helper-code <tt class="docutils literal"><span class="pre">run_kurtogram.py</span></tt> that may
@@ -230,7 +175,7 @@ will not be able to use data from those stations (WaveLoc will tell you and
 keep going for the other stations).</p>
 <p>Create a separate text file containing only the GTSRCE lines, which will be
 read by other scripts that need the station coordinates.  Copy this file to
-the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/aux</span></tt> directory.</p>
+the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/lib</span></tt> directory.</p>
 <p>Creating the grid files requires running two NonLinLoc commands (NLL must be installed first, of course):</p>
 <div class="highlight-python"><pre>&gt; Vel2Grid nll_tutorial.in
 &gt; Grid2Time nll_tutorial.in</pre>
@@ -248,15 +193,9 @@ then modify this grid, making it smaller or denser as you prefer.</p>
 points in the search grid, so make the grid as small as you can, and no denser
 than you need.</dd>
 </dl>
-<p>Copy, move or make symbolic links to the .hdr and .buf files in the
-<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/aux</span></tt> directory, and you should be set to go, e.g.:</p>
-<div class="highlight-python"><pre>aux
-├── coord_stations_tutorial -&gt; ../nll/TUTORIAL/coord_stations_tutorial
-├── grid.tutorial.search.hdr -&gt; ../nll/TUTORIAL/grid.tutorial.search.hdr
-├── tutorial.P.AIR.time.buf -&gt; ../nll/TUTORIAL/tutorial.P.AIR.time.buf
-├── tutorial.P.AIR.time.hdr -&gt; ../nll/TUTORIAL/tutorial.P.AIR.time.hdr
-...</pre>
-</div>
+<p>Run <tt class="docutils literal"><span class="pre">grid2hdf5</span></tt> to turn the nll .hdr and .buf files into .hdf5 files.
+Copy, move or make symbolic links to the .hdf5 files in the
+<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/lib</span></tt> directory, and you should be set to go.</p>
 </div>
 <div class="section" id="run-migration">
 <h2>Run migration<a class="headerlink" href="#run-migration" title="Permalink to this headline">¶</a></h2>
@@ -293,11 +232,8 @@ to process multiple data streams simultaneously.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Tutorial</a><ul>
-<li><a class="reference internal" href="#download-and-installation">Download and installation</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#preprocess-the-data">Preprocess the data</a></li>
+<li><a class="reference internal" href="#waveloc-options">Waveloc options</a></li>
+<li><a class="reference internal" href="#preprocess-your-data">Preprocess your data</a></li>
 <li><a class="reference internal" href="#prepare-the-time-and-search-grids">Prepare the time and search grids</a></li>
 <li><a class="reference internal" href="#run-migration">Run migration</a></li>
 <li><a class="reference internal" href="#run-location">Run location</a></li>
@@ -307,8 +243,8 @@ to process multiple data streams simultaneously.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="intro.html"
-                        title="previous chapter">Introduction</a></p>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Getting Started</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="api.html"
                         title="next chapter">WaveLoc API</a></p>
@@ -347,7 +283,7 @@ to process multiple data streams simultaneously.</p>
           <a href="api.html" title="WaveLoc API"
              >next</a> |</li>
         <li class="right" >
-          <a href="intro.html" title="Introduction"
+          <a href="getting_started.html" title="Getting Started"
              >previous</a> |</li>
         <li><a href="index.html">WaveLoc 2.0 documentation</a> &raquo;</li> 
       </ul>

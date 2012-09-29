@@ -4,45 +4,11 @@
 Tutorial
 ========
 
-This is a simple tutorial for getting started with WaveLoc.
+Waveloc options
+===============
 
-Download and installation
-=========================
-
-WaveLoc can be obtained **here**.
-
-System requirements : 
-
-* python (works well with the Enthought python, available here)
-* obspy (available here)
-* xvbf on linux / mac (available here)
-* NonLinLoc for time grid calculation (not strictly required)
-* other stuff I've surelly fogotten about...
-
-Installation
-------------
-
-Untar the distribution.  Set the environment variable ``WAVELOC_PATH`` to point to
-the root of the distribution.  Add ``$WAVELOC_PATH/PyProgs`` to your ``PYTHON_PATH`` if you
-want to run the codes from any directory.
-
-Expected directory strucutre::
-
-  waveloc
-  |-- aux
-  |-- data
-  |-- nll
-  |-- out
-  |-- PyProgs
-
-Install ``NonLinLoc`` where you prefer.  You just need to be able to call
-``Vel2Grid`` and ``Grid2Time`` correctly if you want to use NLL to construct
-your time grids from your 2D or 3D starting model and not provide these grids
-yourself.
-
-
-Preprocess the data
-===================
+Preprocess your data
+====================
 
 Raw data can be provided in any format that obspy is capable of reading (tested
 formats : ``MSEED`` and ``SAC`` for now).  Preferred data structure are SDS archives,
@@ -53,38 +19,7 @@ archives from flat files using soft links.
 
 The processing code will look for data in the ``$WAVELOC_PATH/data/SOME_NAME``
 directory, where the ``SOME_NAME`` subdirectory contains the SDS archive(s) and will
-also contain the processed waveforms.  Data for the tutorial are in the
-``Tutorial`` subdirectory.
-
-The preprocessing code is run using the script
-:mod:`run_SDS_processing_threading.py`, which uses a multi-threaded architecture
-to process multiple data streams simultaneously. 
-
-To see the command-line options for the processing code type::
-
-  > run_SDS_processing_threading.py --help
-
-::
-
-  Usage: run_SDS_processing_threading.py [options]
-
-  Options:
-    -h, --help            show this help message and exit
-    --datadir=DATADIR     data subdirectory
-    --net_list=NET_LIST   list of network codes (e.g. "BE,G")
-    --sta_list=STA_LIST   list of station names (e.g. "STA1,STA2")
-    --comp_list=COMP_LIST
-                          list of component names (e.g. "HHZ,LHZ")
-    --starttime=STARTTIME
-                          start time for data e.g. 2010-10-14T00:00:00.0Z
-    --endtime=ENDTIME     end time for data e.g. 2010-10-14T10:00:00.0Z
-    --resample            resample data
-    --fs=FS               resample frequency
-    --c1=C1               low frequency corner of band pass filter
-    --c2=C2               high frequency corner of band pass filter
-    --kwin=KWIN           length of kurtosis window (seconds)
-    --krec                use recursive kurtosis calculation (faster but less precise)
-    --kderiv              also calculate the gradient of the kurtosis
+also contain the processed waveforms.  
 
 Most of the options are self-explanatory.  The choice of the frequency ranges
 will influence the ability of the kurtosis to detect a non-stationary signal
@@ -178,7 +113,7 @@ keep going for the other stations).
 
 Create a separate text file containing only the GTSRCE lines, which will be
 read by other scripts that need the station coordinates.  Copy this file to
-the ``$WAVELOC_PATH/aux`` directory.
+the ``$WAVELOC_PATH/lib`` directory.
 
 Creating the grid files requires running two NonLinLoc commands (NLL must be installed first, of course)::
 
@@ -198,15 +133,12 @@ then modify this grid, making it smaller or denser as you prefer.
   points in the search grid, so make the grid as small as you can, and no denser
   than you need. 
 
-Copy, move or make symbolic links to the .hdr and .buf files in the 
-``$WAVELOC_PATH/aux`` directory, and you should be set to go, e.g.::
+Run ``grid2hdf5`` to turn the nll .hdr and .buf files into .hdf5 files. 
+Copy, move or make symbolic links to the .hdf5 files in the 
+``$WAVELOC_PATH/lib`` directory, and you should be set to go.
 
-  aux
-  ├── coord_stations_tutorial -> ../nll/TUTORIAL/coord_stations_tutorial
-  ├── grid.tutorial.search.hdr -> ../nll/TUTORIAL/grid.tutorial.search.hdr
-  ├── tutorial.P.AIR.time.buf -> ../nll/TUTORIAL/tutorial.P.AIR.time.buf
-  ├── tutorial.P.AIR.time.hdr -> ../nll/TUTORIAL/tutorial.P.AIR.time.hdr
-  ...
+
+
 
 
 Run migration
