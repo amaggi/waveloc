@@ -21,6 +21,4 @@ OP_waveforms
 .. autoclass:: Waveform
 
 
-Grid Manipulation
-=================
 

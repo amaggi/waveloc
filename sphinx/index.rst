@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    intro
+   getting_started
    tutorial
    api
    
