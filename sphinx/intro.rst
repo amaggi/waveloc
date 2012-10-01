@@ -57,7 +57,7 @@ for a recursive kurtosis calculation:
 
 where the constant C is the ratio of the time-step of the data and a chosen
 window length for the kurtosis calculation.
-  The maximum of the kurtosis is sligtly delayed with respect to the true first arrival, and this delay would induce a significant bias in the migrated origin times if the kurtosis waveforms themselves were used for the migration.  In order to reduce this bias, we use the positive time-derivative of the kurtosis waveforms for migration.
+The maximum of the kurtosis is sligtly delayed with respect to the true first arrival, and this delay would induce a significant bias in the migrated origin times if the kurtosis waveforms themselves were used for the migration.  In order to reduce this bias, we use the positive time-derivative of the kurtosis waveforms for migration.
 
 Migration
 =========
