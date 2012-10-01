@@ -163,6 +163,8 @@ def do_locations_trigger_setup_and_run(opdict):
   if reloc:
 
     logging.warn('Relocation may be broken, take extreme care !!')
+    logging.warn('Code under modification ... !!')
+    logging.warn(' !!')
 
     logging.info("\nDealing with relocation, so taper before merging ...\n")
 
