@@ -9,7 +9,7 @@ def suite():
 
 def setUpModule():
 
-  from waveloc.make_SDS_data_links import make_SDS_data_links
+  from make_SDS_data_links import make_SDS_data_links
 
   # get basic information
   base_path=os.getenv('WAVELOC_PATH')

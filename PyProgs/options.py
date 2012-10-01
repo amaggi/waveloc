@@ -6,9 +6,10 @@ class WavelocOptions(object):
 
     self.opdict={}
 
-    base_path=os.getenv('WAVELOC_PATH')
-    if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
-    self.opdict['base_path']=base_path
+
+    #base_path=os.getenv('WAVELOC_PATH')
+    #if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
+    #self.opdict['base_path']=base_path
 
     # set some default values
     self.opdict['time']=False
@@ -18,8 +19,8 @@ class WavelocOptions(object):
     self.opdict['snr_loclevel']=10
 
     # check for existence of lib directory
-    lib_path=os.path.join(base_path,'lib')
-    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
+#    lib_path=os.path.join(base_path,'lib')
+#    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
   
     self.p = argparse.ArgumentParser()
 
@@ -184,8 +185,22 @@ class WavelocOptions(object):
 
     self.opdict['syn_addnoise']=False
 
+  def verify_base_path(self):
+
+    if not self.opdict.has_key('base_path'):
+      logging.info('No base_path set in options, getting base_path from $WAVELOC_PATH')
+      base_path=os.getenv('WAVELOC_PATH')
+      if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
+      self.opdict['base_path']=base_path
+    
+    base_path=self.opdict['base_path']
+
+    lib_path=os.path.join(base_path,'lib')
+    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
+
   def verify_SDS_processing_options(self):
 
+    self.verify_base_path()
     base_path=self.opdict['base_path']
 
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
@@ -209,6 +224,7 @@ class WavelocOptions(object):
 
   def verify_migration_options(self):
 
+    self.verify_base_path()
     base_path=self.opdict['base_path']
 
     if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
@@ -248,6 +264,7 @@ class WavelocOptions(object):
 
   def verify_location_options(self):
 
+    self.verify_base_path()
     base_path=self.opdict['base_path']
 
     if not self.opdict.has_key('datadir') :  raise UserWarning('Empty data directory name') 
@@ -302,6 +319,7 @@ class WavelocOptions(object):
 
   def verify_synthetic_options(self):
 
+    self.verify_base_path()
     base_path=self.opdict['base_path']
 
     
@@ -337,6 +355,7 @@ class WavelocOptions(object):
 
   def verify_plotting_options(self):
 
+    self.verify_base_path()
     base_path=self.opdict['base_path']
 
     if not self.opdict.has_key('datadir') or self.opdict['datadir']==None :  raise UserWarning('Empty datadir') 

@@ -1,11 +1,11 @@
 import os, glob, unittest, h5py
 import numpy as np
-from waveloc.options import WavelocOptions
-from waveloc.OP_waveforms import Waveform
-from waveloc.migration import do_migration_setup_and_run
-from waveloc.integrate4D import * 
-from waveloc.synth_migration import generateSyntheticDirac
-from waveloc_tests.test_processing import waveforms_to_signature
+from options import WavelocOptions
+from OP_waveforms import Waveform
+from migration import do_migration_setup_and_run
+from integrate4D import * 
+from synth_migration import generateSyntheticDirac
+from test_processing import waveforms_to_signature
 
 
 
@@ -35,9 +35,9 @@ def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
 class SyntheticMigrationTests(unittest.TestCase):
 
   def test_dirac_migration(self):
-    from waveloc.locations_trigger import trigger_locations_inner
-    from waveloc.plot_mpl import plot_probloc_mpl, plotDiracTest
-    from waveloc.filters import smooth
+    from locations_trigger import trigger_locations_inner
+    from plot_mpl import plot_probloc_mpl, plotDiracTest
+    from filters import smooth
 
     wo=WavelocOptions()
     wo.set_test_options()
@@ -156,7 +156,7 @@ class MigrationTests(unittest.TestCase):
 
     self.assertSequenceEqual(lines,expected_lines)
 
-#  @unittest.skip('Not running full resolution test')
+  @unittest.skip('Not running full resolution test')
   #@profile
   def test_migration_fullRes(self):
 
