@@ -1,7 +1,7 @@
 import unittest, os, glob
-from waveloc.SDS_processing import do_SDS_processing_setup_and_run
-from waveloc.OP_waveforms import Waveform
-from waveloc.options import WavelocOptions
+from SDS_processing import do_SDS_processing_setup_and_run
+from OP_waveforms import Waveform
+from options import WavelocOptions
 
 def suite():
   suite = unittest.TestSuite()
