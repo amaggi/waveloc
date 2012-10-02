@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Introduction &mdash; WaveLoc 2.0 documentation</title>
+    <title>Introduction &mdash; waveloc 0.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '2.0',
+        VERSION:     '0.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,8 +25,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="WaveLoc 2.0 documentation" href="index.html" />
-    <link rel="next" title="Tutorial" href="tutorial.html" />
+    <link rel="top" title="waveloc 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Getting Started" href="getting_started.html" />
     <link rel="prev" title="Waveloc documentation" href="index.html" /> 
   </head>
   <body>
@@ -40,12 +40,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tutorial.html" title="Tutorial"
+          <a href="getting_started.html" title="Getting Started"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Waveloc documentation"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">WaveLoc 2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">waveloc 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -94,13 +94,18 @@ for a recursive kurtosis calculation:</p>
 \sigma^2_i = C\ \sigma_{i-1} + (1-C)\ (x_i-\bar{x}_i)^2, \\
 {\rm Kurt}_i = C\ {\rm Kurt}_{i-1} + (1-C)\ \left[\frac{(x_i-\bar{x}_i)}{\sigma_i}\right]^4 ,"/></p>
 </div><p>where the constant C is the ratio of the time-step of the data and a chosen
-window length for the kurtosis calculation.</p>
+window length for the kurtosis calculation.
+The maximum of the kurtosis is sligtly delayed with respect to the true first arrival, and this delay would induce a significant bias in the migrated origin times if the kurtosis waveforms themselves were used for the migration.  In order to reduce this bias, we use the positive time-derivative of the kurtosis waveforms for migration.</p>
 </div>
 <div class="section" id="migration">
 <h2>Migration<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h2>
+<p>During the second step of the WaveLoc process, we migrate the waveforms obtained in the first step onto a target grid of potential hypocentral locations, using an a-priori P-wave velocity model for the region. &nbsp;We are exploiting here the coherence of first-arrival information across a network of stations, subject to sufficient knowledge of the regional velocity structure. We calculate travel-times from each point of the target grid to each station through a 1-D or 3-D P-wave velocity model, using the REF eikonal solver as implemented by REF in the NonLinLoc package. For each point of the target grid, we shift each waveform back by the corresponding travel-time, then stack the shifted waveforms to create a point-stack. The 3D grid of such point stacks defines a stack volume, at each point of which corresponds a time-series, so in the end we have a 4D volume in space and time. Local maxima of this 4D volume correspond to event detections.</p>
+<p>For a typical problem with 20 stations, a search grid of 30x30x10=9000 target points, and a sample-rate of 100Hz, the stack-volume will contain 3.24e9 data-points per hour of recorded data.  In order to simplify the task of sifting through such a large volume of data, and to reduce storage needs, we create and store a summary-stack containing for each time the maximum value of stack volume, and we also store the coordinates of the corresponding target points. Strong local maxima in the summary stack occur at the origin times of seismic events, and their corresponding locations can be read directly from the stored coordinates.</p>
 </div>
 <div class="section" id="detection-location">
 <h2>Detection / Location<a class="headerlink" href="#detection-location" title="Permalink to this headline">¶</a></h2>
+<p>We intend by <em>detection</em> the determination of the occurrence of a seismic event, and by <em>location</em> the determination of its origin time, its hypocentral coordinates and their corresponding uncertainties.  As described above, we detect events directly from the sumamry time-series, by applying a simple triggering algorithm with a given threshold.</p>
+<p>Once the triggering algorithm detects the occurrence of an event on, we assign the time at which the corresponding local maximum occurs as the origin time, and define the left and right uncertainty bounds around this origin time by taking the times at which the summary stack descends to 95% of its value at the local maximum. We take as hypocentral coordinates and their uncertainties respectively the mean and standard deviation of the coordinates corresponding to the maximum values, between the left and right times.</p>
 </div>
 </div>
 
@@ -124,8 +129,8 @@ window length for the kurtosis calculation.</p>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Waveloc documentation</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="tutorial.html"
-                        title="next chapter">Tutorial</a></p>
+  <p class="topless"><a href="getting_started.html"
+                        title="next chapter">Getting Started</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/intro.txt"
@@ -158,16 +163,17 @@ window length for the kurtosis calculation.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="tutorial.html" title="Tutorial"
+          <a href="getting_started.html" title="Getting Started"
              >next</a> |</li>
         <li class="right" >
           <a href="index.html" title="Waveloc documentation"
              >previous</a> |</li>
-        <li><a href="index.html">WaveLoc 2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">waveloc 0.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Alessia Maggi.
+      Last updated on Oct 02, 2012.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
