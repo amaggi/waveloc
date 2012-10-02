@@ -22,5 +22,5 @@ setup(name='waveloc',
 		'License :: OSI Approved :: GNU General Public License (GPL)',
 		'Programming Language :: Python :: 2.7',
 		'Topic :: Scientific/Engineering',
-	],
+	] 
 )
