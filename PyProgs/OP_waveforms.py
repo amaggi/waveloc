@@ -82,7 +82,9 @@ class Waveform(object):
   def _get_values_(self):
     """Read-only property.  Returns values of ``self.trace.data``. """
     return self.trace.data
-
+  def _get_starttime_(self):
+    """Read-only property.  Returns start time of ``self.trace``. """
+    return self.trace.stats.starttime
 
   npts=property(_get_npts_)
   delta=property(_get_delta_)
@@ -92,6 +94,7 @@ class Waveform(object):
   comp=property(_get_channel_)
   t_array=property(_get_t_array_)
   values=property(_get_values_)
+  starttime=property(_get_starttime_)
 
   def read_from_SDS(self,sds_root,net_name,sta_name,comp_name,starttime=None,endtime=None,rmean=False,taper=False,pad_value=None):
     """
