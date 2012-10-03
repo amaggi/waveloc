@@ -81,6 +81,15 @@ class WavelocOptions(object):
     self.p.add_argument('--plot_tafter',action='store',type=float, help="time after origin time for plots")
    #self.p.add_argument('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
 
+    self.p.add_argument('--threshold',action='store',default=0.7, type=float, help="correlation value over which the correlation is computed again in the Fourier domain")
+    self.p.add_argument('--before',action='store',default=0.5, type=float, help="cross-correlation window: time interval before the origin time")
+    self.p.add_argument('--after',action='store',default=6.0, type=float, help="cross-correlation window: time interval after the origin time")
+    self.p.add_argument('--corr',action='store',help="name of the file containing all correlation values")
+    self.p.add_argument('--delay',action='store',help="name of the file containing all time delays")
+
+    self.p.add_argument('--nbsta',action='store',default=3, type=int, help="number of stations over which an event pair is considered provided that its correlation coefficient is greater than a given threshold")
+    self.p.add_argument('--clus',action='store',default=0.8, type=float, help="correlation value over which an event pair is considered")
+
 
   def set_all_arguments(self,args):
     self.opdict['time']=args.time
@@ -138,6 +147,19 @@ class WavelocOptions(object):
     self.opdict['plot_tbefore']=args.plot_tbefore
     self.opdict['plot_tafter']=args.plot_tafter
 
+    self.opdict['threshold']=args.threshold
+    self.opdict['before']=args.before
+    self.opdict['after']=args.after
+    self.opdict['corr']=args.corr
+    self.opdict['delay']=args.delay
+
+    self.opdict['clus']=args.clus
+    self.opdict['nbsta']=args.nbsta
+
+    self.opdict['new_file']=args.new_file
+    self.opdict['refine']=args.refine
+
+
   def set_test_options(self):
     self.opdict['time']=True
     self.opdict['verbose']=False
@@ -184,6 +206,16 @@ class WavelocOptions(object):
     self.opdict['n_kurt_min']=4
 
     self.opdict['syn_addnoise']=False
+
+    self.opdict['threshold']=0.7
+    self.opdict['before']=0.5
+    self.opdict['after']=6.0
+    self.opdict['corr']='corr'
+    self.opdict['delay']='delay'
+
+    self.opdict['clus']=0.8
+    self.opdict['nbsta']=3
+
 
   def verify_base_path(self):
 
@@ -241,7 +273,7 @@ class WavelocOptions(object):
 
     if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
-    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s',grad_names)
+    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
     
     if self.opdict['starttime']==None: raise UserWarning('Empty start time') 
     if self.opdict['endtime']==None:   raise UserWarning('Empty end time') 
@@ -266,6 +298,7 @@ class WavelocOptions(object):
 
     self.verify_base_path()
     base_path=self.opdict['base_path']
+    print base_path
 
     if not self.opdict.has_key('datadir') :  raise UserWarning('Empty data directory name') 
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
@@ -273,18 +306,19 @@ class WavelocOptions(object):
 
     if not self.opdict.has_key('kurtglob') :  raise UserWarning('Empty kurtglob') 
     kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
-    if len(kurt_names)==0: raise UserWarning('No kurtosis files found : %s',kurt_names)
+    if len(kurt_names)==0: raise UserWarning('No kurtosis files found : %s'%kurt_names)
 
     if not self.opdict.has_key('gradglob') :  raise UserWarning('Empty gradglob') 
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
-    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s',grad_names)
+    print os.path.join(datadir,self.opdict['gradglob'])
+    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
 
     out_path=os.path.join(base_path,'out',self.opdict['outdir'])
-    if not os.path.isdir(out_path): raise UserWarning('Output directory %s does not exist.') 
+    if not os.path.isdir(out_path): raise UserWarning('Output directory %s does not exist.'%out_path) 
 
     if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     stackdir=os.path.join(base_path,'out',self.opdict['outdir'],'stack')
-    if not os.path.isdir(stackdir): raise UserWarning('Stack directory %s does not exist.  Have you run migration correctly ?') 
+    if not os.path.isdir(stackdir): raise UserWarning('Stack directory %s does not exist.  Have you run migration correctly ?'%stackdir) 
 
     locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
     if not os.path.exists(locdir): os.makedirs(locdir)  
@@ -316,13 +350,71 @@ class WavelocOptions(object):
     tg_files=glob.glob(tg_glob)
     if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
 
+  def verify_correlation_options(self):
+    
+    self.verify_base_path()
+    base_path=self.opdict['base_path']
+
+    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+
+    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+    if not os.path.exists(locdir): os.makedirs(locdir)
+
+    if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
+    kurt_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
+    if len(kurt_names)==0: raise UserWarning('No data files found : %s'%kurt_names)
+
+    if self.opdict['threshold']==None:  raise UserWarning('Empty correlation threshold for refinement in Fourier domain')
+    if self.opdict['before']==None:  raise UserWarning('Empty lower limit for correlation time window')
+    if self.opdict['after']==None:  raise UserWarning('Empty upper limit for correlation time window')
+
+    if self.opdict['corr']==None:  raise UserWarning('Empty correlation file name')
+    coeff_file=os.path.join(locdir,self.opdict['corr'])
+    
+    if self.opdict['delay']==None:  raise UserWarning('Empty time delays file name')
+    delay_file=os.path.join(locdir,self.opdict['delay'])
+
+  def verify_cluster_options(self):
+    
+    self.verify_base_path()
+    base_path=self.opdict['base_path']
+
+    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+
+    if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
+    data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
+    if len(data_names)==0: raise UserWarning('No data files found : %s'%data_names)
+
+    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+    if not os.path.exists(locdir): os.makedirs(locdir)
+
+    if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
+    stations=os.path.join(base_path,'lib',self.opdict['stations'])
+    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+
+    if self.opdict['corr']==None:  raise UserWarning('Empty correlation file')
+    coeff_file=os.path.join(locdir,self.opdict['corr'])
+    if not os.path.isfile(coeff_file):  raise UserWarning('Cannot find %s'%coeff_file)
+    
+    if self.opdict['delay']==None:  raise UserWarning('Empty time delays file')
+    delay_file=os.path.join(locdir,self.opdict['delay'])
+    if not os.path.isfile(delay_file):  raise UserWarning('Cannot find %s'%delay_file)
+
+    if self.opdict['nbsta']==None:  raise UserWarning('Empty minimum number of stations')
+    if self.opdict['clus']==None:  raise UserWarning('Empty correlation threshold for clustering')
+
 
   def verify_synthetic_options(self):
 
     self.verify_base_path()
     base_path=self.opdict['base_path']
 
-    
     if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
     time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
     tg_glob=time_grid+'*'
