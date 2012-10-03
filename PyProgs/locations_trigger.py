@@ -323,8 +323,8 @@ if __name__=='__main__':
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  wo.set_arguments()
   wo.set_all_arguments(args)
+  wo.verify_location_options()
 
   do_locations_trigger_setup_and_run(wo.opdict)
 
