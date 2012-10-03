@@ -148,6 +148,7 @@ def do_locations_trigger_setup_and_run(opdict):
   else:
     loc_path=os.path.join(out_path,'loc')
     stack_files=glob.glob(os.path.join(stack_path,'stack_all*.hdf5'))
+    stack_files.sort()
 
   n_stacks=len(stack_files)
   if n_stacks == 0 : raise UserWarning('Empty list of stacks in %s'%(stack_path))
@@ -234,11 +235,11 @@ def do_locations_trigger_setup_and_run(opdict):
       cmax_y[ibegin:ibegin+nt] = max_y[:]
       cmax_z[ibegin:ibegin+nt] = max_z[:]
 
-      # close the stack 
+      # close the stack
       f_stack.close()
 
     # end_time now contains the final end_time
-    nt_full=int((end_time - start_time)/dt)
+    nt_full=int((end_time - first_start_time)/dt)
     # resize
     cmax_val.resize(nt_full,0)
     cmax_x.resize(nt_full,0)
@@ -258,7 +259,6 @@ def do_locations_trigger_setup_and_run(opdict):
     loclevel=opdict['loclevel']
   left_trig=loclevel
   right_trig=loclevel
-
 
   loc_list=trigger_locations_inner(cmax_val_smooth[:],cmax_x,cmax_y,cmax_z,left_trig,right_trig,first_start_time,dt)
   logging.info('Found %d initial.'%(len(loc_list)))
