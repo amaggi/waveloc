@@ -447,6 +447,18 @@ class WavelocOptions(object):
     if len(grad_names)==0: 
         raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
 
+  def _verify_time_grid(self):
+    if not self.opdict.has_key('time_grid'):
+        raise UserWarning('time_grid option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
+    tg_glob=time_grid+'*'
+    tg_files=glob.glob(tg_glob)
+    if len(tg_files) == 0 : 
+        raise UserWarning('No time grid files found %s'%tg_glob)
+
+
   def _verify_data_length(self):
     if not self.opdict.has_key('data_length'):
         raise UserWarning('data_length option not set')
@@ -454,6 +466,24 @@ class WavelocOptions(object):
   def _verify_data_overlap(self):
     if not self.opdict.has_key('data_overlap'):
         raise UserWarning('data_overlap option not set')
+
+  def _verify_stations(self):
+    if not self.opdict.has_key('stations'):
+        raise UserWarning('stations option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    stations=os.path.join(base_path,'lib',self.opdict['stations'])
+    if not os.path.isfile(stations) : 
+        raise UserWarning('Cannot find %s'%stations)
+
+  def _verify_search_grid(self):
+    if not self.opdict.has_key('search_grid'):
+        raise UserWarning('search_grid option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
+    if not os.path.isfile(search_grid) : 
+        raise UserWarning('Cannot find %s'%search_grid)
 
 
   def verify_SDS_processing_options(self):
@@ -489,19 +519,10 @@ class WavelocOptions(object):
     self._verify_data_length()
     self._verify_data_overlap()
 
-    if not self.opdict.has_key('stations') or self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_stations()
+    self._verify_search_grid()
 
-    if not self.opdict.has_key('search_grid') or self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
-    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
-
-    if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+    self._verify_time_grid()
 
   def verify_location_options(self):
 
@@ -526,15 +547,9 @@ class WavelocOptions(object):
     if self.opdict['sn_time']==None:   raise UserWarning('Empty time span for signal to noise ratio computation') 
     if self.opdict['n_kurt_min']==None:   raise UserWarning('Empty minimum number of good kurtosis for location') 
 
-    if self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
-    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
+    self._verify_search_grid()
 
-    if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+    self._verify_time_grid()
 
   def verify_correlation_options(self):
     
@@ -572,9 +587,7 @@ class WavelocOptions(object):
     self._verify_dataglob()
 
 
-    if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_stations()
 
     if self.opdict['corr']==None:  raise UserWarning('Empty correlation file')
     coeff_file=os.path.join(locdir,self.opdict['corr'])
@@ -595,15 +608,9 @@ class WavelocOptions(object):
     self._verify_outdir()
     base_path=self.opdict['base_path']
 
-    if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+    self._verify_time_grid()
 
-    if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_stations()
 
     if self.opdict['syn_addnoise'] :
       if self.opdict['syn_snr']==None:	raise UserWarning('No SNR set for synthetic test')
@@ -640,18 +647,8 @@ class WavelocOptions(object):
     if not self.opdict.has_key('plot_tbefore') : raise UserWarning('Missing start time for plots (plot_tbefore)')
     if not self.opdict.has_key('plot_tafter') : raise UserWarning('Missing end time for plots (plot_tafter)')
 
-    if not self.opdict.has_key('search_grid') or self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
-    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
+    self._verify_search_grid()
+    self._verify_time_grid()
 
 
-    if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
-
-
-    if not self.opdict.has_key('stations') or self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_stations()
