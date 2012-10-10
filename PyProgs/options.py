@@ -521,7 +521,6 @@ class WavelocOptions(object):
 
     self._verify_stations()
     self._verify_search_grid()
-
     self._verify_time_grid()
 
   def verify_location_options(self):
@@ -530,10 +529,6 @@ class WavelocOptions(object):
     self._verify_lib_path()
     self._verify_datadir()
     self._verify_outdir()
-
-    base_path=self.opdict['base_path']
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    out_path=os.path.join(base_path,'out',self.opdict['outdir'])
 
     self._verify_kurtglob()
     self._verify_gradglob()
@@ -559,7 +554,7 @@ class WavelocOptions(object):
     self._verify_outdir()
 
     base_path=self.opdict['base_path']
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
 
 
     self._verify_dataglob()
@@ -582,7 +577,7 @@ class WavelocOptions(object):
     self._verify_outdir()
 
     base_path=self.opdict['base_path']
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
 
     self._verify_dataglob()
 
