@@ -25,6 +25,9 @@ def do_plotting_setup_and_run(opdict):
   data_files=glob.glob(os.path.join(data_dir,data_glob))
   kurt_files=glob.glob(os.path.join(data_dir,kurt_glob))
   grad_files=glob.glob(os.path.join(data_dir,grad_glob))
+  data_files.sort()
+  kurt_files.sort()
+  grad_files.sort()
 
   search_grid=os.path.join(base_path,'lib',opdict['search_grid'])
   stations_file=os.path.join(base_path,'lib',opdict['stations'])
