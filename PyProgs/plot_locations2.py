@@ -5,8 +5,8 @@ import numpy as np
 from OP_waveforms import Waveform
 from obspy.core import read
 from locations_trigger import read_locs_from_file
-from grids_paths import StationList, ChannelList, QDTimeGrid
-from sub_PdF_waveloc import do_migration_loop_plot
+from NllGridLib import read_stations_file,read_hdr_file
+from hdf5_grids import get_interpolated_time_grids
 from plot_mpl import plotLocationGrid
 
 def do_plotting_setup_and_run(opdict):
@@ -29,27 +29,22 @@ def do_plotting_setup_and_run(opdict):
   kurt_files.sort()
   grad_files.sort()
 
-  search_grid=os.path.join(base_path,'lib',opdict['search_grid'])
-  stations_file=os.path.join(base_path,'lib',opdict['stations'])
-  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
-  
 
   figdir=os.path.join(base_path,'out',opdict['outdir'],'fig')
 
   # read time grid information
 
 
-  sta=StationList()
-  sta.read_from_file(stations_file)
+  # stations
+  stations_filename=os.path.join(base_path,'lib',opdict['stations'])
+  stations=read_stations_file(stations_filename)
 
 
-  cha=ChannelList()
-  cha.populate_from_station_list_and_data_files(sta,data_files)
-
-
-  time_grid=QDTimeGrid()
-  time_grid.read_NLL_hdr_file(search_grid)
-  time_grid.populate_from_time_grids(grid_filename_base,cha,output_dir,load_buf=opdict['load_ttimes_buf'])
+  # grids
+  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
+  search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
+  grid_info=read_hdr_file(search_grid_filename)
+  time_grids=get_interpolated_time_grids(opdict)
 
 
   # read locations
