@@ -71,6 +71,12 @@ directory ``$WAVELOC_PATH/out/TEST_Dirac/fig``:
   :width: 600px
   :align: center
 
+You can test the effect of reducing the station coverage by uncommenting the
+following line in the script and re-running the test. ::
+
+  #uncomment remove some stations to test response for fewer stations
+  #wo.opdict['sta_list']="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
+
 Running the migration test
 --------------------------
 Run the ``run_waveloc_example.py`` script to run the synthetic test.  The first
@@ -83,3 +89,6 @@ lines, indicating that two events were found: ::
   Max = 93.83, 2010-10-14T00:15:57.380000 - 0.13 s + 0.17 s, x= 366.2417 pm 0.3505 km, y= 7650.5250 pm 0.1627 km, z= -0.5417 pm 0.4087 km
   Max = 70.13, 2010-10-14T00:17:13.830000 - 0.17 s + 0.17 s, x= 366.1324 pm 0.1940 km, y= 7650.6176 pm 0.1514 km, z= -0.6691 pm 0.5581 km
 
+.. warning::
+  Plotting of located events is currently broken.  Fixing it is on the issue
+  list.  Feel free to contribute on github if you want to help with the fix!

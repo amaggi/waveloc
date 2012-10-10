@@ -26,7 +26,7 @@ wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
 
 wo.opdict['stations'] = 'coord_stations_test'
 
-#uncomment this line to select a subset of stations for migration test
+#uncomment remove some stations to test response for fewer stations
 #wo.opdict['sta_list']="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
 
 wo.opdict['syn_amplitude']  = 1.0
