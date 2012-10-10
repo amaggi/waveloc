@@ -1,95 +1,190 @@
 import os, glob, argparse, logging
 
 class WavelocOptions(object):
+  """
+  Describe the WavelocOptions class, and all the options
+  """
 
   def __init__(self):
 
     self.opdict={}
 
 
-    #base_path=os.getenv('WAVELOC_PATH')
-    #if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
-    #self.opdict['base_path']=base_path
-
     # set some default values
+
+    # general profiling / debugging behaviour
     self.opdict['time']=False
     self.opdict['verbose']=False
+
+    # data processing
+    self.opdict['resample']=False
+    self.opdict['krec']=False
+    self.opdict['kderiv']=False
+
+    # migration
+    self.opdict['load_ttimes_buf']=True
+
+    # location
     self.opdict['reloc']=False
     self.opdict['auto_loclevel']=False
-    self.opdict['snr_loclevel']=10
-    self.opdict['syn_addnoise']=False
+    self.opdict['loclevel']=50.
+    self.opdict['snr_loclevel']=10.
+    self.opdict['snr_limit']=10.
+    self.opdict['sn_time']=10.
+    self.opdict['n_kurt_min']=4
 
-    # check for existence of lib directory
-#    lib_path=os.path.join(base_path,'lib')
-#    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
+    # synthetic
+    self.opdict['syn_addnoise']=False
+    self.opdict['syn_amplitude']=1.
+    self.opdict['syn_kwidth']=0.1
+
+    # cross-correlation
+    self.opdict['threshold']=0.7
+    self.opdict['before']=0.5
+    self.opdict['after']=6.0
+
+    # clustering
+    self.opdict['nbsta']=3
+    self.opdict['clus']=0.8
+
   
+    # For now, continue to support command-line arguments
+    # TODO : get rid of these evenutally for ease of maintenance
     self.p = argparse.ArgumentParser()
 
-    self.p.add_argument('--time','-t',action='store_true',default=False,help='print timing information to stout')
-    self.p.add_argument('--verbose','-v',action='store_true',default=False,help='print debugging information to stout')
+    self.p.add_argument('--time', '-t', action='store_true',
+            default=self.opdict['time'], 
+            help='print timing information to stout')
+    self.p.add_argument('--verbose', '-v', action='store_true',
+            default=self.opdict['verbose'], 
+            help='print debugging information to stout')
   
-    self.p.add_argument('--datadir',action='store',help="subdirectory of $WAVELOC_PATH/data")
-    self.p.add_argument('--outdir', action='store', help='subdirectory of $WAVELOC_PATH/out for stocking output files')
+    self.p.add_argument('--datadir',action='store', 
+            help="subdirectory of base_path/data")
+    self.p.add_argument('--outdir', action='store', 
+            help='subdirectory of base_path/out for stocking output files')
 
-    self.p.add_argument('--net_list', action='store',help="list of network codes (e.g. \"BE,G\") ")
-    self.p.add_argument('--sta_list', action='store',help="list of station names (e.g. \"STA1,STA2\") ")
-    self.p.add_argument('--comp_list',action='store',help="list of component names (e.g. \"HHZ,LHZ\") ")
+    self.p.add_argument('--net_list', action='store', 
+            help="list of network codes (e.g. \"BE,G\") ")
+    self.p.add_argument('--sta_list', action='store',
+            help="list of station names (e.g. \"STA1,STA2\") ")
+    self.p.add_argument('--comp_list',action='store',
+            help="list of component names (e.g. \"HHZ,LHZ\") ")
 
-    self.p.add_argument('--resample',action='store_true',default=False, help="resample data")
-    self.p.add_argument('--fs',      action='store', type=float,  help="resample frequency")
+    self.p.add_argument('--resample',action='store_true',
+            default=self.opdict['resample'], help="resample data")
+    self.p.add_argument('--fs',      action='store', type=float,
+            help="resample frequency")
 
-    self.p.add_argument('--c1',action='store',type=float,  help="low frequency corner of band pass filter ")
-    self.p.add_argument('--c2',action='store',type=float,  help="high frequency corner of band pass filter ")
-    self.p.add_argument('--kwin',action='store',type=float, help="length of kurtosis window (seconds)")
-    self.p.add_argument('--krec',action='store_true',default=False, help="use recursive kurtosis calculation (faster but less precise)")
-    self.p.add_argument('--kderiv',action='store_true',default=False, help="use derivative of kurtosis")
+    self.p.add_argument('--c1',action='store',type=float,  
+            help="low frequency corner of band pass filter ")
+    self.p.add_argument('--c2',action='store',type=float,  
+            help="high frequency corner of band pass filter ")
+    self.p.add_argument('--kwin',action='store',type=float, 
+            help="length of kurtosis window (seconds)")
+    self.p.add_argument('--krec',action='store_true',
+            default=self.opdict['krec'], 
+            help="use recursive kurtosis calculation (faster but less precise)")
+    self.p.add_argument('--kderiv',action='store_true',
+            default=self.opdict['kderiv'], help="use derivative of kurtosis")
 
     self.p.add_argument('--dataglob',action='store',help="data glob")
     self.p.add_argument('--kurtglob',action='store',help="kurtosis glob")
     self.p.add_argument('--gradglob',action='store',help="gradient glob")
 
-    self.p.add_argument('--starttime',action='store',help="start time for data e.g. 2010-10-14T00:00:00.0Z")
-    self.p.add_argument('--endtime',  action='store',help="end time for data e.g. 2010-10-14T10:00:00.0Z")
-    self.p.add_argument('--data_length', action='store',type=float,help="length in seconds for data segments to analyse (e.g. 630)")
-    self.p.add_argument('--data_overlap',action='store',type=float,help="length in seconds for overlapping data segments (e.g. 30)")
+    self.p.add_argument('--starttime', action='store', 
+            help="start time for data e.g. 2010-10-14T00:00:00.0Z")
+    self.p.add_argument('--endtime',  action='store', 
+            help="end time for data e.g. 2010-10-14T10:00:00.0Z")
+    self.p.add_argument('--data_length', action='store', type=float,
+            help="length in seconds for data segments to analyse (e.g. 630)")
+    self.p.add_argument('--data_overlap', action='store', type=float,
+            help="length in seconds for overlapping data segments (e.g. 30)")
 
-    self.p.add_argument('--stations',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
-    self.p.add_argument('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/lib)")
-    self.p.add_argument('--time_grid',  action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/lib)")
-    self.p.add_argument('--load_ttimes_buf',action='store_true',default=True,help='load pre-calculated travel-times for the search grid from file')
+    self.p.add_argument('--stations',action='store',
+            help='station list (found in base_path/lib)') 
+    self.p.add_argument('--search_grid',action='store',
+            help="search grid (found in base_path/lib)")
+    self.p.add_argument('--time_grid',  action='store',
+            help="time grid basename (found in base_path/lib)")
+    self.p.add_argument('--load_ttimes_buf',action='store_true',
+            default=self.opdict['load_ttimes_buf'], help = 
+            'load pre-calculated travel-times for the search grid from file')
 
-    self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
-    self.p.add_argument('--auto_loclevel', action='store', default=False,   type=float,help='automatically set trigger stack level for locations ')
-    self.p.add_argument('--loclevel', action='store', default=50,   type=float,help='trigger stack level for locations (e.g. 50) ')
-    self.p.add_argument('--snr_loclevel', action='store', default=10,   type=float,help='SNR for automatically setting trigger stack level for locations')
-    self.p.add_argument('--snr_limit',action='store', default=10.0, type=float,help="signal_to_noise level for kurtosis acceptance")
-    self.p.add_argument('--sn_time',action='store',   default=10.0, type=float,help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
-    self.p.add_argument('--n_kurt_min',action='store',default=4,    type=int,  help="min number of good kurtosis traces for a location")
+    self.p.add_argument('--reloc', action='store_true',
+            default=self.opdict['reloc'], help='apply to relocated events')
+    self.p.add_argument('--auto_loclevel', action='store',
+            default=self.opdict['auto_loclevel'], type=float,
+            help='automatically set trigger stack level for locations ')
+    self.p.add_argument('--loclevel', action='store',
+            default=self.opdict['loclevel'],   type=float,
+            help='trigger stack level for locations (e.g. 50) ')
+    self.p.add_argument('--snr_loclevel', action='store',
+            default=self.opdict['snr_loclevel'],   type=float, help= 
+            'SNR for automatically setting trigger stack level for locations')
+    self.p.add_argument('--snr_limit',action='store',
+            default=self.opdict['snr_limit'], type=float,
+            help="signal_to_noise level for kurtosis acceptance")
+    self.p.add_argument('--sn_time',action='store',
+            default=self.opdict['sn_time'], type=float, help="time over which \
+            to calculate the signal_to_noise ratio for kurtosis acceptance")
+    self.p.add_argument('--n_kurt_min',action='store',
+            default=self.opdict['n_kurt_min'], type=int,  
+            help="min number of good kurtosis traces for a location")
 
-    self.p.add_argument('--syn_addnoise',action='store_true',default=False, help="add noise to synthetic tests")
-    self.p.add_argument('--syn_snr',action='store',type=float, help="Signal to  noise ratio for synthetic tests")
-    self.p.add_argument('--syn_amplitude',action='store',type=float, default=1.0, help="amplitude of kurtosis gradient peak on synthetic waveforms")
-    self.p.add_argument('--syn_datalength',action='store',type=float, help="length of synthetic waveforms")
-    self.p.add_argument('--syn_samplefreq',action='store',type=float, help="sample frequency (Hz) of synthetic waveforms")
-    self.p.add_argument('--syn_kwidth',action='store',type=float, default=0.1, help="width of kurtosis gradient pulse on synthetic waveforms")
-    self.p.add_argument('--syn_otime',action='store',type=float, help="origin time for synthetic waveforms (wrt start of waveforms)")
-    self.p.add_argument('--syn_ix',action='store',type=int, help="x grid index for syntetic hypocenter")
-    self.p.add_argument('--syn_iy',action='store',type=int, help="y grid index for syntetic hypocenter")
-    self.p.add_argument('--syn_iz',action='store',type=int, help="z grid index for syntetic hypocenter")
-    self.p.add_argument('--syn_filename',action='store', help="filename for synthetic grid (in $WAVELOC_PATH/out/OUTDIR/grid)")
+    self.p.add_argument('--syn_addnoise',action='store_true',
+            default=self.opdict['syn_addnoise'], 
+            help="add noise to synthetic tests")
+    self.p.add_argument('--syn_snr',action='store',type=float, 
+            help="Signal to noise ratio for synthetic tests")
+    self.p.add_argument('--syn_amplitude',action='store',type=float,
+            default=self.opdict['syn_amplitude'], 
+            help="amplitude of kurtosis gradient peak on synthetic waveforms")
+    self.p.add_argument('--syn_datalength',action='store',type=float,
+            help="length of synthetic waveforms")
+    self.p.add_argument('--syn_samplefreq',action='store',type=float,
+            help="sample frequency (Hz) of synthetic waveforms")
+    self.p.add_argument('--syn_kwidth',action='store',type=float,
+            default=self.opdict['syn_kwidth'], 
+            help="width of kurtosis gradient pulse on synthetic waveforms")
+    self.p.add_argument('--syn_otime',action='store',type=float, help=
+            "origin time for synthetic waveforms (wrt start of waveforms)")
+    self.p.add_argument('--syn_ix',action='store',type=int, 
+            help="x grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_iy',action='store',type=int, 
+            help="y grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_iz',action='store',type=int, 
+            help="z grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_filename',action='store', 
+            help="filename for synthetic grid")
 
-    self.p.add_argument('--plot_tbefore',action='store',type=float, help="time before origin time for plots")
-    self.p.add_argument('--plot_tafter',action='store',type=float, help="time after origin time for plots")
-   #self.p.add_argument('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
+    self.p.add_argument('--plot_tbefore',action='store',type=float, 
+            help="time before origin time for plots")
+    self.p.add_argument('--plot_tafter',action='store',type=float, 
+            help="time after origin time for plots")
 
-    self.p.add_argument('--threshold',action='store',default=0.7, type=float, help="correlation value over which the correlation is computed again in the Fourier domain")
-    self.p.add_argument('--before',action='store',default=0.5, type=float, help="cross-correlation window: time interval before the origin time")
-    self.p.add_argument('--after',action='store',default=6.0, type=float, help="cross-correlation window: time interval after the origin time")
-    self.p.add_argument('--corr',action='store',help="name of the file containing all correlation values")
-    self.p.add_argument('--delay',action='store',help="name of the file containing all time delays")
+    self.p.add_argument('--threshold',action='store',
+            default=self.opdict['threshold'], type=float, 
+            help="correlation value over which the correlation is computed \
+                    again in the Fourier domain")
+    self.p.add_argument('--before',action='store',
+            default=self.opdict['before'], type=float, help=
+            "cross-correlation window: time interval before the origin time")
+    self.p.add_argument('--after',action='store', default=self.opdict['after'],
+            type=float, help="cross-correlation window: time interval after \
+                    the origin time")
+    self.p.add_argument('--corr', action='store', 
+            help="name of the file containing all correlation values")
+    self.p.add_argument('--delay', action='store', 
+            help="name of the file containing all time delays")
 
-    self.p.add_argument('--nbsta',action='store',default=3, type=int, help="number of stations over which an event pair is considered provided that its correlation coefficient is greater than a given threshold")
-    self.p.add_argument('--clus',action='store',default=0.8, type=float, help="correlation value over which an event pair is considered")
+    self.p.add_argument('--nbsta',action='store', default=self.opdict['nbsta'],
+            type=int, help="number of stations over which an event pair is \
+            considered provided that its correlation coefficient is greater \
+            than a given threshold")
+    self.p.add_argument('--clus',action='store', default=self.opdict['clus'],
+            type=float, 
+            help="correlation value over which an event pair is considered")
 
 
   def set_all_arguments(self,args):
@@ -219,269 +314,438 @@ class WavelocOptions(object):
 
 
   def verify_base_path(self):
+    """
+    Verifies that the base_path is set
+    """
 
+    # if the option base_path is not set, then check the environment variable
+    # if the environment variable is not set, quit with error message
     if not self.opdict.has_key('base_path'):
-      logging.info('No base_path set in options, getting base_path from $WAVELOC_PATH')
+      logging.info('No base_path set in options, getting base_path from \
+              $WAVELOC_PATH')
       base_path=os.getenv('WAVELOC_PATH')
-      if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
+      if not os.path.isdir(base_path): 
+          raise UserWarning('Environment variable WAVELOC_PATH not set \
+                  correctly.')
       self.opdict['base_path']=base_path
     
     base_path=self.opdict['base_path']
-
     lib_path=os.path.join(base_path,'lib')
-    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
+    if not os.path.isdir(lib_path): 
+        raise UserWarning('Directory %s does not exist.'%lib_path)
+
+  def _verify_lib_path(self):
+    self.verify_base_path()
+    base_path=self.opdict['base_path']
+    lib_path=os.path.join(base_path,'lib')
+    if not os.path.isdir(lib_path): 
+        raise UserWarning('Directory %s does not exist.'%lib_path)
+
+  def _verify_datadir(self):
+    self.verify_base_path()
+    base_path=self.opdict['base_path']
+    if not self.opdict.has_key('datadir'):
+        raise UserWarning('datadir option not set')
+
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    if not os.path.isdir(datadir):  
+        raise UserWarning('Directory %s does not exist.'%datadir)
+
+  def _verify_outdir(self):
+    self.verify_base_path()
+    base_path=self.opdict['base_path']
+    if not self.opdict.has_key('outdir'):
+        raise UserWarning('outdir option not set')
+
+    outdir=os.path.join(base_path,'out',self.opdict['outdir'])
+    if not os.path.isdir(outdir):  
+      os.makedirs(outdir)
+    if not os.path.isdir(os.path.join(outdir,'fig')):  
+      os.makedirs(os.path.join(outdir,'fig'))
+    if not os.path.isdir(os.path.join(outdir,'grid')):  
+      os.makedirs(os.path.join(outdir,'grid'))
+    if not os.path.isdir(os.path.join(outdir,'loc')):  
+      os.makedirs(os.path.join(outdir,'loc'))
+    if not os.path.isdir(os.path.join(outdir,'stack')):  
+      os.makedirs(os.path.join(outdir,'stack'))
+    if not os.path.isdir(os.path.join(outdir,'time_grids')):  
+      os.makedirs(os.path.join(outdir,'time_grids'))
+    if self.opdict['reloc'] and not os.path.isdir(os.path.join(outdir,'reloc')):
+      os.makedirs(os.path.join(outdir,'reloc'))
+
+
+  def _verify_net_list(self):
+    if not self.opdict.has_key('net_list'):
+        raise UserWarning('net_list option not set')
+ 
+  def _verify_sta_list(self):
+    if not self.opdict.has_key('sta_list'):
+        raise UserWarning('sta_list option not set')
+
+  def _verify_comp_list(self):
+    if not self.opdict.has_key('comp_list'):
+        raise UserWarning('comp_list option not set')
+
+  def _verify_starttime(self):
+    if not self.opdict.has_key('starttime'):
+        raise UserWarning('starttime option not set')
+
+  def _verify_endtime(self):
+    if not self.opdict.has_key('endtime'):
+        raise UserWarning('endtime option not set')
+
+  def _verify_resample(self):
+    if not self.opdict.has_key('resample'):
+        raise UserWarning('resample option not set')
+
+  def _verify_fs(self):
+    self._verify_resample()
+    resample=self.opdict['resample']
+    if resample:
+      if not self.opdict.has_key('fs'):
+        raise UserWarning('fs option not set')
+
+  def _verify_c1(self):
+    if not self.opdict.has_key('c1'):
+        raise UserWarning('c1 option not set')
+
+  def _verify_c2(self):
+    if not self.opdict.has_key('c2'):
+        raise UserWarning('c2 option not set')
+
+  def _verify_kwin(self):
+    if not self.opdict.has_key('kwin'):
+        raise UserWarning('kwin option not set')
+
+  def _verify_dataglob(self):
+    if not self.opdict.has_key('dataglob'):
+        raise UserWarning('dataglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
+    if len(data_names)==0: 
+        raise UserWarning('No data files found : %s'%data_names)
+
+  def _verify_kurtglob(self):
+    if not self.opdict.has_key('kurtglob'):
+        raise UserWarning('kurtglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
+    if len(kurt_names)==0: 
+        raise UserWarning('No kurtosis files found : %s'%kurt_names)
+
+  def _verify_gradglob(self):
+    if not self.opdict.has_key('gradglob'):
+        raise UserWarning('gradglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
+    if len(grad_names)==0: 
+        raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
+
+  def _verify_time_grid(self):
+    if not self.opdict.has_key('time_grid'):
+        raise UserWarning('time_grid option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
+    tg_glob=time_grid+'*'
+    tg_files=glob.glob(tg_glob)
+    if len(tg_files) == 0 : 
+        raise UserWarning('No time grid files found %s'%tg_glob)
+
+
+  def _verify_data_length(self):
+    if not self.opdict.has_key('data_length'):
+        raise UserWarning('data_length option not set')
+
+  def _verify_data_overlap(self):
+    if not self.opdict.has_key('data_overlap'):
+        raise UserWarning('data_overlap option not set')
+
+  def _verify_snr_limit(self):
+    if not self.opdict.has_key('snr_limit'):
+        raise UserWarning('snr_limit option not set')
+
+  def _verify_sn_time(self):
+    if not self.opdict.has_key('sn_time'):
+        raise UserWarning('sn_time option not set')
+
+  def _verify_n_kurt_min(self):
+    if not self.opdict.has_key('n_kurt_min'):
+        raise UserWarning('n_kurt_min option not set')
+
+  def _verify_stations(self):
+    if not self.opdict.has_key('stations'):
+        raise UserWarning('stations option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    stations=os.path.join(base_path,'lib',self.opdict['stations'])
+    if not os.path.isfile(stations) : 
+        raise UserWarning('Cannot find %s'%stations)
+
+  def _verify_search_grid(self):
+    if not self.opdict.has_key('search_grid'):
+        raise UserWarning('search_grid option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
+    if not os.path.isfile(search_grid) : 
+        raise UserWarning('Cannot find %s'%search_grid)
+
+  def _verify_auto_loclevel(self):
+    if not self.opdict.has_key('auto_loclevel'):
+        raise UserWarning('auto_loclevel option not set')
+
+  def _verify_snr_loclevel(self):
+    self._verify_auto_loclevel()
+    auto_loclevel=self.opdict['auto_loclevel']
+    if auto_loclevel:
+      if not self.opdict.has_key('snr_loclevel'):
+        raise UserWarning('snr_loclevel option not set')
+
+  def _verify_loclevel(self):
+    self._verify_auto_loclevel()
+    auto_loclevel=self.opdict['auto_loclevel']
+    if not auto_loclevel:
+      if not self.opdict.has_key('loclevel'):
+        raise UserWarning('loclevel option not set')
+
+  def _verify_threshold(self):
+    if not self.opdict.has_key('threshold'):
+        raise UserWarning('threshold option not set')
+
+  def _verify_before(self):
+    if not self.opdict.has_key('before'):
+        raise UserWarning('before option not set')
+
+  def _verify_after(self):
+    if not self.opdict.has_key('after'):
+        raise UserWarning('after option not set')
+
+  def _verify_corr(self):
+    if not self.opdict.has_key('corr'):
+        raise UserWarning('corr option not set')
+
+  def _verify_delay(self):
+    if not self.opdict.has_key('delay'):
+        raise UserWarning('delay option not set')
+
+  def _verify_nbsta(self):
+    if not self.opdict.has_key('nbsta'):
+        raise UserWarning('nbsta option not set')
+
+  def _verify_clus(self):
+    if not self.opdict.has_key('clus'):
+        raise UserWarning('clus option not set')
+
+  def _verify_syn_addnoise(self):
+    if not self.opdict.has_key('syn_addnoise'):
+        raise UserWarning('syn_addnoise option not set')
+
+  def _verify_syn_snr(self):
+    self._verify_syn_addnoise()
+    syn_addnoise=self.opdict['syn_addnoise']
+    if syn_addnoise:
+      if not self.opdict.has_key('syn_snr'):
+        raise UserWarning('syn_snr option not set')
+
+  def _verify_syn_amplitude(self):
+    if not self.opdict.has_key('syn_amplitude'):
+        raise UserWarning('syn_amplitude option not set')
+
+  def _verify_syn_datalength(self):
+    if not self.opdict.has_key('syn_datalength'):
+        raise UserWarning('syn_datalength option not set')
+
+  def _verify_syn_samplefreq(self):
+    if not self.opdict.has_key('syn_samplefreq'):
+        raise UserWarning('syn_samplefreq option not set')
+
+  def _verify_syn_kwidth(self):
+    if not self.opdict.has_key('syn_kwidth'):
+        raise UserWarning('syn_kwidth option not set')
+
+  def _verify_syn_otime(self):
+    if not self.opdict.has_key('syn_otime'):
+        raise UserWarning('syn_otime option not set')
+
+  def _verify_syn_ix(self):
+    if not self.opdict.has_key('syn_ix'):
+        raise UserWarning('syn_ix option not set')
+
+  def _verify_syn_iy(self):
+    if not self.opdict.has_key('syn_iy'):
+        raise UserWarning('syn_iy option not set')
+
+  def _verify_syn_iz(self):
+    if not self.opdict.has_key('syn_iz'):
+        raise UserWarning('syn_iz option not set')
+
+  def _verify_syn_filename(self):
+    if not self.opdict.has_key('syn_filename'):
+        raise UserWarning('syn_filename option not set')
+
+  def _verify_plot_tbefore(self):
+    if not self.opdict.has_key('plot_tbefore'):
+        raise UserWarning('plot_tbefore option not set')
+
+  def _verify_plot_tafter(self):
+    if not self.opdict.has_key('plot_tafter'):
+        raise UserWarning('plot_tafter option not set')
+
 
   def verify_SDS_processing_options(self):
 
     self.verify_base_path()
-    base_path=self.opdict['base_path']
+    self._verify_datadir()
 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+    self._verify_net_list()
+    self._verify_sta_list()
+    self._verify_comp_list()
 
-    if self.opdict['net_list']==None:  raise UserWarning('Empty network list') 
-    if self.opdict['sta_list']==None:  raise UserWarning('Empty station list') 
-    if self.opdict['comp_list']==None: raise UserWarning('Empty component list') 
-   
-    if self.opdict['starttime']==None: raise UserWarning('Missing start time') 
-    if self.opdict['endtime']==None:   raise UserWarning('Missing end time') 
-    
-    if self.opdict['resample']:
-      if self.opdict['fs'] ==None : raise UserWarning('Missing resampling frequency')
+    self._verify_starttime()
+    self._verify_endtime()
 
-    if self.opdict['c1'] ==None :   raise UserWarning('Missing low frequency corner for filtering')
-    if self.opdict['c2'] ==None :   raise UserWarning('Missing low frequency corner for filtering')
-    if self.opdict['kwin'] ==None : raise UserWarning('Missing kurtosis window length')
+    self._verify_fs()
+    self._verify_c1()
+    self._verify_c2()
+    self._verify_kwin()
 
 
   def verify_migration_options(self):
 
     self.verify_base_path()
-    base_path=self.opdict['base_path']
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
 
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+    self._verify_gradglob()
+    self._verify_starttime()
+    self._verify_endtime()
+    self._verify_data_length()
+    self._verify_data_overlap()
 
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    outdir=os.path.join(base_path,'out',self.opdict['outdir'])
-    if not os.path.exists(outdir):  
-      os.makedirs(outdir)
-      os.makedirs(os.path.join(outdir,'grid'))
-      os.makedirs(os.path.join(outdir,'stack'))
-      os.makedirs(os.path.join(outdir,'time_grids'))
-
-    if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
-    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
-    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
-    
-    if self.opdict['starttime']==None: raise UserWarning('Empty start time') 
-    if self.opdict['endtime']==None:   raise UserWarning('Empty end time') 
-    if self.opdict['data_length']==None:   raise UserWarning('Empty data segment length') 
-    if self.opdict['data_overlap']==None:   raise UserWarning('Empty data segment overlap') 
-
-    if not self.opdict.has_key('stations') or self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
-
-    if not self.opdict.has_key('search_grid') or self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
-    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
-
-    if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+    self._verify_stations()
+    self._verify_search_grid()
+    self._verify_time_grid()
 
   def verify_location_options(self):
 
     self.verify_base_path()
-    base_path=self.opdict['base_path']
-    print base_path
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
 
-    if not self.opdict.has_key('datadir') :  raise UserWarning('Empty data directory name') 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+    self._verify_kurtglob()
+    self._verify_gradglob()
 
-    if not self.opdict.has_key('kurtglob') :  raise UserWarning('Empty kurtglob') 
-    kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
-    if len(kurt_names)==0: raise UserWarning('No kurtosis files found : %s'%kurt_names)
 
-    if not self.opdict.has_key('gradglob') :  raise UserWarning('Empty gradglob') 
-    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
-    print os.path.join(datadir,self.opdict['gradglob'])
-    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
+    self._verify_loclevel()
+    self._verify_snr_loclevel()
+    self._verify_snr_limit()
+    self._verify_sn_time()
+    self._verify_n_kurt_min()
 
-    out_path=os.path.join(base_path,'out',self.opdict['outdir'])
-    if not os.path.isdir(out_path): raise UserWarning('Output directory %s does not exist.'%out_path) 
+    self._verify_search_grid()
 
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    stackdir=os.path.join(base_path,'out',self.opdict['outdir'],'stack')
-    if not os.path.isdir(stackdir): raise UserWarning('Stack directory %s does not exist.  Have you run migration correctly ?'%stackdir) 
-
-    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): os.makedirs(locdir)  
-
-    relocdir=os.path.join(base_path,'out',self.opdict['outdir'],'reloc')
-    if self.opdict['reloc'] and not os.path.exists(relocdir): os.makedirs(relocdir)  
-
-    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): os.makedirs(griddir)  
-
-    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
-    if not os.path.exists(figdir): os.makedirs(figdir)  
-
-    if self.opdict['auto_loclevel']: 
-      if self.opdict['snr_loclevel']==None :   raise UserWarning('Empty snr for automatic location threshold') 
-    else :
-      if self.opdict['loclevel']==None :   raise UserWarning('Empty location threshold') 
-    if self.opdict['snr_limit']==None:   raise UserWarning('Empty threshold for signal to noise ratio') 
-    if self.opdict['sn_time']==None:   raise UserWarning('Empty time span for signal to noise ratio computation') 
-    if self.opdict['n_kurt_min']==None:   raise UserWarning('Empty minimum number of good kurtosis for location') 
-
-    if self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
-    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
-
-    if self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+    self._verify_time_grid()
 
   def verify_correlation_options(self):
     
     self.verify_base_path()
-    base_path=self.opdict['base_path']
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
 
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
+    self._verify_dataglob()
+    self._verify_threshold()
+    self._verify_before()
+    self._verify_after()
+    self._verify_corr()
+    self._verify_delay()
 
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): os.makedirs(locdir)
-
-    if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
-    kurt_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
-    if len(kurt_names)==0: raise UserWarning('No data files found : %s'%kurt_names)
-
-    if self.opdict['threshold']==None:  raise UserWarning('Empty correlation threshold for refinement in Fourier domain')
-    if self.opdict['before']==None:  raise UserWarning('Empty lower limit for correlation time window')
-    if self.opdict['after']==None:  raise UserWarning('Empty upper limit for correlation time window')
-
-    if self.opdict['corr']==None:  raise UserWarning('Empty correlation file name')
-    coeff_file=os.path.join(locdir,self.opdict['corr'])
-    
-    if self.opdict['delay']==None:  raise UserWarning('Empty time delays file name')
-    delay_file=os.path.join(locdir,self.opdict['delay'])
 
   def verify_cluster_options(self):
     
     self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
+
     base_path=self.opdict['base_path']
-
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
-
-    if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
-    data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
-    if len(data_names)==0: raise UserWarning('No data files found : %s'%data_names)
-
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): os.makedirs(locdir)
 
-    if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_dataglob()
 
-    if self.opdict['corr']==None:  raise UserWarning('Empty correlation file')
+    self._verify_stations()
+    self._verify_corr()
+    self._verify_delay()
+
     coeff_file=os.path.join(locdir,self.opdict['corr'])
-    if not os.path.isfile(coeff_file):  raise UserWarning('Cannot find %s'%coeff_file)
+    if not os.path.isfile(coeff_file):  
+        raise UserWarning('Cannot find %s'%coeff_file)
     
-    if self.opdict['delay']==None:  raise UserWarning('Empty time delays file')
     delay_file=os.path.join(locdir,self.opdict['delay'])
-    if not os.path.isfile(delay_file):  raise UserWarning('Cannot find %s'%delay_file)
+    if not os.path.isfile(delay_file):  
+        raise UserWarning('Cannot find %s'%delay_file)
 
-    if self.opdict['nbsta']==None:  raise UserWarning('Empty minimum number of stations')
-    if self.opdict['clus']==None:  raise UserWarning('Empty correlation threshold for clustering')
+    self._verify_nbsta()
+    self._verify_clus()
 
 
   def verify_synthetic_options(self):
 
     self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_outdir()
     base_path=self.opdict['base_path']
 
-    if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
+    self._verify_time_grid()
 
-    if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_stations()
+    self._verify_syn_addnoise()
+    self._verify_syn_snr()
 
-    if self.opdict['syn_addnoise'] :
-      if self.opdict['syn_snr']==None:	raise UserWarning('No SNR set for synthetic test')
+    self._verify_syn_amplitude()
+    self._verify_syn_datalength()
+    self._verify_syn_samplefreq()
+    self._verify_syn_kwidth()
+    self._verify_syn_otime()
+    self._verify_syn_ix()
+    self._verify_syn_iy()
+    self._verify_syn_iz()
+    self._verify_syn_filename()
           
-    if self.opdict['syn_amplitude']==None:	raise UserWarning('No synthetic amplitudue set')
-    if self.opdict['syn_datalength']==None:	raise UserWarning('No synthetic datalength set')  
-    if self.opdict['syn_samplefreq']==None:	raise UserWarning('No synthetic samplefreq set')  
-    if self.opdict['syn_kwidth']==None:	raise UserWarning('No synthetic kwidth set')  
-    if self.opdict['syn_otime']==None:	raise UserWarning('No synthetic otime set')  
-    if self.opdict['syn_ix']==None:	raise UserWarning('No synthetic ix set')  
-    if self.opdict['syn_iy']==None:	raise UserWarning('No synthetic iy set')  
-    if self.opdict['syn_iz']==None:	raise UserWarning('No synthetic iz set')  
-    if self.opdict['syn_filename']==None:	raise UserWarning('No filename set for synthetic grid')  
 
-
-    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): os.makedirs(griddir)  
-
-    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
-    if not os.path.exists(figdir): os.makedirs(figdir)  
 
   def verify_plotting_options(self):
 
     self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
+
     base_path=self.opdict['base_path']
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
 
-    if not self.opdict.has_key('datadir') or self.opdict['datadir']==None :  raise UserWarning('Empty datadir') 
-    if not self.opdict.has_key('outdir') or self.opdict['outdir']==None :  raise UserWarning('Empty outdir') 
+    locfile=os.path.join(locdir,'locations.dat')
+    if not os.path.isfile(locfile): 
+        raise UserWarning('Locations file %s does not exist.'%locfile)
 
-    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): os.makedirs(griddir)  
+    self._verify_dataglob()
+    self._verify_kurtglob()
+    self._verify_gradglob()
 
-    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
-    if not os.path.exists(figdir): os.makedirs(figdir)  
+    self._verify_plot_tbefore()
+    self._verify_plot_tafter()
 
-    locfile=os.path.join(base_path,'out',self.opdict['outdir'],'loc','locations.dat')
-    if not os.path.isfile(locfile): raise UserWarning('Locations file %s does not exist.'%locfile)
-
-    if not self.opdict.has_key('dataglob') or self.opdict['dataglob']==None :  raise UserWarning('Empty dataglob') 
-    if not self.opdict.has_key('kurtglob') or self.opdict['kurtglob']==None :  raise UserWarning('Empty kurtglob') 
-    if not self.opdict.has_key('gradglob') or self.opdict['gradglob']==None :  raise UserWarning('Empty gradglob') 
-
-    if not self.opdict.has_key('plot_tbefore') : raise UserWarning('Missing start time for plots (plot_tbefore)')
-    if not self.opdict.has_key('plot_tafter') : raise UserWarning('Missing end time for plots (plot_tafter)')
-
-    if not self.opdict.has_key('search_grid') or self.opdict['search_grid']==None:   raise UserWarning('Empty search grid filename') 
-    search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
-    if not os.path.isfile(search_grid) : raise UserWarning('Cannot find %s'%search_grid)
+    self._verify_search_grid()
+    self._verify_time_grid()
 
 
-    if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
-    tg_glob=time_grid+'*'
-    tg_files=glob.glob(tg_glob)
-    if len(tg_files) == 0 : raise UserWarning('No time grid files found %s'%tg_glob)
-
-
-    if not self.opdict.has_key('stations') or self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
-    stations=os.path.join(base_path,'lib',self.opdict['stations'])
-    if not os.path.isfile(stations) : raise UserWarning('Cannot find %s'%stations)
+    self._verify_stations()
