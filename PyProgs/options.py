@@ -374,7 +374,6 @@ class WavelocOptions(object):
       os.makedirs(os.path.join(outdir,'reloc'))
 
 
-
   def _verify_net_list(self):
     if not self.opdict.has_key('net_list'):
         raise UserWarning('net_list option not set')
@@ -418,6 +417,44 @@ class WavelocOptions(object):
     if not self.opdict.has_key('kwin'):
         raise UserWarning('kwin option not set')
 
+  def _verify_dataglob(self):
+    if not self.opdict.has_key('dataglob'):
+        raise UserWarning('dataglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
+    if len(data_names)==0: 
+        raise UserWarning('No data files found : %s'%data_names)
+
+  def _verify_kurtglob(self):
+    if not self.opdict.has_key('kurtglob'):
+        raise UserWarning('kurtglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
+    if len(kurt_names)==0: 
+        raise UserWarning('No kurtosis files found : %s'%kurt_names)
+
+  def _verify_gradglob(self):
+    if not self.opdict.has_key('gradglob'):
+        raise UserWarning('gradglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
+    if len(grad_names)==0: 
+        raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
+
+  def _verify_data_length(self):
+    if not self.opdict.has_key('data_length'):
+        raise UserWarning('data_length option not set')
+
+  def _verify_data_overlap(self):
+    if not self.opdict.has_key('data_overlap'):
+        raise UserWarning('data_overlap option not set')
+
 
   def verify_SDS_processing_options(self):
 
@@ -445,17 +482,12 @@ class WavelocOptions(object):
     self._verify_outdir()
 
     base_path=self.opdict['base_path']
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
 
-
-    if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
-    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
-    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
-    
+    self._verify_gradglob()
     self._verify_starttime()
     self._verify_endtime()
-    if self.opdict['data_length']==None:   raise UserWarning('Empty data segment length') 
-    if self.opdict['data_overlap']==None:   raise UserWarning('Empty data segment overlap') 
+    self._verify_data_length()
+    self._verify_data_overlap()
 
     if not self.opdict.has_key('stations') or self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
     stations=os.path.join(base_path,'lib',self.opdict['stations'])
@@ -482,14 +514,8 @@ class WavelocOptions(object):
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
     out_path=os.path.join(base_path,'out',self.opdict['outdir'])
 
-    if not self.opdict.has_key('kurtglob') :  raise UserWarning('Empty kurtglob') 
-    kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
-    if len(kurt_names)==0: raise UserWarning('No kurtosis files found : %s'%kurt_names)
-
-    if not self.opdict.has_key('gradglob') :  raise UserWarning('Empty gradglob') 
-    grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
-    print os.path.join(datadir,self.opdict['gradglob'])
-    if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
+    self._verify_kurtglob()
+    self._verify_gradglob()
 
 
     if self.opdict['auto_loclevel']: 
@@ -521,9 +547,7 @@ class WavelocOptions(object):
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
 
 
-    if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
-    kurt_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
-    if len(kurt_names)==0: raise UserWarning('No data files found : %s'%kurt_names)
+    self._verify_dataglob()
 
     if self.opdict['threshold']==None:  raise UserWarning('Empty correlation threshold for refinement in Fourier domain')
     if self.opdict['before']==None:  raise UserWarning('Empty lower limit for correlation time window')
@@ -545,9 +569,7 @@ class WavelocOptions(object):
     base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
 
-    if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
-    data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
-    if len(data_names)==0: raise UserWarning('No data files found : %s'%data_names)
+    self._verify_dataglob()
 
 
     if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
@@ -611,9 +633,9 @@ class WavelocOptions(object):
     locfile=os.path.join(base_path,'out',self.opdict['outdir'],'loc','locations.dat')
     if not os.path.isfile(locfile): raise UserWarning('Locations file %s does not exist.'%locfile)
 
-    if not self.opdict.has_key('dataglob') or self.opdict['dataglob']==None :  raise UserWarning('Empty dataglob') 
-    if not self.opdict.has_key('kurtglob') or self.opdict['kurtglob']==None :  raise UserWarning('Empty kurtglob') 
-    if not self.opdict.has_key('gradglob') or self.opdict['gradglob']==None :  raise UserWarning('Empty gradglob') 
+    self._verify_dataglob()
+    self._verify_kurtglob()
+    self._verify_gradglob()
 
     if not self.opdict.has_key('plot_tbefore') : raise UserWarning('Missing start time for plots (plot_tbefore)')
     if not self.opdict.has_key('plot_tafter') : raise UserWarning('Missing end time for plots (plot_tafter)')
