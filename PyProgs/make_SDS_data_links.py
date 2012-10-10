@@ -14,6 +14,7 @@ def make_SDS_data_links(datadir,dataglob,outdir):
   logging.debug('SDS data to be put in directory %s'%out_dir)
 
   all_files=glob.glob(os.path.join(data_dir,dataglob))
+  all_files.sort()
 
   filedict={}
   for filename in all_files:

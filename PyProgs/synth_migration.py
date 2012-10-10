@@ -43,6 +43,7 @@ def generateSyntheticDirac(opdict,time_grids=None):
       data_dir=os.path.join(base_path,'data',opdict['datadir'])
       data_glob=opdict['gradglob']
       datafile_list=glob.glob(os.path.join(data_dir,data_glob))
+      datafile_list.sort()
     except KeyError:
       logging.info('No data given, so use all stations in the coord_stations file')
       use_data=False

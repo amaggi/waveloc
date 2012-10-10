@@ -135,6 +135,7 @@ def do_locations_trigger_setup_and_run(opdict):
   # parse command line
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
   kurt_files=glob.glob(os.path.join(data_dir,opdict['kurtglob']))
+  kurt_files.sort()
 
   logging.info("Starting log for combine_stacks.")
 
@@ -145,6 +146,7 @@ def do_locations_trigger_setup_and_run(opdict):
   if reloc:
     loc_path=os.path.join(out_path,'reloc')
     stack_files=glob.glob(os.path.join(stack_path),'reloc_stack_all*.hdf5')
+    stack_files.sort()
   else:
     loc_path=os.path.join(out_path,'loc')
     stack_files=glob.glob(os.path.join(stack_path,'stack_all*.hdf5'))
