@@ -1,6 +1,9 @@
 import os, glob, argparse, logging
 
 class WavelocOptions(object):
+  """
+  Describe the WavelocOptions class, and all the options
+  """
 
   def __init__(self):
 
@@ -311,26 +314,48 @@ class WavelocOptions(object):
 
 
   def verify_base_path(self):
+    """
+    Verifies that the base_path is set
+    """
 
+    # if the option base_path is not set, then check the environment variable
+    # if the environment variable is not set, quit with error message
     if not self.opdict.has_key('base_path'):
-      logging.info('No base_path set in options, getting base_path from $WAVELOC_PATH')
+      logging.info('No base_path set in options, getting base_path from \
+              $WAVELOC_PATH')
       base_path=os.getenv('WAVELOC_PATH')
-      if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
+      if not os.path.isdir(base_path): 
+          raise UserWarning('Environment variable WAVELOC_PATH not set \
+                  correctly.')
       self.opdict['base_path']=base_path
     
     base_path=self.opdict['base_path']
-
     lib_path=os.path.join(base_path,'lib')
-    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
+    if not os.path.isdir(lib_path): 
+        raise UserWarning('Directory %s does not exist.'%lib_path)
+
+  def _verify_lib_path(self):
+    base_path=self.opdict['base_path']
+    lib_path=os.path.join(base_path,'lib')
+    if not os.path.isdir(lib_path): 
+        raise UserWarning('Directory %s does not exist.'%lib_path)
+
+  def _verify_datadir(self):
+    base_path=self.opdict['base_path']
+    if not self.opdict.has_key('datadir'):
+        raise UserWarning('datadir option not set')
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    if not os.path.isdir(datadir):  
+        raise UserWarning('Directory %s does not exist.'%datadir)
+
+ 
 
   def verify_SDS_processing_options(self):
 
     self.verify_base_path()
+    self._verify_datadir()
     base_path=self.opdict['base_path']
 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if self.opdict['net_list']==None:  raise UserWarning('Empty network list') 
     if self.opdict['sta_list']==None:  raise UserWarning('Empty station list') 
@@ -350,11 +375,11 @@ class WavelocOptions(object):
   def verify_migration_options(self):
 
     self.verify_base_path()
-    base_path=self.opdict['base_path']
+    self._verify_lib_path()
+    self._verify_datadir()
 
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
+    base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     outdir=os.path.join(base_path,'out',self.opdict['outdir'])
@@ -390,12 +415,11 @@ class WavelocOptions(object):
   def verify_location_options(self):
 
     self.verify_base_path()
-    base_path=self.opdict['base_path']
-    print base_path
+    self._verify_lib_path()
+    self._verify_datadir()
 
-    if not self.opdict.has_key('datadir') :  raise UserWarning('Empty data directory name') 
+    base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if not self.opdict.has_key('kurtglob') :  raise UserWarning('Empty kurtglob') 
     kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
@@ -446,11 +470,11 @@ class WavelocOptions(object):
   def verify_correlation_options(self):
     
     self.verify_base_path()
-    base_path=self.opdict['base_path']
+    self._verify_lib_path()
+    self._verify_datadir()
 
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
+    base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
     locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
@@ -473,11 +497,11 @@ class WavelocOptions(object):
   def verify_cluster_options(self):
     
     self.verify_base_path()
-    base_path=self.opdict['base_path']
+    self._verify_lib_path()
+    self._verify_datadir()
 
-    if self.opdict['datadir']==None:  raise UserWarning('Empty data directory name') 
+    base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
-    if not os.path.isdir(datadir):  raise UserWarning('Data directory %s does not exist'%datadir)
 
     if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
     data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
@@ -506,6 +530,7 @@ class WavelocOptions(object):
   def verify_synthetic_options(self):
 
     self.verify_base_path()
+    self._verify_lib_path()
     base_path=self.opdict['base_path']
 
     if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
@@ -541,9 +566,11 @@ class WavelocOptions(object):
   def verify_plotting_options(self):
 
     self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_datadir()
+
     base_path=self.opdict['base_path']
 
-    if not self.opdict.has_key('datadir') or self.opdict['datadir']==None :  raise UserWarning('Empty datadir') 
     if not self.opdict.has_key('outdir') or self.opdict['outdir']==None :  raise UserWarning('Empty outdir') 
 
     griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
