@@ -11,7 +11,7 @@ Download and installation
 
 You can download the latest distribution on the `waveloc downloads page  
 <http://github.com/amaggi/waveloc/downloads>`_, or if you're feeling
-courageous you can download the deveopment version from github:
+courageous you can download the development version from github:
 http://github.com/amaggi/waveloc.  
 
 System requirements : 
