@@ -335,41 +335,106 @@ class WavelocOptions(object):
         raise UserWarning('Directory %s does not exist.'%lib_path)
 
   def _verify_lib_path(self):
+    self.verify_base_path()
     base_path=self.opdict['base_path']
     lib_path=os.path.join(base_path,'lib')
     if not os.path.isdir(lib_path): 
         raise UserWarning('Directory %s does not exist.'%lib_path)
 
   def _verify_datadir(self):
+    self.verify_base_path()
     base_path=self.opdict['base_path']
     if not self.opdict.has_key('datadir'):
         raise UserWarning('datadir option not set')
+
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
     if not os.path.isdir(datadir):  
         raise UserWarning('Directory %s does not exist.'%datadir)
 
+  def _verify_outdir(self):
+    self.verify_base_path()
+    base_path=self.opdict['base_path']
+    if not self.opdict.has_key('outdir'):
+        raise UserWarning('outdir option not set')
+
+    outdir=os.path.join(base_path,'out',self.opdict['outdir'])
+    if not os.path.isdir(outdir):  
+      os.makedirs(outdir)
+    if not os.path.isdir(os.path.join(outdir,'fig')):  
+      os.makedirs(os.path.join(outdir,'fig'))
+    if not os.path.isdir(os.path.join(outdir,'grid')):  
+      os.makedirs(os.path.join(outdir,'grid'))
+    if not os.path.isdir(os.path.join(outdir,'loc')):  
+      os.makedirs(os.path.join(outdir,'loc'))
+    if not os.path.isdir(os.path.join(outdir,'stack')):  
+      os.makedirs(os.path.join(outdir,'stack'))
+    if not os.path.isdir(os.path.join(outdir,'time_grids')):  
+      os.makedirs(os.path.join(outdir,'time_grids'))
+    if self.opdict['reloc'] and not os.path.isdir(os.path.join(outdir,'reloc')):
+      os.makedirs(os.path.join(outdir,'reloc'))
+
+
+
+  def _verify_net_list(self):
+    if not self.opdict.has_key('net_list'):
+        raise UserWarning('net_list option not set')
  
+  def _verify_sta_list(self):
+    if not self.opdict.has_key('sta_list'):
+        raise UserWarning('sta_list option not set')
+
+  def _verify_comp_list(self):
+    if not self.opdict.has_key('comp_list'):
+        raise UserWarning('comp_list option not set')
+
+  def _verify_starttime(self):
+    if not self.opdict.has_key('starttime'):
+        raise UserWarning('starttime option not set')
+
+  def _verify_endtime(self):
+    if not self.opdict.has_key('endtime'):
+        raise UserWarning('endtime option not set')
+
+  def _verify_resample(self):
+    if not self.opdict.has_key('resample'):
+        raise UserWarning('resample option not set')
+
+  def _verify_fs(self):
+    self._verify_resample()
+    resample=self.opdict['resample']
+    if resample:
+      if not self.opdict.has_key('fs'):
+        raise UserWarning('fs option not set')
+
+  def _verify_c1(self):
+    if not self.opdict.has_key('c1'):
+        raise UserWarning('c1 option not set')
+
+  def _verify_c2(self):
+    if not self.opdict.has_key('c2'):
+        raise UserWarning('c2 option not set')
+
+  def _verify_kwin(self):
+    if not self.opdict.has_key('kwin'):
+        raise UserWarning('kwin option not set')
+
 
   def verify_SDS_processing_options(self):
 
     self.verify_base_path()
     self._verify_datadir()
-    base_path=self.opdict['base_path']
 
+    self._verify_net_list()
+    self._verify_sta_list()
+    self._verify_comp_list()
 
-    if self.opdict['net_list']==None:  raise UserWarning('Empty network list') 
-    if self.opdict['sta_list']==None:  raise UserWarning('Empty station list') 
-    if self.opdict['comp_list']==None: raise UserWarning('Empty component list') 
-   
-    if self.opdict['starttime']==None: raise UserWarning('Missing start time') 
-    if self.opdict['endtime']==None:   raise UserWarning('Missing end time') 
-    
-    if self.opdict['resample']:
-      if self.opdict['fs'] ==None : raise UserWarning('Missing resampling frequency')
+    self._verify_starttime()
+    self._verify_endtime()
 
-    if self.opdict['c1'] ==None :   raise UserWarning('Missing low frequency corner for filtering')
-    if self.opdict['c2'] ==None :   raise UserWarning('Missing low frequency corner for filtering')
-    if self.opdict['kwin'] ==None : raise UserWarning('Missing kurtosis window length')
+    self._verify_fs()
+    self._verify_c1()
+    self._verify_c2()
+    self._verify_kwin()
 
 
   def verify_migration_options(self):
@@ -377,24 +442,18 @@ class WavelocOptions(object):
     self.verify_base_path()
     self._verify_lib_path()
     self._verify_datadir()
+    self._verify_outdir()
 
     base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
 
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    outdir=os.path.join(base_path,'out',self.opdict['outdir'])
-    if not os.path.exists(outdir):  
-      os.makedirs(outdir)
-      os.makedirs(os.path.join(outdir,'grid'))
-      os.makedirs(os.path.join(outdir,'stack'))
-      os.makedirs(os.path.join(outdir,'time_grids'))
 
     if self.opdict['gradglob']==None:  raise UserWarning('Empty gradglob') 
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
     if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
     
-    if self.opdict['starttime']==None: raise UserWarning('Empty start time') 
-    if self.opdict['endtime']==None:   raise UserWarning('Empty end time') 
+    self._verify_starttime()
+    self._verify_endtime()
     if self.opdict['data_length']==None:   raise UserWarning('Empty data segment length') 
     if self.opdict['data_overlap']==None:   raise UserWarning('Empty data segment overlap') 
 
@@ -417,9 +476,11 @@ class WavelocOptions(object):
     self.verify_base_path()
     self._verify_lib_path()
     self._verify_datadir()
+    self._verify_outdir()
 
     base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    out_path=os.path.join(base_path,'out',self.opdict['outdir'])
 
     if not self.opdict.has_key('kurtglob') :  raise UserWarning('Empty kurtglob') 
     kurt_names=glob.glob(os.path.join(datadir,self.opdict['kurtglob']))
@@ -430,24 +491,6 @@ class WavelocOptions(object):
     print os.path.join(datadir,self.opdict['gradglob'])
     if len(grad_names)==0: raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
 
-    out_path=os.path.join(base_path,'out',self.opdict['outdir'])
-    if not os.path.isdir(out_path): raise UserWarning('Output directory %s does not exist.'%out_path) 
-
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    stackdir=os.path.join(base_path,'out',self.opdict['outdir'],'stack')
-    if not os.path.isdir(stackdir): raise UserWarning('Stack directory %s does not exist.  Have you run migration correctly ?'%stackdir) 
-
-    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): os.makedirs(locdir)  
-
-    relocdir=os.path.join(base_path,'out',self.opdict['outdir'],'reloc')
-    if self.opdict['reloc'] and not os.path.exists(relocdir): os.makedirs(relocdir)  
-
-    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): os.makedirs(griddir)  
-
-    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
-    if not os.path.exists(figdir): os.makedirs(figdir)  
 
     if self.opdict['auto_loclevel']: 
       if self.opdict['snr_loclevel']==None :   raise UserWarning('Empty snr for automatic location threshold') 
@@ -472,13 +515,11 @@ class WavelocOptions(object):
     self.verify_base_path()
     self._verify_lib_path()
     self._verify_datadir()
+    self._verify_outdir()
 
     base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
 
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): os.makedirs(locdir)
 
     if self.opdict['dataglob']==None:  raise UserWarning('Empty dataglob') 
     kurt_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
@@ -499,6 +540,7 @@ class WavelocOptions(object):
     self.verify_base_path()
     self._verify_lib_path()
     self._verify_datadir()
+    self._verify_outdir()
 
     base_path=self.opdict['base_path']
     datadir=os.path.join(base_path,'data',self.opdict['datadir'])
@@ -507,9 +549,6 @@ class WavelocOptions(object):
     data_names=glob.glob(os.path.join(datadir,self.opdict['dataglob']))
     if len(data_names)==0: raise UserWarning('No data files found : %s'%data_names)
 
-    if self.opdict['outdir']==None:  raise UserWarning('Empty output directory name') 
-    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-    if not os.path.exists(locdir): os.makedirs(locdir)
 
     if self.opdict['stations']==None:   raise UserWarning('Empty stations coordinate file') 
     stations=os.path.join(base_path,'lib',self.opdict['stations'])
@@ -531,6 +570,7 @@ class WavelocOptions(object):
 
     self.verify_base_path()
     self._verify_lib_path()
+    self._verify_outdir()
     base_path=self.opdict['base_path']
 
     if not self.opdict.has_key('time_grid') or self.opdict['time_grid']==None:   raise UserWarning('Empty time grid base filename') 
@@ -557,27 +597,16 @@ class WavelocOptions(object):
     if self.opdict['syn_filename']==None:	raise UserWarning('No filename set for synthetic grid')  
 
 
-    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): os.makedirs(griddir)  
-
-    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
-    if not os.path.exists(figdir): os.makedirs(figdir)  
 
   def verify_plotting_options(self):
 
     self.verify_base_path()
     self._verify_lib_path()
     self._verify_datadir()
+    self._verify_outdir()
 
     base_path=self.opdict['base_path']
 
-    if not self.opdict.has_key('outdir') or self.opdict['outdir']==None :  raise UserWarning('Empty outdir') 
-
-    griddir=os.path.join(base_path,'out',self.opdict['outdir'],'grid')
-    if not os.path.exists(griddir): os.makedirs(griddir)  
-
-    figdir=os.path.join(base_path,'out',self.opdict['outdir'],'fig')
-    if not os.path.exists(figdir): os.makedirs(figdir)  
 
     locfile=os.path.join(base_path,'out',self.opdict['outdir'],'loc','locations.dat')
     if not os.path.isfile(locfile): raise UserWarning('Locations file %s does not exist.'%locfile)
