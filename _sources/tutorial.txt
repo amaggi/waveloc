@@ -4,52 +4,14 @@
 Tutorial
 ========
 
+.. warning::
+  This tutorial is seriously out of date.  Am working on updating it before
+  sending the code out for beta-testing.
+
 Waveloc options
 ===============
 
-Preprocess your data
-====================
-
-Raw data can be provided in any format that obspy is capable of reading (tested
-formats : ``MSEED`` and ``SAC`` for now).  Preferred data structure are SDS archives,
-but other structures are acceptable so long as a siutable io interface is coded
-into the processing code.  As an alternative to re-programming the processing
-code, a helper script, ``make_SDS_data_links.py``, is provided to create SDS
-archives from flat files using soft links.
-
-The processing code will look for data in the ``$WAVELOC_PATH/data/SOME_NAME``
-directory, where the ``SOME_NAME`` subdirectory contains the SDS archive(s) and will
-also contain the processed waveforms.  
-
-Most of the options are self-explanatory.  The choice of the frequency ranges
-will influence the ability of the kurtosis to detect a non-stationary signal
-(i.e. a first arrival).  We provide a helper-code ``run_kurtogram.py`` that may
-help you find the best frequency range for your data by plotting the power in
-the kurtosis as a function of central frequency and of width of frequency band.
-Run this on several examples of data to get an idea of the best frequency range
-for the rest of the analysis.
-
-We suggest you use the recursive
-kurtosis calculation given the considerable increase in speed it offers.  The
-window for the recursive calculation should be long enough to smooth over the
-S-P arrival time, in order to avoid double peaks in the kurtosis.
-We also suggest you calculate the gradient of the kurtosis, as using this for 
-migration will give more precise results. 
-
-.. warning::
-  The option to chose recursive kurtosis and kurtosis gradient calculations may
-  soon disappear from the code, as they will likely become the default options.
-
-We provide an example run-script ``run_tutorial.sh`` to show how to run the
-processing scripts and the following migration and location scripts.  Feel free
-to modify this run-script for your own data.
-
-::
-
-  Add file here
-
-Show figure for output.
-
+Describe waveloc options here...
 
 Prepare the time and search grids
 =================================
@@ -128,7 +90,7 @@ geographical transformation and its center should be the same as for the time
 grids. Hint: start with an identical grid, by copying the ``.mod.hdr`` file,
 then modify this grid, making it smaller or denser as you prefer.  
 
-..warning:: 
+.. warning:: 
   Computation time for WaveLoc increasces linearly with the total number of
   points in the search grid, so make the grid as small as you can, and no denser
   than you need. 
@@ -136,6 +98,50 @@ then modify this grid, making it smaller or denser as you prefer.
 Run ``grid2hdf5`` to turn the nll .hdr and .buf files into .hdf5 files. 
 Copy, move or make symbolic links to the .hdf5 files in the 
 ``$WAVELOC_PATH/lib`` directory, and you should be set to go.
+
+
+Preprocess your data
+====================
+
+Raw data can be provided in any format that obspy is capable of reading (tested
+formats : ``MSEED`` and ``SAC`` for now).  Preferred data structure are SDS archives,
+but other structures are acceptable so long as a siutable io interface is coded
+into the processing code.  As an alternative to re-programming the processing
+code, a helper script, ``make_SDS_data_links.py``, is provided to create SDS
+archives from flat files using soft links.
+
+The processing code will look for data in the ``$WAVELOC_PATH/data/SOME_NAME``
+directory, where the ``SOME_NAME`` subdirectory contains the SDS archive(s) and will
+also contain the processed waveforms.  
+
+Most of the options are self-explanatory.  The choice of the frequency ranges
+will influence the ability of the kurtosis to detect a non-stationary signal
+(i.e. a first arrival).  We provide a helper-code ``run_kurtogram.py`` that may
+help you find the best frequency range for your data by plotting the power in
+the kurtosis as a function of central frequency and of width of frequency band.
+Run this on several examples of data to get an idea of the best frequency range
+for the rest of the analysis.
+
+We suggest you use the recursive
+kurtosis calculation given the considerable increase in speed it offers.  The
+window for the recursive calculation should be long enough to smooth over the
+S-P arrival time, in order to avoid double peaks in the kurtosis.
+We also suggest you calculate the gradient of the kurtosis, as using this for 
+migration will give more precise results. 
+
+.. warning::
+  The option to chose recursive kurtosis and kurtosis gradient calculations may
+  soon disappear from the code, as they will likely become the default options.
+
+We provide an example run-script ``run_tutorial.sh`` to show how to run the
+processing scripts and the following migration and location scripts.  Feel free
+to modify this run-script for your own data.
+
+::
+
+  Add file here
+
+Show figure for output.
 
 
 
