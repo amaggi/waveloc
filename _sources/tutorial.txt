@@ -5,8 +5,8 @@ Tutorial
 ========
 
 .. warning::
-  This tutorial is seriously out of date.  Am working on updating it before
-  sending the code out for beta-testing.
+  This tutorial is seriously out of date.  Am working on updating it, but it
+  may not be ready before sending the code out for beta-testing.
 
 Waveloc options
 ===============

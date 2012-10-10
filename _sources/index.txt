@@ -6,7 +6,18 @@
 Waveloc documentation
 =====================
 
-Contents:
+Thank you for trying out waveloc, the migration-based event detector and
+locator.  Development of waveloc is being carried out as part of the European
+Union funded NERA project.
+
+This documentation is for the offline version of waveloc.  Development of a
+real-time version is planned to start soon.
+
+Waveloc is open-source software. It is distributed under the CeCILL Free
+Software License Agreement. Feel free to fork the sofware from 
+http://github.com/amaggi/waveloc if you want to modify it, and please consider
+contributing your modifications back to the central version.
+
 
 .. toctree::
    :maxdepth: 2

@@ -60,7 +60,7 @@
 <div class="section" id="download-and-installation">
 <h2>Download and installation<a class="headerlink" href="#download-and-installation" title="Permalink to this headline">¶</a></h2>
 <p>You can download the latest distribution on the <a class="reference external" href="http://github.com/amaggi/waveloc/downloads">waveloc downloads page</a>, or if you&#8217;re feeling
-courageous you can download the deveopment version from github:
+courageous you can download the development version from github:
 <a class="reference external" href="http://github.com/amaggi/waveloc">http://github.com/amaggi/waveloc</a>.</p>
 <p>System requirements :</p>
 <ul class="simple">
@@ -85,29 +85,54 @@ correctly).</p>
 <p>In order to get you started running waveloc, we have prepared the following
 example scripts :</p>
 <ol class="arabic simple">
-<li>a synthetic test to verify the response of the recording network;</li>
-<li>a real migration test.</li>
+<li>a synthetic example to verify the response of the recording network;</li>
+<li>a real migration example.</li>
 </ol>
 <p>You should find the relevant scripts in the <tt class="docutils literal"><span class="pre">examples</span></tt> directory in the
 waveloc distribution.</p>
-<ul class="simple">
-<li>For the tests, temporarily set the environment variable <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> to
-the directory you would like the tests to run in.</li>
-<li>Download the test data here : <a class="reference external" href="https://github.com/downloads/amaggi/waveloc/test_data.tgz">test_data.tgz</a> (beware : it is a
-large file !), and unpack the archive in the  <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> directory.</li>
-<li>Run the <tt class="docutils literal"><span class="pre">setup_tests.py</span></tt> script to set up the required directory structure
-for the examples.</li>
+<ul>
+<li><p class="first">For the tests, temporarily set the environment variable <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> to
+the directory you would like the tests to run in.</p>
+</li>
+<li><p class="first">Download the test data here : <a class="reference external" href="https://github.com/downloads/amaggi/waveloc/test_data.tgz">test_data.tgz</a> (beware : it is a
+large file !), and unpack the archive in the  <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> directory.</p>
+</li>
+<li><p class="first">Run the <tt class="docutils literal"><span class="pre">setup_examples.py</span></tt> script to set up the required directory structure
+for the examples:</p>
+<div class="highlight-python"><pre>python setup_examples.py</pre>
+</div>
+</li>
 </ul>
 <div class="section" id="running-the-synthetic-test">
 <h3>Running the synthetic test<a class="headerlink" href="#running-the-synthetic-test" title="Permalink to this headline">¶</a></h3>
-<p>Run the <tt class="docutils literal"><span class="pre">run_syn_test.py</span></tt> script to run the synthetic test.  The first time
+<p>Run the <tt class="docutils literal"><span class="pre">run_syn_example.py</span></tt> script to run the synthetic test.  The first time
 you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
-directory <tt class="docutils literal"><span class="pre">§WAVELOC_PATH/out/TEST_Dirac/fig</span></tt>:</p>
+directory <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_Dirac/fig</span></tt>:</p>
 <img alt="_images/syn_example.png" class="align-center" src="_images/syn_example.png" style="width: 600px;" />
+<p>You can test the effect of reducing the station coverage by uncommenting the
+following line in the script and re-running the test.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#uncomment remove some stations to test response for fewer stations</span>
+<span class="c">#wo.opdict[&#39;sta_list&#39;]=&quot;FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15&quot;</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="running-the-migration-test">
 <h3>Running the migration test<a class="headerlink" href="#running-the-migration-test" title="Permalink to this headline">¶</a></h3>
+<p>Run the <tt class="docutils literal"><span class="pre">run_waveloc_example.py</span></tt> script to run the synthetic test.  The first
+time you run the script it will take a long time, as the time grids need to be
+interpolated.  After the run, you should the find the a file named
+<tt class="docutils literal"><span class="pre">locations.dat</span></tt> in the following directory
+<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_fullRes/loc</span></tt>.  The file should contain the following
+lines, indicating that two events were found:</p>
+<div class="highlight-python"><pre>Max = 93.83, 2010-10-14T00:15:57.380000 - 0.13 s + 0.17 s, x= 366.2417 pm 0.3505 km, y= 7650.5250 pm 0.1627 km, z= -0.5417 pm 0.4087 km
+Max = 70.13, 2010-10-14T00:17:13.830000 - 0.17 s + 0.17 s, x= 366.1324 pm 0.1940 km, y= 7650.6176 pm 0.1514 km, z= -0.6691 pm 0.5581 km</pre>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Plotting of located events is currently broken.  Fixing it is on the issue
+list.  Feel free to contribute on github if you want to help with the fix!</p>
+</div>
 </div>
 </div>
 </div>

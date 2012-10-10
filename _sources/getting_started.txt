@@ -11,7 +11,7 @@ Download and installation
 
 You can download the latest distribution on the `waveloc downloads page  
 <http://github.com/amaggi/waveloc/downloads>`_, or if you're feeling
-courageous you can download the deveopment version from github:
+courageous you can download the development version from github:
 http://github.com/amaggi/waveloc.  
 
 System requirements : 
@@ -42,8 +42,8 @@ Running the examples
 In order to get you started running waveloc, we have prepared the following
 example scripts : 
 
-#. a synthetic test to verify the response of the recording network;
-#. a real migration test.
+#. a synthetic example to verify the response of the recording network;
+#. a real migration example.
 
 You should find the relevant scripts in the ``examples`` directory in the
 waveloc distribution.
@@ -55,20 +55,40 @@ waveloc distribution.
   <https://github.com/downloads/amaggi/waveloc/test_data.tgz>`_ (beware : it is a
   large file !), and unpack the archive in the  ``$WAVELOC_PATH`` directory.
 
-* Run the ``setup_tests.py`` script to set up the required directory structure
-  for the examples.  
+* Run the ``setup_examples.py`` script to set up the required directory structure
+  for the examples: ::
+
+    python setup_examples.py  
 
 Running the synthetic test
 --------------------------
-Run the ``run_syn_test.py`` script to run the synthetic test.  The first time
+Run the ``run_syn_example.py`` script to run the synthetic test.  The first time
 you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
-directory ``§WAVELOC_PATH/out/TEST_Dirac/fig``:
+directory ``$WAVELOC_PATH/out/TEST_Dirac/fig``:
   
 .. image:: figures/syn_example.png
   :width: 600px
   :align: center
 
+You can test the effect of reducing the station coverage by uncommenting the
+following line in the script and re-running the test. ::
+
+  #uncomment remove some stations to test response for fewer stations
+  #wo.opdict['sta_list']="FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
+
 Running the migration test
 --------------------------
+Run the ``run_waveloc_example.py`` script to run the synthetic test.  The first
+time you run the script it will take a long time, as the time grids need to be
+interpolated.  After the run, you should the find the a file named
+``locations.dat`` in the following directory
+``$WAVELOC_PATH/out/TEST_fullRes/loc``.  The file should contain the following
+lines, indicating that two events were found: ::
 
+  Max = 93.83, 2010-10-14T00:15:57.380000 - 0.13 s + 0.17 s, x= 366.2417 pm 0.3505 km, y= 7650.5250 pm 0.1627 km, z= -0.5417 pm 0.4087 km
+  Max = 70.13, 2010-10-14T00:17:13.830000 - 0.17 s + 0.17 s, x= 366.1324 pm 0.1940 km, y= 7650.6176 pm 0.1514 km, z= -0.6691 pm 0.5581 km
+
+.. warning::
+  Plotting of located events is currently broken.  Fixing it is on the issue
+  list.  Feel free to contribute on github if you want to help with the fix!
