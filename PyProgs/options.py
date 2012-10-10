@@ -7,89 +7,181 @@ class WavelocOptions(object):
     self.opdict={}
 
 
-    #base_path=os.getenv('WAVELOC_PATH')
-    #if not os.path.isdir(base_path): raise UserWarning('Environment variable WAVELOC_PATH not set correctly.')
-    #self.opdict['base_path']=base_path
-
     # set some default values
+
+    # general profiling / debugging behaviour
     self.opdict['time']=False
     self.opdict['verbose']=False
+
+    # data processing
+    self.opdict['resample']=False
+    self.opdict['krec']=False
+    self.opdict['kderiv']=False
+
+    # migration
+    self.opdict['load_ttimes_buf']=True
+
+    # location
     self.opdict['reloc']=False
     self.opdict['auto_loclevel']=False
-    self.opdict['snr_loclevel']=10
-    self.opdict['syn_addnoise']=False
+    self.opdict['loclevel']=50.
+    self.opdict['snr_loclevel']=10.
+    self.opdict['snr_limit']=10.
+    self.opdict['sn_time']=10.
+    self.opdict['n_kurt_min']=4
 
-    # check for existence of lib directory
-#    lib_path=os.path.join(base_path,'lib')
-#    if not os.path.isdir(lib_path): raise UserWarning('Directory %s does not exist.'%lib_path)
+    # synthetic
+    self.opdict['syn_addnoise']=False
+    self.opdict['syn_amplitude']=1.
+    self.opdict['syn_kwidth']=0.1
+
+    # cross-correlation
+    self.opdict['threshold']=0.7
+    self.opdict['before']=0.5
+    self.opdict['after']=6.0
+
+    # clustering
+    self.opdict['nbsta']=3
+    self.opdict['clus']=0.8
+
   
+    # For now, continue to support command-line arguments
+    # TODO : get rid of these evenutally for ease of maintenance
     self.p = argparse.ArgumentParser()
 
-    self.p.add_argument('--time','-t',action='store_true',default=False,help='print timing information to stout')
-    self.p.add_argument('--verbose','-v',action='store_true',default=False,help='print debugging information to stout')
+    self.p.add_argument('--time', '-t', action='store_true',
+            default=self.opdict['time'], 
+            help='print timing information to stout')
+    self.p.add_argument('--verbose', '-v', action='store_true',
+            default=self.opdict['verbose'], 
+            help='print debugging information to stout')
   
-    self.p.add_argument('--datadir',action='store',help="subdirectory of $WAVELOC_PATH/data")
-    self.p.add_argument('--outdir', action='store', help='subdirectory of $WAVELOC_PATH/out for stocking output files')
+    self.p.add_argument('--datadir',action='store', 
+            help="subdirectory of base_path/data")
+    self.p.add_argument('--outdir', action='store', 
+            help='subdirectory of base_path/out for stocking output files')
 
-    self.p.add_argument('--net_list', action='store',help="list of network codes (e.g. \"BE,G\") ")
-    self.p.add_argument('--sta_list', action='store',help="list of station names (e.g. \"STA1,STA2\") ")
-    self.p.add_argument('--comp_list',action='store',help="list of component names (e.g. \"HHZ,LHZ\") ")
+    self.p.add_argument('--net_list', action='store', 
+            help="list of network codes (e.g. \"BE,G\") ")
+    self.p.add_argument('--sta_list', action='store',
+            help="list of station names (e.g. \"STA1,STA2\") ")
+    self.p.add_argument('--comp_list',action='store',
+            help="list of component names (e.g. \"HHZ,LHZ\") ")
 
-    self.p.add_argument('--resample',action='store_true',default=False, help="resample data")
-    self.p.add_argument('--fs',      action='store', type=float,  help="resample frequency")
+    self.p.add_argument('--resample',action='store_true',
+            default=self.opdict['resample'], help="resample data")
+    self.p.add_argument('--fs',      action='store', type=float,
+            help="resample frequency")
 
-    self.p.add_argument('--c1',action='store',type=float,  help="low frequency corner of band pass filter ")
-    self.p.add_argument('--c2',action='store',type=float,  help="high frequency corner of band pass filter ")
-    self.p.add_argument('--kwin',action='store',type=float, help="length of kurtosis window (seconds)")
-    self.p.add_argument('--krec',action='store_true',default=False, help="use recursive kurtosis calculation (faster but less precise)")
-    self.p.add_argument('--kderiv',action='store_true',default=False, help="use derivative of kurtosis")
+    self.p.add_argument('--c1',action='store',type=float,  
+            help="low frequency corner of band pass filter ")
+    self.p.add_argument('--c2',action='store',type=float,  
+            help="high frequency corner of band pass filter ")
+    self.p.add_argument('--kwin',action='store',type=float, 
+            help="length of kurtosis window (seconds)")
+    self.p.add_argument('--krec',action='store_true',
+            default=self.opdict['krec'], 
+            help="use recursive kurtosis calculation (faster but less precise)")
+    self.p.add_argument('--kderiv',action='store_true',
+            default=self.opdict['kderiv'], help="use derivative of kurtosis")
 
     self.p.add_argument('--dataglob',action='store',help="data glob")
     self.p.add_argument('--kurtglob',action='store',help="kurtosis glob")
     self.p.add_argument('--gradglob',action='store',help="gradient glob")
 
-    self.p.add_argument('--starttime',action='store',help="start time for data e.g. 2010-10-14T00:00:00.0Z")
-    self.p.add_argument('--endtime',  action='store',help="end time for data e.g. 2010-10-14T10:00:00.0Z")
-    self.p.add_argument('--data_length', action='store',type=float,help="length in seconds for data segments to analyse (e.g. 630)")
-    self.p.add_argument('--data_overlap',action='store',type=float,help="length in seconds for overlapping data segments (e.g. 30)")
+    self.p.add_argument('--starttime', action='store', 
+            help="start time for data e.g. 2010-10-14T00:00:00.0Z")
+    self.p.add_argument('--endtime',  action='store', 
+            help="end time for data e.g. 2010-10-14T10:00:00.0Z")
+    self.p.add_argument('--data_length', action='store', type=float,
+            help="length in seconds for data segments to analyse (e.g. 630)")
+    self.p.add_argument('--data_overlap', action='store', type=float,
+            help="length in seconds for overlapping data segments (e.g. 30)")
 
-    self.p.add_argument('--stations',action='store',default='channels_HHZ.dat',help='station list (found in $WAVELOC_PATH/lib)')
-    self.p.add_argument('--search_grid',action='store',help="search grid e.g. grid.500m.search.hdr (found in $WAVELOC_PATH/lib)")
-    self.p.add_argument('--time_grid',  action='store',help="time grid basename e.g. belgium.P (found in $WAVELOC_PATH/lib)")
-    self.p.add_argument('--load_ttimes_buf',action='store_true',default=True,help='load pre-calculated travel-times for the search grid from file')
+    self.p.add_argument('--stations',action='store',
+            help='station list (found in base_path/lib)') 
+    self.p.add_argument('--search_grid',action='store',
+            help="search grid (found in base_path/lib)")
+    self.p.add_argument('--time_grid',  action='store',
+            help="time grid basename (found in base_path/lib)")
+    self.p.add_argument('--load_ttimes_buf',action='store_true',
+            default=self.opdict['load_ttimes_buf'], help = 
+            'load pre-calculated travel-times for the search grid from file')
 
-    self.p.add_argument('--reloc', action='store_true', default=False, help='apply to relocated events')
-    self.p.add_argument('--auto_loclevel', action='store', default=False,   type=float,help='automatically set trigger stack level for locations ')
-    self.p.add_argument('--loclevel', action='store', default=50,   type=float,help='trigger stack level for locations (e.g. 50) ')
-    self.p.add_argument('--snr_loclevel', action='store', default=10,   type=float,help='SNR for automatically setting trigger stack level for locations')
-    self.p.add_argument('--snr_limit',action='store', default=10.0, type=float,help="signal_to_noise level for kurtosis acceptance")
-    self.p.add_argument('--sn_time',action='store',   default=10.0, type=float,help="time over which to calculate the signal_to_noise ratio for kurtosis acceptance")
-    self.p.add_argument('--n_kurt_min',action='store',default=4,    type=int,  help="min number of good kurtosis traces for a location")
+    self.p.add_argument('--reloc', action='store_true',
+            default=self.opdict['reloc'], help='apply to relocated events')
+    self.p.add_argument('--auto_loclevel', action='store',
+            default=self.opdict['auto_loclevel'], type=float,
+            help='automatically set trigger stack level for locations ')
+    self.p.add_argument('--loclevel', action='store',
+            default=self.opdict['loclevel'],   type=float,
+            help='trigger stack level for locations (e.g. 50) ')
+    self.p.add_argument('--snr_loclevel', action='store',
+            default=self.opdict['snr_loclevel'],   type=float, help= 
+            'SNR for automatically setting trigger stack level for locations')
+    self.p.add_argument('--snr_limit',action='store',
+            default=self.opdict['snr_limit'], type=float,
+            help="signal_to_noise level for kurtosis acceptance")
+    self.p.add_argument('--sn_time',action='store',
+            default=self.opdict['sn_time'], type=float, help="time over which \
+            to calculate the signal_to_noise ratio for kurtosis acceptance")
+    self.p.add_argument('--n_kurt_min',action='store',
+            default=self.opdict['n_kurt_min'], type=int,  
+            help="min number of good kurtosis traces for a location")
 
-    self.p.add_argument('--syn_addnoise',action='store_true',default=False, help="add noise to synthetic tests")
-    self.p.add_argument('--syn_snr',action='store',type=float, help="Signal to  noise ratio for synthetic tests")
-    self.p.add_argument('--syn_amplitude',action='store',type=float, default=1.0, help="amplitude of kurtosis gradient peak on synthetic waveforms")
-    self.p.add_argument('--syn_datalength',action='store',type=float, help="length of synthetic waveforms")
-    self.p.add_argument('--syn_samplefreq',action='store',type=float, help="sample frequency (Hz) of synthetic waveforms")
-    self.p.add_argument('--syn_kwidth',action='store',type=float, default=0.1, help="width of kurtosis gradient pulse on synthetic waveforms")
-    self.p.add_argument('--syn_otime',action='store',type=float, help="origin time for synthetic waveforms (wrt start of waveforms)")
-    self.p.add_argument('--syn_ix',action='store',type=int, help="x grid index for syntetic hypocenter")
-    self.p.add_argument('--syn_iy',action='store',type=int, help="y grid index for syntetic hypocenter")
-    self.p.add_argument('--syn_iz',action='store',type=int, help="z grid index for syntetic hypocenter")
-    self.p.add_argument('--syn_filename',action='store', help="filename for synthetic grid (in $WAVELOC_PATH/out/OUTDIR/grid)")
+    self.p.add_argument('--syn_addnoise',action='store_true',
+            default=self.opdict['syn_addnoise'], 
+            help="add noise to synthetic tests")
+    self.p.add_argument('--syn_snr',action='store',type=float, 
+            help="Signal to noise ratio for synthetic tests")
+    self.p.add_argument('--syn_amplitude',action='store',type=float,
+            default=self.opdict['syn_amplitude'], 
+            help="amplitude of kurtosis gradient peak on synthetic waveforms")
+    self.p.add_argument('--syn_datalength',action='store',type=float,
+            help="length of synthetic waveforms")
+    self.p.add_argument('--syn_samplefreq',action='store',type=float,
+            help="sample frequency (Hz) of synthetic waveforms")
+    self.p.add_argument('--syn_kwidth',action='store',type=float,
+            default=self.opdict['syn_kwidth'], 
+            help="width of kurtosis gradient pulse on synthetic waveforms")
+    self.p.add_argument('--syn_otime',action='store',type=float, help=
+            "origin time for synthetic waveforms (wrt start of waveforms)")
+    self.p.add_argument('--syn_ix',action='store',type=int, 
+            help="x grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_iy',action='store',type=int, 
+            help="y grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_iz',action='store',type=int, 
+            help="z grid index for syntetic hypocenter")
+    self.p.add_argument('--syn_filename',action='store', 
+            help="filename for synthetic grid")
 
-    self.p.add_argument('--plot_tbefore',action='store',type=float, help="time before origin time for plots")
-    self.p.add_argument('--plot_tafter',action='store',type=float, help="time after origin time for plots")
-   #self.p.add_argument('--2D',action='store_true',default=False,dest='twoD',help='use 2D time grids')
+    self.p.add_argument('--plot_tbefore',action='store',type=float, 
+            help="time before origin time for plots")
+    self.p.add_argument('--plot_tafter',action='store',type=float, 
+            help="time after origin time for plots")
 
-    self.p.add_argument('--threshold',action='store',default=0.7, type=float, help="correlation value over which the correlation is computed again in the Fourier domain")
-    self.p.add_argument('--before',action='store',default=0.5, type=float, help="cross-correlation window: time interval before the origin time")
-    self.p.add_argument('--after',action='store',default=6.0, type=float, help="cross-correlation window: time interval after the origin time")
-    self.p.add_argument('--corr',action='store',help="name of the file containing all correlation values")
-    self.p.add_argument('--delay',action='store',help="name of the file containing all time delays")
+    self.p.add_argument('--threshold',action='store',
+            default=self.opdict['threshold'], type=float, 
+            help="correlation value over which the correlation is computed \
+                    again in the Fourier domain")
+    self.p.add_argument('--before',action='store',
+            default=self.opdict['before'], type=float, help=
+            "cross-correlation window: time interval before the origin time")
+    self.p.add_argument('--after',action='store', default=self.opdict['after'],
+            type=float, help="cross-correlation window: time interval after \
+                    the origin time")
+    self.p.add_argument('--corr', action='store', 
+            help="name of the file containing all correlation values")
+    self.p.add_argument('--delay', action='store', 
+            help="name of the file containing all time delays")
 
-    self.p.add_argument('--nbsta',action='store',default=3, type=int, help="number of stations over which an event pair is considered provided that its correlation coefficient is greater than a given threshold")
-    self.p.add_argument('--clus',action='store',default=0.8, type=float, help="correlation value over which an event pair is considered")
+    self.p.add_argument('--nbsta',action='store', default=self.opdict['nbsta'],
+            type=int, help="number of stations over which an event pair is \
+            considered provided that its correlation coefficient is greater \
+            than a given threshold")
+    self.p.add_argument('--clus',action='store', default=self.opdict['clus'],
+            type=float, 
+            help="correlation value over which an event pair is considered")
 
 
   def set_all_arguments(self,args):
