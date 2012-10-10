@@ -36,26 +36,16 @@ def generateSyntheticDirac(opdict,time_grids=None):
 
     fig_path = os.path.join(base_path,'out',outdir,'fig')
 
-    # data (actual waveforms will not be read - will just use the metadata to set up synthetic problem)
-    # if waveforms exist, then read them, else just use all the stations in the stations file
-    use_data=True
-    try:
-      data_dir=os.path.join(base_path,'data',opdict['datadir'])
-      data_glob=opdict['gradglob']
-      datafile_list=glob.glob(os.path.join(data_dir,data_glob))
-      datafile_list.sort()
-    except KeyError:
-      logging.info('No data given, so use all stations in the coord_stations file')
-      use_data=False
-      
-
-    out_dir=os.path.join(base_path,'out',opdict['outdir'])
-
     # get filenames for time-grids and search grids 
-    grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
-    search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
-    stations_filename=os.path.join(base_path,'lib',opdict['stations'])
+    grid_filename_base   = os.path.join(base_path,'lib',opdict['time_grid'])
+    search_grid_filename = os.path.join(base_path,'lib',opdict['search_grid'])
+    stations_filename    = os.path.join(base_path,'lib',opdict['stations'])
     stations=read_stations_file(stations_filename)
+
+    if opdict.has_key('sta_list') :
+        sta_list=opdict['sta_list'].split(',')
+    else:
+        sta_list=stations.keys()
 
     # get parameters for noise etc
     syn_addnoise=opdict['syn_addnoise']
@@ -92,13 +82,16 @@ def generateSyntheticDirac(opdict,time_grids=None):
     it=int(round(s_t0/s_delta))
 
     # retrieve travel times for chosen hypocenter 
+    # and station list
     ib= ix*ny*nz + iy*nz + iz
     n_buf=nx*ny*nz
     logging.debug('ib for true hypocenter = %d'%ib)
     ttimes={}
-    for key in time_grids.keys():
-      ttimes[key]=time_grids[key].grid_data[ib]
-    #print ttimes
+    for sta in sta_list:
+        if time_grids.has_key(sta):
+            ttimes[sta]=time_grids[sta].grid_data[ib]
+        else:
+            logging.info('Missing travel-time information for station %s. Ignoring station...'%sta)
     logging.debug('Travel-times for true hypocenter = %s'%ttimes)
 
     # construct data with these travel times
