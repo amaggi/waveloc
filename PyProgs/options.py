@@ -467,6 +467,18 @@ class WavelocOptions(object):
     if not self.opdict.has_key('data_overlap'):
         raise UserWarning('data_overlap option not set')
 
+  def _verify_snr_limit(self):
+    if not self.opdict.has_key('snr_limit'):
+        raise UserWarning('snr_limit option not set')
+
+  def _verify_sn_time(self):
+    if not self.opdict.has_key('sn_time'):
+        raise UserWarning('sn_time option not set')
+
+  def _verify_n_kurt_min(self):
+    if not self.opdict.has_key('n_kurt_min'):
+        raise UserWarning('n_kurt_min option not set')
+
   def _verify_stations(self):
     if not self.opdict.has_key('stations'):
         raise UserWarning('stations option not set')
@@ -484,6 +496,107 @@ class WavelocOptions(object):
     search_grid=os.path.join(base_path,'lib',self.opdict['search_grid'])
     if not os.path.isfile(search_grid) : 
         raise UserWarning('Cannot find %s'%search_grid)
+
+  def _verify_auto_loclevel(self):
+    if not self.opdict.has_key('auto_loclevel'):
+        raise UserWarning('auto_loclevel option not set')
+
+  def _verify_snr_loclevel(self):
+    self._verify_auto_loclevel()
+    auto_loclevel=self.opdict['auto_loclevel']
+    if auto_loclevel:
+      if not self.opdict.has_key('snr_loclevel'):
+        raise UserWarning('snr_loclevel option not set')
+
+  def _verify_loclevel(self):
+    self._verify_auto_loclevel()
+    auto_loclevel=self.opdict['auto_loclevel']
+    if not auto_loclevel:
+      if not self.opdict.has_key('loclevel'):
+        raise UserWarning('loclevel option not set')
+
+  def _verify_threshold(self):
+    if not self.opdict.has_key('threshold'):
+        raise UserWarning('threshold option not set')
+
+  def _verify_before(self):
+    if not self.opdict.has_key('before'):
+        raise UserWarning('before option not set')
+
+  def _verify_after(self):
+    if not self.opdict.has_key('after'):
+        raise UserWarning('after option not set')
+
+  def _verify_corr(self):
+    if not self.opdict.has_key('corr'):
+        raise UserWarning('corr option not set')
+
+  def _verify_delay(self):
+    if not self.opdict.has_key('delay'):
+        raise UserWarning('delay option not set')
+
+  def _verify_nbsta(self):
+    if not self.opdict.has_key('nbsta'):
+        raise UserWarning('nbsta option not set')
+
+  def _verify_clus(self):
+    if not self.opdict.has_key('clus'):
+        raise UserWarning('clus option not set')
+
+  def _verify_syn_addnoise(self):
+    if not self.opdict.has_key('syn_addnoise'):
+        raise UserWarning('syn_addnoise option not set')
+
+  def _verify_syn_snr(self):
+    self._verify_syn_addnoise()
+    syn_addnoise=self.opdict['syn_addnoise']
+    if syn_addnoise:
+      if not self.opdict.has_key('syn_snr'):
+        raise UserWarning('syn_snr option not set')
+
+  def _verify_syn_amplitude(self):
+    if not self.opdict.has_key('syn_amplitude'):
+        raise UserWarning('syn_amplitude option not set')
+
+  def _verify_syn_datalength(self):
+    if not self.opdict.has_key('syn_datalength'):
+        raise UserWarning('syn_datalength option not set')
+
+  def _verify_syn_samplefreq(self):
+    if not self.opdict.has_key('syn_samplefreq'):
+        raise UserWarning('syn_samplefreq option not set')
+
+  def _verify_syn_kwidth(self):
+    if not self.opdict.has_key('syn_kwidth'):
+        raise UserWarning('syn_kwidth option not set')
+
+  def _verify_syn_otime(self):
+    if not self.opdict.has_key('syn_otime'):
+        raise UserWarning('syn_otime option not set')
+
+  def _verify_syn_ix(self):
+    if not self.opdict.has_key('syn_ix'):
+        raise UserWarning('syn_ix option not set')
+
+  def _verify_syn_iy(self):
+    if not self.opdict.has_key('syn_iy'):
+        raise UserWarning('syn_iy option not set')
+
+  def _verify_syn_iz(self):
+    if not self.opdict.has_key('syn_iz'):
+        raise UserWarning('syn_iz option not set')
+
+  def _verify_syn_filename(self):
+    if not self.opdict.has_key('syn_filename'):
+        raise UserWarning('syn_filename option not set')
+
+  def _verify_plot_tbefore(self):
+    if not self.opdict.has_key('plot_tbefore'):
+        raise UserWarning('plot_tbefore option not set')
+
+  def _verify_plot_tafter(self):
+    if not self.opdict.has_key('plot_tafter'):
+        raise UserWarning('plot_tafter option not set')
 
 
   def verify_SDS_processing_options(self):
@@ -511,8 +624,6 @@ class WavelocOptions(object):
     self._verify_datadir()
     self._verify_outdir()
 
-    base_path=self.opdict['base_path']
-
     self._verify_gradglob()
     self._verify_starttime()
     self._verify_endtime()
@@ -534,13 +645,11 @@ class WavelocOptions(object):
     self._verify_gradglob()
 
 
-    if self.opdict['auto_loclevel']: 
-      if self.opdict['snr_loclevel']==None :   raise UserWarning('Empty snr for automatic location threshold') 
-    else :
-      if self.opdict['loclevel']==None :   raise UserWarning('Empty location threshold') 
-    if self.opdict['snr_limit']==None:   raise UserWarning('Empty threshold for signal to noise ratio') 
-    if self.opdict['sn_time']==None:   raise UserWarning('Empty time span for signal to noise ratio computation') 
-    if self.opdict['n_kurt_min']==None:   raise UserWarning('Empty minimum number of good kurtosis for location') 
+    self._verify_loclevel()
+    self._verify_snr_loclevel()
+    self._verify_snr_limit()
+    self._verify_sn_time()
+    self._verify_n_kurt_min()
 
     self._verify_search_grid()
 
@@ -553,21 +662,13 @@ class WavelocOptions(object):
     self._verify_datadir()
     self._verify_outdir()
 
-    base_path=self.opdict['base_path']
-    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
-
-
     self._verify_dataglob()
+    self._verify_threshold()
+    self._verify_before()
+    self._verify_after()
+    self._verify_corr()
+    self._verify_delay()
 
-    if self.opdict['threshold']==None:  raise UserWarning('Empty correlation threshold for refinement in Fourier domain')
-    if self.opdict['before']==None:  raise UserWarning('Empty lower limit for correlation time window')
-    if self.opdict['after']==None:  raise UserWarning('Empty upper limit for correlation time window')
-
-    if self.opdict['corr']==None:  raise UserWarning('Empty correlation file name')
-    coeff_file=os.path.join(locdir,self.opdict['corr'])
-    
-    if self.opdict['delay']==None:  raise UserWarning('Empty time delays file name')
-    delay_file=os.path.join(locdir,self.opdict['delay'])
 
   def verify_cluster_options(self):
     
@@ -581,19 +682,20 @@ class WavelocOptions(object):
 
     self._verify_dataglob()
 
-
     self._verify_stations()
+    self._verify_corr()
+    self._verify_delay()
 
-    if self.opdict['corr']==None:  raise UserWarning('Empty correlation file')
     coeff_file=os.path.join(locdir,self.opdict['corr'])
-    if not os.path.isfile(coeff_file):  raise UserWarning('Cannot find %s'%coeff_file)
+    if not os.path.isfile(coeff_file):  
+        raise UserWarning('Cannot find %s'%coeff_file)
     
-    if self.opdict['delay']==None:  raise UserWarning('Empty time delays file')
     delay_file=os.path.join(locdir,self.opdict['delay'])
-    if not os.path.isfile(delay_file):  raise UserWarning('Cannot find %s'%delay_file)
+    if not os.path.isfile(delay_file):  
+        raise UserWarning('Cannot find %s'%delay_file)
 
-    if self.opdict['nbsta']==None:  raise UserWarning('Empty minimum number of stations')
-    if self.opdict['clus']==None:  raise UserWarning('Empty correlation threshold for clustering')
+    self._verify_nbsta()
+    self._verify_clus()
 
 
   def verify_synthetic_options(self):
@@ -606,20 +708,19 @@ class WavelocOptions(object):
     self._verify_time_grid()
 
     self._verify_stations()
+    self._verify_syn_addnoise()
+    self._verify_syn_snr()
 
-    if self.opdict['syn_addnoise'] :
-      if self.opdict['syn_snr']==None:	raise UserWarning('No SNR set for synthetic test')
+    self._verify_syn_amplitude()
+    self._verify_syn_datalength()
+    self._verify_syn_samplefreq()
+    self._verify_syn_kwidth()
+    self._verify_syn_otime()
+    self._verify_syn_ix()
+    self._verify_syn_iy()
+    self._verify_syn_iz()
+    self._verify_syn_filename()
           
-    if self.opdict['syn_amplitude']==None:	raise UserWarning('No synthetic amplitudue set')
-    if self.opdict['syn_datalength']==None:	raise UserWarning('No synthetic datalength set')  
-    if self.opdict['syn_samplefreq']==None:	raise UserWarning('No synthetic samplefreq set')  
-    if self.opdict['syn_kwidth']==None:	raise UserWarning('No synthetic kwidth set')  
-    if self.opdict['syn_otime']==None:	raise UserWarning('No synthetic otime set')  
-    if self.opdict['syn_ix']==None:	raise UserWarning('No synthetic ix set')  
-    if self.opdict['syn_iy']==None:	raise UserWarning('No synthetic iy set')  
-    if self.opdict['syn_iz']==None:	raise UserWarning('No synthetic iz set')  
-    if self.opdict['syn_filename']==None:	raise UserWarning('No filename set for synthetic grid')  
-
 
 
   def verify_plotting_options(self):
@@ -630,17 +731,18 @@ class WavelocOptions(object):
     self._verify_outdir()
 
     base_path=self.opdict['base_path']
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
 
-
-    locfile=os.path.join(base_path,'out',self.opdict['outdir'],'loc','locations.dat')
-    if not os.path.isfile(locfile): raise UserWarning('Locations file %s does not exist.'%locfile)
+    locfile=os.path.join(locdir,'locations.dat')
+    if not os.path.isfile(locfile): 
+        raise UserWarning('Locations file %s does not exist.'%locfile)
 
     self._verify_dataglob()
     self._verify_kurtglob()
     self._verify_gradglob()
 
-    if not self.opdict.has_key('plot_tbefore') : raise UserWarning('Missing start time for plots (plot_tbefore)')
-    if not self.opdict.has_key('plot_tafter') : raise UserWarning('Missing end time for plots (plot_tafter)')
+    self._verify_plot_tbefore()
+    self._verify_plot_tafter()
 
     self._verify_search_grid()
     self._verify_time_grid()
