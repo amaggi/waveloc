@@ -17,6 +17,7 @@ class WavelocOptions(object):
     self.opdict['reloc']=False
     self.opdict['auto_loclevel']=False
     self.opdict['snr_loclevel']=10
+    self.opdict['syn_addnoise']=False
 
     # check for existence of lib directory
 #    lib_path=os.path.join(base_path,'lib')
