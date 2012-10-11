@@ -186,27 +186,31 @@ def plotDiracTest(test_info,fig_dir):
   # set up the 4 axes
   x=np.arange(nx)*dx
   y=np.arange(ny)*dy
-  z=np.arange(nz)*dz
+  z=(np.arange(nz)*dz+z_orig)*(-1)
   t=np.arange(nt)*dt+stack_start_time
 
   # do plot
   plt.subplot(3,3,1)
-  p=plt.contourf(x,y,xy_cut.T)
+  #p=plt.contourf(x,y,xy_cut.T)
+  p=plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
+  #p=plt.imshow(x,y,xy_cut.T,origin='lower',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
   #plt.plot(x[ix_true],y[iy_true],'wo',markersize=20, alpha=0.5)
-  plt.xlabel('x (km)')
-  plt.ylabel('y (km)')
+  plt.xlabel('x (km wrt origin)')
+  plt.ylabel('y (km wrt to origin)')
   plt.title('XY plane')
   plt.subplot(3,3,2)
-  p=plt.contourf(x,z,xz_cut.T)
+  #p=plt.contourf(x,z,xz_cut.T)
+  p=plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
   #plt.plot(x[ix_true],z[iz_true],'wo',markersize=20, alpha=0.5)
-  plt.xlabel('x (km)')
-  plt.ylabel('z (km)')
+  plt.xlabel('x (km wrt origin)')
+  plt.ylabel('z (km up)')
   plt.title('XZ plane')
   plt.subplot(3,3,3)
-  p=plt.contourf(y,z,yz_cut.T)
+  #p=plt.contourf(y,z,yz_cut.T)
+  p=plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
   #plt.plot(y[iy_true],z[iz_true],'wo',markersize=20, alpha=0.5)
-  plt.xlabel('y (km)')
-  plt.ylabel('z (km)')
+  plt.xlabel('y (km wrt origin)')
+  plt.ylabel('z (km up)')
   plt.title('YZ plane')
   #plt.colorbar(p)
 
@@ -253,7 +257,7 @@ def plotDiracTest(test_info,fig_dir):
   plt.plot(t,max_z)
   plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
-  plt.ylabel('z (km) ')
+  plt.ylabel('z (km down) ')
   plt.title('z at maximum')
   p.set_xlim(llim,rlim)
   plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
