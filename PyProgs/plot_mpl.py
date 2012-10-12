@@ -89,19 +89,21 @@ def plotLocationGrid(loc,grid_info,fig_dir):
   plot_info['true_indexes'] = (ix_true, iy_true, iz_true, it_true)
 
   # get indexes corresponding to location uncertainties
-  it_left=np.int(np.round((o_time-o_err_left-stack_starttime)/dt))
-  it_right=np.int(np.round((o_time+o_err_right-stack_starttime)/dt))
-  ix_low=np.int(np.round((x_mean-x_sigma-x_orig)/dx))
-  iy_low=np.int(np.round((y_mean-y_sigma-y_orig)/dy))
-  iz_low=np.int(np.round((z_mean-z_sigma-z_orig)/dz))
-  ix_high=np.int(np.round((x_mean+x_sigma-x_orig)/dx))
-  iy_high=np.int(np.round((y_mean+y_sigma-y_orig)/dy))
-  iz_high=np.int(np.round((z_mean+z_sigma-z_orig)/dz))
+  # times are wrt stack_starttime
+  t_left  = o_time - o_err_left  - stack_starttime
+  t_right = o_time + o_err_right - stack_starttime
+  # coordinates are absolute
+  x_low   = x_mean - x_sigma 
+  y_low   = y_mean - y_sigma
+  z_low   = z_mean - z_sigma 
+  x_high  = x_mean + x_sigma
+  y_high  = y_mean + y_sigma
+  z_high  = z_mean + z_sigma
 
-  plot_info['t_err'] = (it_left, it_left)
-  plot_info['x_err'] = (ix_low, ix_high)
-  plot_info['y_err'] = (iy_low, iy_high)
-  plot_info['z_err'] = (iz_low, iz_high)
+  plot_info['t_err'] = (t_left, t_right)
+  plot_info['x_err'] = (x_low, x_high)
+  plot_info['y_err'] = (y_low, y_high)
+  plot_info['z_err'] = (z_low, z_high)
 
   plotDiracTest(plot_info,fig_dir)
 
@@ -195,6 +197,9 @@ def plotDiracTest(test_info,fig_dir):
   p.set_ylim(0,max(max_val))
 #  plt.hlines(loclevel,llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],0,max(max_val),'r',linewidth=2)
+  if test_info.has_key('t_err'):
+      t_left,t_right=test_info['t_err']
+      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   # put the origin back in for the last plots
   x=np.arange(nx)*dx+x_orig
@@ -210,6 +215,13 @@ def plotDiracTest(test_info,fig_dir):
   p.set_xlim(llim,rlim)
   plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
+  if test_info.has_key('x_err'):
+      x_low,x_high=test_info['x_err']
+      plt.axhspan(x_low,x_high,facecolor='r', alpha=0.2)
+  if test_info.has_key('t_err'):
+      t_left,t_right=test_info['t_err']
+      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
+
   # plot max y
   p=plt.subplot(3,3,8)
   plt.plot(t,max_y)
@@ -220,6 +232,13 @@ def plotDiracTest(test_info,fig_dir):
   p.set_xlim(llim,rlim)
   plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
+  if test_info.has_key('y_err'):
+      y_low,y_high=test_info['y_err']
+      plt.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
+  if test_info.has_key('t_err'):
+      t_left,t_right=test_info['t_err']
+      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
+
   # plot max z
   p=plt.subplot(3,3,9)
   plt.plot(t,max_z)
@@ -230,6 +249,12 @@ def plotDiracTest(test_info,fig_dir):
   p.set_xlim(llim,rlim)
   plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
+  if test_info.has_key('z_err'):
+      z_low,z_high=test_info['z_err']
+      plt.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
+  if test_info.has_key('t_err'):
+      t_left,t_right=test_info['t_err']
+      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   plt.tight_layout()
   plt.savefig(fig_filename)
