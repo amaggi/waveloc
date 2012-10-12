@@ -58,6 +58,7 @@ waveloc distribution.
 * Run the ``setup_examples.py`` script to set up the required directory structure
   for the examples: ::
 
+    cd examples
     python setup_examples.py  
 
 Running the synthetic test
