@@ -214,6 +214,10 @@ def do_locations_trigger_setup_and_run(opdict):
     cmax_x = f.create_dataset('max_x',(nt0*n_stacks,), 'f', chunks=(nt0,))
     cmax_y = f.create_dataset('max_y',(nt0*n_stacks,), 'f', chunks=(nt0,))
     cmax_z = f.create_dataset('max_z',(nt0*n_stacks,), 'f', chunks=(nt0,))
+    for name in f:
+      dset=f[name]
+      dset.attrs['dt']=dt
+      dset.attrs['start_time']=first_start_time.isoformat()
 
     for i in range(n_stacks):
       f_stack = h5py.File(stack_files[i],'r')
