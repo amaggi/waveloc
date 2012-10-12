@@ -38,7 +38,6 @@ def do_migration_setup_and_run(opdict):
   # grids
   grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
   search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
-  grid_info=read_hdr_file(search_grid_filename)
   time_grids=get_interpolated_time_grids(opdict)
 
   #start and end times
@@ -70,6 +69,9 @@ def do_migration_setup_and_run(opdict):
     logging.info("Reading data  : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
     data,delta=read_data_compatible_with_time_dict(data_files,time_grids,start_time,end_time)
 
+    # re-read grid_info at each iteration to make sure it is a clean copy
+    grid_info=read_hdr_file(search_grid_filename)
+
     # do migration if have enough data (3 is bare minimum)
     if len(data.keys())>=3:
       logging.info("Migrating data : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
@@ -97,8 +99,20 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
   options_time=opdict['time']
   output_dir=os.path.join(opdict['base_path'],'out',opdict['outdir'])
 
-  n_buf=grid_info['nx']*grid_info['ny']*grid_info['nz']
+  nx=grid_info['nx']
+  ny=grid_info['ny']
+  nz=grid_info['nz']
+  n_buf=nx*ny*nz
   min_npts=min([len(data[key]) for key in data.keys()])
+
+  dx=grid_info['dx']
+  dy=grid_info['dy']
+  dz=grid_info['dz']
+
+  x_orig=grid_info['x_orig']
+  y_orig=grid_info['y_orig']
+  z_orig=grid_info['z_orig']
+
 
   if options_time:
     t_ref=time()  
@@ -135,6 +149,8 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
       dset.attrs['dt']=delta
 
     f_stack.close()
+    # keep the stack_filename
+    grid_info['stack_file']=stack_filename
     if options_time:
       t=time()-t_ref
       logging.info("Time for extracting maxima : %.2f s\n" % (t))
@@ -146,6 +162,16 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
       stack_grid.attrs[key]=value
     stack_grid.attrs['dt']=delta
     stack_grid.attrs['start_time']=stack_start_time.isoformat()
+    # keep the grid_filename
+    grid_info['dat_file']=grid_filename
+
+  # hdf5 files cannot have complex attributes
+  # so add these to grid_info after having added
+  # useful info to stack_grid.attrs
+  grid_info['grid_spacing']=(dx,dy,dz,delta)
+  grid_info['grid_orig']=(x_orig,y_orig,z_orig)
+  grid_info['grid_shape']=(nx,ny,nz,nt)
+  grid_info['start_time']=stack_start_time
 
   # close the hdf5 file for the grid 
   f.close()
