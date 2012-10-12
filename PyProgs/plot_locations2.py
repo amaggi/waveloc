@@ -51,10 +51,9 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
 
   # open stack file
   f_stack=h5py.File(stackfile,'r')
-  max_val=f_stack['max_val']
+  max_val=f_stack['max_val_smooth']
   stack_start_time=UTCDateTime(max_val.attrs['start_time'])
   
-  #for loc in locs[0:1]:
   for loc in locs:
     # generate the grids
     o_time=loc['o_time']

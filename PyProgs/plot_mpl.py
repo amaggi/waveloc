@@ -68,6 +68,7 @@ def plotLocationGrid(loc,grid_info,fig_dir):
 
   # Take much of the information from the grid_info
   plot_info=deepcopy(grid_info)
+  plot_info['o_time']=loc['o_time']
 
   # get location info
   o_time=loc['o_time']
@@ -114,7 +115,12 @@ def plotDiracTest(test_info,fig_dir):
   stack_start_time=test_info['start_time']
   grid_filename=test_info['dat_file']
   stack_filename=test_info['stack_file']
-  fig_filename=os.path.join(fig_dir,"%s.pdf"%os.path.basename(grid_filename))
+  if test_info.has_key('o_time'):
+    fig_filename = os.path.join(fig_dir,"grid_%s.pdf" % 
+            test_info['o_time'].isoformat())
+  else:
+    fig_filename = os.path.join(fig_dir,"%s.pdf" % 
+            os.path.basename(grid_filename))
 
   # read the stack file
   f=h5py.File(grid_filename,'r')
@@ -130,7 +136,11 @@ def plotDiracTest(test_info,fig_dir):
 
   # extract the max stacks
   f_stack=h5py.File(stack_filename,'r')
-  max_val=f_stack['max_val']
+  # if have a smoothed version, use it for the plots
+  if 'max_val_smooth' in f_stack:
+    max_val=f_stack['max_val_smooth']
+  else:
+    max_val=f_stack['max_val']
   max_x=f_stack['max_x']
   max_y=f_stack['max_y']
   max_z=f_stack['max_z']

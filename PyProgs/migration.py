@@ -11,6 +11,7 @@ from time import time
 from OP_waveforms import read_data_compatible_with_time_dict
 from NllGridLib import read_stations_file,read_hdr_file
 from hdf5_grids import get_interpolated_time_grids
+from filters import smooth
 
 def do_migration_setup_and_run(opdict):
 
@@ -273,6 +274,7 @@ def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
   nb,nt=stack_grid.shape
 
   max_val=f_stack.create_dataset('max_val',(nt,),'f')
+  max_val_smooth=f_stack.create_dataset('max_val_smooth',(nt,),'f')
   max_x=f_stack.create_dataset('max_x',(nt,),'f')
   max_y=f_stack.create_dataset('max_y',(nt,),'f')
   max_z=f_stack.create_dataset('max_z',(nt,),'f')
@@ -305,11 +307,7 @@ def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
   max_x[:]=max_ix[:]*dx+x_orig
   max_y[:]=max_iy[:]*dy+y_orig
   max_z[:]=max_iz[:]*dz+z_orig
-
-  logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
-  logging.debug('In extract_max_values, max_x : %f %f'%(np.max(max_x),np.sum(max_x)))
-  logging.debug('In extract_max_values, max_y : %f %f'%(np.max(max_y),np.sum(max_y)))
-  logging.debug('In extract_max_values, max_z : %f %f'%(np.max(max_z),np.sum(max_z)))
+  max_val_smooth[:] = smooth(np.array(max_val),51)
 
   # clean up temporary datasets
   del f_stack['max_ib']

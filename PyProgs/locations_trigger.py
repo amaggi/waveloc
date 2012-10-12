@@ -214,11 +214,9 @@ def do_locations_trigger_setup_and_run(opdict):
     cmax_x = f.create_dataset('max_x',(nt0*n_stacks,), 'f', chunks=(nt0,))
     cmax_y = f.create_dataset('max_y',(nt0*n_stacks,), 'f', chunks=(nt0,))
     cmax_z = f.create_dataset('max_z',(nt0*n_stacks,), 'f', chunks=(nt0,))
-    for name in f:
-      dset=f[name]
-      dset.attrs['dt']=dt
-      dset.attrs['start_time']=first_start_time.isoformat()
 
+    # concatenate unsmoothed versions of max_val to avoid 
+    # problems at file starts and ends
     for i in range(n_stacks):
       f_stack = h5py.File(stack_files[i],'r')
       max_val = f_stack['max_val']
@@ -234,7 +232,6 @@ def do_locations_trigger_setup_and_run(opdict):
       # update final end time
       end_time = start_time+nt*dt
 
-      print start_time, dt, nt, ibegin
       # copy data over into the right place
       cmax_val[ibegin:ibegin+nt] = max_val[:]
       cmax_x[ibegin:ibegin+nt] = max_x[:]
@@ -256,6 +253,10 @@ def do_locations_trigger_setup_and_run(opdict):
     cmax_val_smooth = f.create_dataset('max_val_smooth',(nt_full,), 'f', chunks=(nt_full,))
     cmax_val_smooth[:] = smooth(np.array(cmax_val),51)
 
+    for name in f:
+      dset=f[name]
+      dset.attrs['dt']=dt
+      dset.attrs['start_time']=first_start_time.isoformat()
 
   # DO TRIGGERING AND LOCATION
   if opdict['auto_loclevel']:
