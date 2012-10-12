@@ -61,8 +61,8 @@ wo.opdict['snr_limit']=10.0
 wo.opdict['sn_time']=10.0
 wo.opdict['n_kurt_min']=4
 
-wo.opdict['plot_tbefore']=10
-wo.opdict['plot_tafter']=20
+wo.opdict['plot_tbefore']=5
+wo.opdict['plot_tafter']=10
 
 # end of option setting - start processing
 
@@ -77,6 +77,6 @@ do_locations_trigger_setup_and_run(wo.opdict)
 
 wo.verify_plotting_options()
 # This will do plotting of grids and stacks for locations
-do_plotting_setup_and_run(wo.opdict)
+do_plotting_setup_and_run(wo.opdict,plot_wfm=True,plot_grid=False)
 
 
