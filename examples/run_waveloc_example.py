@@ -77,6 +77,6 @@ do_locations_trigger_setup_and_run(wo.opdict)
 
 wo.verify_plotting_options()
 # This will do plotting of grids and stacks for locations
-do_plotting_setup_and_run(wo.opdict,plot_wfm=True,plot_grid=False)
+do_plotting_setup_and_run(wo.opdict,plot_wfm=True,plot_grid=True)
 
 
