@@ -61,6 +61,9 @@ wo.opdict['snr_limit']=10.0
 wo.opdict['sn_time']=10.0
 wo.opdict['n_kurt_min']=4
 
+wo.opdict['plot_tbefore']=10
+wo.opdict['plot_tafter']=20
+
 # end of option setting - start processing
 
 wo.verify_SDS_processing_options()
@@ -72,10 +75,8 @@ do_migration_setup_and_run(wo.opdict)
 wo.verify_location_options()
 do_locations_trigger_setup_and_run(wo.opdict)
 
-# plotting is broken at the moment - you will get an error if you 
-# uncomment the following lines
-
-#wo.verify_plotting_options()
-#do_plotting_setup_and_run(wo.opdict)
+wo.verify_plotting_options()
+# This will do plotting of grids and stacks for locations
+do_plotting_setup_and_run(wo.opdict)
 
 
