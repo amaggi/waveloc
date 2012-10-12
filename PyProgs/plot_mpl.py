@@ -6,6 +6,58 @@ from integrate4D import *
 from filters import smooth
 from copy import deepcopy
 
+def plotLocationWaveforms(loc,data_dict,grad_dict,stack_wfm,fig_dir):
+    """
+    Creates plot for located waveforms.  Assumes data and grad are ready
+    for plotting.
+    """
+
+    otime=loc['o_time']
+
+    plot_filename=os.path.join(fig_dir,'loc_%s.pdf'%(otime.isoformat()))
+
+    stations=data_dict.keys()
+    stations.sort()
+    n_traces=len(stations)+1
+
+    plt.clf()
+    fig=plt.figure()
+    ax=fig.add_subplot(n_traces,2,1,title='Data')
+    ax.set_axis_off()
+    ax=fig.add_subplot(n_traces,2,2,title='Kurtosis Gradient')
+    ax.set_axis_off()
+
+    i=0
+    for sta in stations :
+        # plot the data in the first column
+        ax=fig.add_subplot(n_traces,2,2*i+1)
+        ax.set_axis_off()
+        ax.plot(data_dict[sta],'b')
+        # add the station name
+        pos=list(ax.get_position().bounds)
+        fig.text(pos[0]-0.01, pos[1], sta, fontsize = 10, 
+                horizontalalignment = 'right')
+        # plot the kurtosis gradient in the second column
+        ax=fig.add_subplot(n_traces,2,2*i+2)
+        ax.set_axis_off()
+        ax.plot(grad_dict[sta],'b')
+        i=i+1
+
+    #plot the stack under the kurtosis gradient only
+    ax=fig.add_subplot(n_traces,2,2*n_traces)
+    ax.set_axis_off()
+    ax.plot(stack_wfm,'r')
+    pos=list(ax.get_position().bounds)
+
+    #write the origin time under the data
+    ax=fig.add_subplot(n_traces,2,2*n_traces-1)
+    ax.set_axis_off()
+    fig.text(pos[0]-0.05, pos[1], otime.isoformat(), fontsize = 10, 
+            horizontalalignment = 'right')
+    plt.savefig(plot_filename)
+    plt.clf()
+
+
 def plotLocationGrid(loc,grid_info,fig_dir):
 
   # set up plot using info from grid_info
