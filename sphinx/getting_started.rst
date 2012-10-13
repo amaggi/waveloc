@@ -16,9 +16,10 @@ http://github.com/amaggi/waveloc.
 
 System requirements : 
 
-* python, numpy, h5py (all available through the `Enthought python distribution
-  <http://www.enthought.com/products/getepd.php>`_)
-* obspy (available here : http://obspy.org)
+* python 2.7, numpy >= 1.6.1, h5py >= 2.0.0 (all available through the 
+  `Enthought python distribution
+  <http://www.enthought.com/products/getepd.php>`_ v 7.3-2)  
+* obspy > 0.7.1 (available here : http://obspy.org)
 * NonLinLoc for time grid calculation (not strictly required)
 * other stuff I've surelly fogotten about...
 
@@ -68,7 +69,7 @@ you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
 directory ``$WAVELOC_PATH/out/TEST_Dirac/fig``:
   
-.. image:: figures/syn_example.png
+.. image:: figures/test_grid4D_hires.hdf5.png
   :width: 600px
   :align: center
 
@@ -90,6 +91,15 @@ lines, indicating that two events were found: ::
   Max = 93.83, 2010-10-14T00:15:57.380000 - 0.13 s + 0.17 s, x= 366.2417 pm 0.3505 km, y= 7650.5250 pm 0.1627 km, z= -0.5417 pm 0.4087 km
   Max = 70.13, 2010-10-14T00:17:13.830000 - 0.17 s + 0.17 s, x= 366.1324 pm 0.1940 km, y= 7650.6176 pm 0.1514 km, z= -0.6691 pm 0.5581 km
 
-.. warning::
-  Plotting of located events is currently broken.  Fixing it is on the issue
-  list.  Feel free to contribute on github if you want to help with the fix!
+In the ``$WAVELOC_PATH/out/TEST_fullRes/loc`` you should find figures that look
+like:
+
+.. image:: figures/grid_2010-10-14T00:15:57.380000.png
+  :width: 600px
+  :align: center
+
+and:
+
+.. image:: figures/loc_2010-10-14T00:15:57.380000.png
+  :width: 600px
+  :align: center
