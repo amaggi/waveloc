@@ -14,21 +14,28 @@ You can download the latest distribution on the `waveloc downloads page
 courageous you can download the development version from github:
 http://github.com/amaggi/waveloc.  
 
-System requirements : 
+**System requirements** : 
 
 * python 2.7, numpy >= 1.6.1, h5py >= 2.0.0 (all available through the 
   `Enthought python distribution
-  <http://www.enthought.com/products/getepd.php>`_ v 7.3-2)  
+  <http://www.enthought.com/products/getepd.php>`_ version >= 7.2)  
 * obspy > 0.7.1 (available here : http://obspy.org)
 * NonLinLoc for time grid calculation (not strictly required)
 * other stuff I've surelly fogotten about...
 
-**Suggestion** : The easiest way to get all the required python modules (except
+**Suggestion** : 
+
+The easiest way to get all the required python modules (except
 for obspy) is to install a recent version of the Enthought Python Distribution.
 Their full distribution is free for academic use (it is temporarily unavailable
 due to modification of their academic license, but should be back soon).  They
-also bundle a completely free version, which seems to have all the necessary
-modules. 
+also bundle a completely free version, but it does not have all the necessary
+modules (notably h5py). 
+
+If you're not already using a full EPD distribution >= 7.2, you may of course
+attempt to install all the required modules by hand, but this is recommended
+only if you really enjoy python hacking.  Or if you know of another
+distribution that works out-of-the-box, please share!!
 
 Once you've installed the EPD python distribution, you should be able to
 install the obspy modules by running ::
