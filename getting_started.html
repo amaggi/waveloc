@@ -64,25 +64,23 @@ courageous you can download the development version from github:
 <a class="reference external" href="http://github.com/amaggi/waveloc">http://github.com/amaggi/waveloc</a>.</p>
 <p><strong>System requirements</strong> :</p>
 <ul class="simple">
-<li>python 2.7, numpy &gt;= 1.6.1, h5py &gt;= 2.0.0 (all available through the
-<a class="reference external" href="http://www.enthought.com/products/getepd.php">Enthought python distribution</a> version &gt;= 7.2)</li>
+<li>python 2.7, numpy &gt;= 1.6.1</li>
+<li>HDF5 (available here : <a class="reference external" href="http://www.hdfgroup.org/ftp/HDF5/current/src/">http://www.hdfgroup.org/ftp/HDF5/current/src/</a>)</li>
+<li>h5py &gt;= 2.0.0 (available here : <a class="reference external" href="http://code.google.com/p/h5py/">http://code.google.com/p/h5py/</a>)</li>
 <li>obspy &gt; 0.7.1 (available here : <a class="reference external" href="http://obspy.org">http://obspy.org</a>)</li>
 <li>NonLinLoc for time grid calculation (not strictly required)</li>
 <li>other stuff I&#8217;ve surelly fogotten about...</li>
 </ul>
-<p><strong>Suggestion</strong> :</p>
 <p>The easiest way to get all the required python modules (except
-for obspy) is to install a recent version of the Enthought Python Distribution.
-Their full distribution is free for academic use (it is temporarily unavailable
-due to modification of their academic license, but should be back soon).  They
-also bundle a completely free version, but it does not have all the necessary
-modules (notably h5py).</p>
-<p>If you&#8217;re not already using a full EPD distribution &gt;= 7.2, you may of course
-attempt to install all the required modules by hand, but this is recommended
-only if you really enjoy python hacking.  Or if you know of another
-distribution that works out-of-the-box, please share!!</p>
-<p>Once you&#8217;ve installed the EPD python distribution, you should be able to
-install the obspy modules by running</p>
+for obspy) is to install a recent version of the full Enthought Python Distribution.
+Enthough deliver free licenses for academic use (it is temporarily unavailable
+due to modification of their academic license, but should be back soon).</p>
+<p>Enthough also bundle a completely free version, but it does not have all the necessary
+modules (notably h5py). If your python distribution does not include h5py and you
+need to compile HDF5 under macosx, make sure that it is configured 32-bit when
+using a 32-bit python distribution. (e.g., CC=&#8217;cc -m32&#8217; ./configure
+&#8211;prefix=/usr/local/hdf5).</p>
+<p>You should then be able to install the obspy modules by running</p>
 <div class="highlight-python"><pre>easy_install -U obspy.core
 easy_install -U obspy.signal
 easy_install -U obspy.mseed</pre>
