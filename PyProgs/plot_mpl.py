@@ -13,12 +13,14 @@ def plotLocationWaveforms(loc,start_time,dt,data_dict,grad_dict,stack_wfm,fig_di
     """
 
     otime=loc['o_time']
-    otime_left=loc['o_err_left']
+    otime_left=-loc['o_err_left']
     otime_right=loc['o_err_right']
-    iotime_left=np.int(np.round((otime - otime_left -start_time)/dt))
-    iotime_right=np.int(np.round((otime + otime_right -start_time)/dt))
+#    iotime_left=np.int(np.round((otime - otime_left -start_time)/dt))
+#    iotime_right=np.int(np.round((otime + otime_right -start_time)/dt))
 
     plot_filename=os.path.join(fig_dir,'loc_%s.pdf'%(otime.isoformat()))
+
+    t=np.arange(len(stack_wfm))*dt - (otime - start_time)
 
     stations=data_dict.keys()
     stations.sort()
@@ -36,31 +38,48 @@ def plotLocationWaveforms(loc,start_time,dt,data_dict,grad_dict,stack_wfm,fig_di
         # plot the data in the first column
         ax=fig.add_subplot(n_traces,2,2*i+1)
         ax.set_axis_off()
-        ax.plot(data_dict[sta],'b')
-        ax.axvspan(iotime_left,iotime_right,facecolor='r', alpha=0.2)
+        ax.plot(t,data_dict[sta],'b')
+        ax.axvspan(otime_left,otime_right,facecolor='r', alpha=0.2)
         # add the station name
         pos=list(ax.get_position().bounds)
-        fig.text(pos[0]-0.01, pos[1], sta, fontsize = 10, 
-                horizontalalignment = 'right')
+        fig.text(pos[0]-0.01, pos[1]+pos[3]/2., sta, fontsize = 10, 
+                horizontalalignment = 'right', 
+                verticalalignment = 'center')
         # plot the kurtosis gradient in the second column
         ax=fig.add_subplot(n_traces,2,2*i+2)
         ax.set_axis_off()
-        ax.plot(grad_dict[sta],'b')
-        ax.axvspan(iotime_left,iotime_right,facecolor='r', alpha=0.2)
+        ax.plot(t,grad_dict[sta],'b')
+        ax.axvspan(otime_left,otime_right,facecolor='r', alpha=0.2)
+        # add the maximum kurtosis value 
+        pos=list(ax.get_position().bounds)
+        fig.text(pos[0]+pos[2]+0.05 , pos[1], 
+                '%.1f'%np.max(grad_dict[sta]), 
+                fontsize = 10, horizontalalignment = 'right') 
         i=i+1
 
     #plot the stack under the kurtosis gradient only
-    ax=fig.add_subplot(n_traces,2,2*n_traces)
-    ax.set_axis_off()
-    ax.plot(stack_wfm,'r')
-    ax.axvspan(iotime_left,iotime_right,facecolor='r', alpha=0.2)
+    ax=fig.add_subplot(n_traces,2,2*n_traces,xlabel='time (s)')
+    ax.plot(t,stack_wfm,'r')
+    # put time axis only on plot
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks([])
+    ax.spines['top'].set_color('none')
+    ax.spines['left'].set_color('none')
+    ax.spines['right'].set_color('none')
+    ax.axvspan(otime_left,otime_right,facecolor='r', alpha=0.2)
+    # add the maximum kurtosis value 
     pos=list(ax.get_position().bounds)
+    fig.text(pos[0]+pos[2]+0.05 , pos[1], 
+            '%.1f'%np.max(stack_wfm), 
+            fontsize = 10, horizontalalignment = 'right') 
 
     #write the origin time under the data
     ax=fig.add_subplot(n_traces,2,2*n_traces-1)
     ax.set_axis_off()
-    fig.text(pos[0]-0.05, pos[1], otime.isoformat(), fontsize = 10, 
-            horizontalalignment = 'right')
+    pos=list(ax.get_position().bounds)
+    fig.text(pos[0]+pos[2]/2., pos[1]+pos[3]/2., otime.isoformat(), 
+            fontsize = 12, horizontalalignment = 'center',
+            verticalalignment = 'top')
     plt.savefig(plot_filename)
     plt.clf()
 
