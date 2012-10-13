@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Getting Started &mdash; waveloc 0.1.0 documentation</title>
+    <title>Getting Started &mdash; waveloc 0.1.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1.0',
+        VERSION:     '0.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="waveloc 0.1.0 documentation" href="index.html" />
+    <link rel="top" title="waveloc 0.1.1 documentation" href="index.html" />
     <link rel="next" title="Tutorial" href="tutorial.html" />
     <link rel="prev" title="Introduction" href="intro.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="intro.html" title="Introduction"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">waveloc 0.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">waveloc 0.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -64,8 +64,9 @@ courageous you can download the development version from github:
 <a class="reference external" href="http://github.com/amaggi/waveloc">http://github.com/amaggi/waveloc</a>.</p>
 <p>System requirements :</p>
 <ul class="simple">
-<li>python, numpy, h5py (all available through the <a class="reference external" href="http://www.enthought.com/products/getepd.php">Enthought python distribution</a>)</li>
-<li>obspy (available here : <a class="reference external" href="http://obspy.org">http://obspy.org</a>)</li>
+<li>python 2.7, numpy &gt;= 1.6.1, h5py &gt;= 2.0.0 (all available through the
+<a class="reference external" href="http://www.enthought.com/products/getepd.php">Enthought python distribution</a> v 7.3-2)</li>
+<li>obspy &gt; 0.7.1 (available here : <a class="reference external" href="http://obspy.org">http://obspy.org</a>)</li>
 <li>NonLinLoc for time grid calculation (not strictly required)</li>
 <li>other stuff I&#8217;ve surelly fogotten about...</li>
 </ul>
@@ -99,7 +100,8 @@ large file !), and unpack the archive in the  <tt class="docutils literal"><span
 </li>
 <li><p class="first">Run the <tt class="docutils literal"><span class="pre">setup_examples.py</span></tt> script to set up the required directory structure
 for the examples:</p>
-<div class="highlight-python"><pre>python setup_examples.py</pre>
+<div class="highlight-python"><pre>cd examples
+python setup_examples.py</pre>
 </div>
 </li>
 </ul>
@@ -109,7 +111,7 @@ for the examples:</p>
 you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
 directory <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_Dirac/fig</span></tt>:</p>
-<img alt="_images/syn_example.png" class="align-center" src="_images/syn_example.png" style="width: 600px;" />
+<img alt="_images/test_grid4D_hires.hdf5.png" class="align-center" src="_images/test_grid4D_hires.hdf5.png" style="width: 600px;" />
 <p>You can test the effect of reducing the station coverage by uncommenting the
 following line in the script and re-running the test.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="c">#uncomment remove some stations to test response for fewer stations</span>
@@ -128,11 +130,11 @@ lines, indicating that two events were found:</p>
 <div class="highlight-python"><pre>Max = 93.83, 2010-10-14T00:15:57.380000 - 0.13 s + 0.17 s, x= 366.2417 pm 0.3505 km, y= 7650.5250 pm 0.1627 km, z= -0.5417 pm 0.4087 km
 Max = 70.13, 2010-10-14T00:17:13.830000 - 0.17 s + 0.17 s, x= 366.1324 pm 0.1940 km, y= 7650.6176 pm 0.1514 km, z= -0.6691 pm 0.5581 km</pre>
 </div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Plotting of located events is currently broken.  Fixing it is on the issue
-list.  Feel free to contribute on github if you want to help with the fix!</p>
-</div>
+<p>In the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_fullRes/loc</span></tt> you should find figures that look
+like:</p>
+<img alt="_images/grid_2010-10-14T00:15:57.380000.png" class="align-center" src="_images/grid_2010-10-14T00:15:57.380000.png" style="width: 600px;" />
+<p>and:</p>
+<img alt="_images/loc_2010-10-14T00:15:57.380000.png" class="align-center" src="_images/loc_2010-10-14T00:15:57.380000.png" style="width: 600px;" />
 </div>
 </div>
 </div>
@@ -202,12 +204,12 @@ list.  Feel free to contribute on github if you want to help with the fix!</p>
         <li class="right" >
           <a href="intro.html" title="Introduction"
              >previous</a> |</li>
-        <li><a href="index.html">waveloc 0.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">waveloc 0.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Alessia Maggi.
-      Last updated on Oct 10, 2012.
+      Last updated on Oct 13, 2012.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
