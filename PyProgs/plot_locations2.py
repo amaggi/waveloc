@@ -129,13 +129,15 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       iend=istart + np.int(np.round(
           (opdict['plot_tbefore'] + opdict['plot_tafter'])  / delta))
       # sanity check in case event is close to start or end of data
-      if istart < 0 : istart=0
+      if istart < 0 : 
+          start_time = start_time + np.abs(istart)*dt
+          istart=0
       if iend   > len(max_val) : iend = len(max_val)
       # do slice
       stack_wfm=max_val[istart:iend]
 
       # plot
-      plotLocationWaveforms(loc,data_dict,grad_dict,stack_wfm,figdir)
+      plotLocationWaveforms(loc,start_time,delta,data_dict,grad_dict,stack_wfm,figdir)
 
   f_stack.close()
 

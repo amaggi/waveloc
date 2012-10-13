@@ -6,13 +6,17 @@ from integrate4D import *
 from filters import smooth
 from copy import deepcopy
 
-def plotLocationWaveforms(loc,data_dict,grad_dict,stack_wfm,fig_dir):
+def plotLocationWaveforms(loc,start_time,dt,data_dict,grad_dict,stack_wfm,fig_dir):
     """
     Creates plot for located waveforms.  Assumes data and grad are ready
     for plotting.
     """
 
     otime=loc['o_time']
+    otime_left=loc['o_err_left']
+    otime_right=loc['o_err_right']
+    iotime_left=np.int(np.round((otime - otime_left -start_time)/dt))
+    iotime_right=np.int(np.round((otime + otime_right -start_time)/dt))
 
     plot_filename=os.path.join(fig_dir,'loc_%s.pdf'%(otime.isoformat()))
 
@@ -33,6 +37,7 @@ def plotLocationWaveforms(loc,data_dict,grad_dict,stack_wfm,fig_dir):
         ax=fig.add_subplot(n_traces,2,2*i+1)
         ax.set_axis_off()
         ax.plot(data_dict[sta],'b')
+        ax.axvspan(iotime_left,iotime_right,facecolor='r', alpha=0.2)
         # add the station name
         pos=list(ax.get_position().bounds)
         fig.text(pos[0]-0.01, pos[1], sta, fontsize = 10, 
@@ -41,12 +46,14 @@ def plotLocationWaveforms(loc,data_dict,grad_dict,stack_wfm,fig_dir):
         ax=fig.add_subplot(n_traces,2,2*i+2)
         ax.set_axis_off()
         ax.plot(grad_dict[sta],'b')
+        ax.axvspan(iotime_left,iotime_right,facecolor='r', alpha=0.2)
         i=i+1
 
     #plot the stack under the kurtosis gradient only
     ax=fig.add_subplot(n_traces,2,2*n_traces)
     ax.set_axis_off()
     ax.plot(stack_wfm,'r')
+    ax.axvspan(iotime_left,iotime_right,facecolor='r', alpha=0.2)
     pos=list(ax.get_position().bounds)
 
     #write the origin time under the data
@@ -87,6 +94,7 @@ def plotLocationGrid(loc,grid_info,fig_dir):
   iy_true=np.int(np.round((y_mean-y_orig)/dy))
   iz_true=np.int(np.round((z_mean-z_orig)/dz))
   plot_info['true_indexes'] = (ix_true, iy_true, iz_true, it_true)
+  plot_info['true_values'] = (x_mean, y_mean, z_mean, o_time-stack_starttime)
 
   # get indexes corresponding to location uncertainties
   # times are wrt stack_starttime
@@ -114,6 +122,8 @@ def plotDiracTest(test_info,fig_dir):
   dx,dy,dz,dt = test_info['grid_spacing']
   x_orig,y_orig,z_orig = test_info['grid_orig']
   ix_true, iy_true, iz_true, it_true= test_info['true_indexes']  
+  if test_info.has_key('true_values'): 
+      x_true, y_true, z_true, t_true= test_info['true_values']  
   stack_start_time=test_info['start_time']
   grid_filename=test_info['dat_file']
   stack_filename=test_info['stack_file']
@@ -132,7 +142,7 @@ def plotDiracTest(test_info,fig_dir):
 
 
   # cut through the true location at the true time 
-  xy_cut=stack_3D[:,:,iz_true]
+  xy_cut=stack_3D[:,:,iz_true] 
   xz_cut=stack_3D[:,iy_true,:]
   yz_cut=stack_3D[ix_true,:,:]
 
@@ -160,42 +170,44 @@ def plotDiracTest(test_info,fig_dir):
     t=np.arange(nt)*dt
 
   # do plot
+
+  # plot xy plane
   plt.subplot(3,3,1)
-  #p=plt.contourf(x,y,xy_cut.T)
   p=plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
-  #p=plt.imshow(x,y,xy_cut.T,origin='lower',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
-  #plt.plot(x[ix_true],y[iy_true],'wo',markersize=20, alpha=0.5)
   plt.xlabel('x (km wrt origin)')
   plt.ylabel('y (km wrt to origin)')
   plt.title('XY plane')
+
+  #plot xz plane
   plt.subplot(3,3,2)
-  #p=plt.contourf(x,z,xz_cut.T)
   p=plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
-  #plt.plot(x[ix_true],z[iz_true],'wo',markersize=20, alpha=0.5)
   plt.xlabel('x (km wrt origin)')
   plt.ylabel('z (km up)')
   plt.title('XZ plane')
+
+  # plot yz plane
   plt.subplot(3,3,3)
-  #p=plt.contourf(y,z,yz_cut.T)
   p=plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
-  #plt.plot(y[iy_true],z[iz_true],'wo',markersize=20, alpha=0.5)
   plt.xlabel('y (km wrt origin)')
   plt.ylabel('z (km up)')
   plt.title('YZ plane')
-  #plt.colorbar(p)
 
+  # choose portion of time series to plot
+  if test_info.has_key('true_values'):
+    llim = t_true-2.0
+    rlim = t_true+2.0
+  else:
+    llim = t[it_true]-2.0
+    rlim = t[it_true]+2.0
 
-  llim = t[it_true]-2.0
-  rlim = t[it_true]+2.0
+  # plot max value
   p=plt.subplot(3,1,2)
   plt.plot(t,max_val)
-  #plt.xticks([llim,t[it_true],rlim])
   plt.xlabel('t (s)')
   plt.ylabel('Stack max ')
   plt.title('Maximum of stack')
   p.set_xlim(llim,rlim)
   p.set_ylim(0,max(max_val))
-#  plt.hlines(loclevel,llim,rlim,'r',linewidth=2)
   plt.vlines(t[it_true],0,max(max_val),'r',linewidth=2)
   if test_info.has_key('t_err'):
       t_left,t_right=test_info['t_err']
@@ -205,6 +217,7 @@ def plotDiracTest(test_info,fig_dir):
   x=np.arange(nx)*dx+x_orig
   y=np.arange(ny)*dy+y_orig
   z=np.arange(nz)*dz+z_orig
+
   # plot max x
   p=plt.subplot(3,3,7)
   plt.plot(t,max_x)
@@ -213,8 +226,12 @@ def plotDiracTest(test_info,fig_dir):
   plt.ylabel('x (km) ')
   plt.title('x at maximum')
   p.set_xlim(llim,rlim)
-  plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
-  plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
+  if test_info.has_key('true_values'):
+    plt.vlines(t_true,min(max_x),max(max_x),'r',linewidth=2)
+    plt.hlines(x_true,llim,rlim,'r',linewidth=2)
+  else:
+    plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
+    plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
   if test_info.has_key('x_err'):
       x_low,x_high=test_info['x_err']
       plt.axhspan(x_low,x_high,facecolor='r', alpha=0.2)
@@ -230,8 +247,12 @@ def plotDiracTest(test_info,fig_dir):
   plt.ylabel('y (km) ')
   plt.title('y at maximum')
   p.set_xlim(llim,rlim)
-  plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
-  plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
+  if test_info.has_key('true_values'):
+    plt.hlines(y_true,llim,rlim,'r',linewidth=2)
+    plt.vlines(t_true,min(max_y),max(max_y),'r',linewidth=2)
+  else:
+    plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
+    plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
   if test_info.has_key('y_err'):
       y_low,y_high=test_info['y_err']
       plt.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
@@ -247,8 +268,12 @@ def plotDiracTest(test_info,fig_dir):
   plt.ylabel('z (km down) ')
   plt.title('z at maximum')
   p.set_xlim(llim,rlim)
-  plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
-  plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
+  if test_info.has_key('true_values'):
+    plt.hlines(z_true,llim,rlim,'r',linewidth=2)
+    plt.vlines(t_true,min(max_z),max(max_z),'r',linewidth=2)
+  else:
+    plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
+    plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
   if test_info.has_key('z_err'):
       z_low,z_high=test_info['z_err']
       plt.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
