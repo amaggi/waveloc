@@ -92,15 +92,19 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       logging.info('Plotting waveforms for location %s'%o_time.isoformat())
 
       # get the index of the location
-      ix=np.int(np.round((loc['x_mean']-grid_info['x_orig'])/dx))
-      iy=np.int(np.round((loc['y_mean']-grid_info['y_orig'])/dy))
-      iz=np.int(np.round((loc['z_mean']-grid_info['z_orig'])/dz))
-      ib= ix*ny*nz + iy*nz + iz
+#      ix=np.int(np.round((loc['x_mean']-grid_info['x_orig'])/dx))
+#      iy=np.int(np.round((loc['y_mean']-grid_info['y_orig'])/dy))
+#      iz=np.int(np.round((loc['z_mean']-grid_info['z_orig'])/dz))
+#      ib= ix*ny*nz + iy*nz + iz
 
+      x=loc['x_mean']
+      y=loc['y_mean']
+      z=loc['z_mean']
       # get the corresponding travel-times for time-shifting
       ttimes={}
       for sta in time_grids.keys():
-          ttimes[sta]=time_grids[sta].grid_data[ib]
+          #ttimes[sta]=time_grids[sta].grid_data[ib]
+          ttimes[sta]=time_grids[sta].value_at_point(x,y,z)
 
       # read data
       data_dict,delta = read_data_compatible_with_time_dict(data_files,
@@ -129,13 +133,15 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       iend=istart + np.int(np.round(
           (opdict['plot_tbefore'] + opdict['plot_tafter'])  / delta))
       # sanity check in case event is close to start or end of data
-      if istart < 0 : istart=0
+      if istart < 0 : 
+          start_time = start_time + np.abs(istart)*dt
+          istart=0
       if iend   > len(max_val) : iend = len(max_val)
       # do slice
       stack_wfm=max_val[istart:iend]
 
       # plot
-      plotLocationWaveforms(loc,data_dict,grad_dict,stack_wfm,figdir)
+      plotLocationWaveforms(loc,start_time,delta,data_dict,grad_dict,stack_wfm,figdir)
 
   f_stack.close()
 
