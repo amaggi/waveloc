@@ -32,7 +32,8 @@ due to modification of their academic license, but should be back soon).  They
 also bundle a completely free version, but it does not have all the necessary
 modules (notably h5py). 
 
-If you're not already using a full EPD distribution >= 7.2, you may of course
+If you're not already using a full EPD distribution >= 7.2, you may be stuck
+until EPD release their academic version again. You may of course
 attempt to install all the required modules by hand, but this is recommended
 only if you really enjoy python hacking.  Or if you know of another
 distribution that works out-of-the-box, please share!!
