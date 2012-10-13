@@ -61,8 +61,8 @@ wo.opdict['snr_limit']=10.0
 wo.opdict['sn_time']=10.0
 wo.opdict['n_kurt_min']=4
 
-wo.opdict['plot_tbefore']=5
-wo.opdict['plot_tafter']=10
+wo.opdict['plot_tbefore']=4
+wo.opdict['plot_tafter']=6
 
 # end of option setting - start processing
 
