@@ -23,6 +23,13 @@ System requirements :
 * NonLinLoc for time grid calculation (not strictly required)
 * other stuff I've surelly fogotten about...
 
+**Suggestion** : The easiest way to get all the required python modules is to
+install a recent version of the Enthought Python Distribution.  Their full
+distribution is free for academic use (it is temporarily unavailable due to
+modification of their academic license, but should be back soon).  They also
+bundle a completely free version, which seems to have all the necessary
+modules. 
+
 Installation
 ------------
 
