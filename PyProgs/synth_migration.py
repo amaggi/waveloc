@@ -31,7 +31,7 @@ def generateSyntheticDirac(opdict,time_grids=None):
     base_path=opdict['base_path']
     outdir=opdict['outdir']
     test_grid_file=os.path.join(base_path,'out',opdict['outdir'],'grid',s_filename)
-    test_stack_file=os.path.join(base_path,'out',opdict['outdir'],'stack','stack_'+s_filename)
+    test_stack_file=os.path.join(base_path,'out',opdict['outdir'],'stack','stack_all_'+s_filename)
     test_info_file=os.path.join(base_path,'out',opdict['outdir'],'grid','%s.info'%s_filename)
 
     fig_path = os.path.join(base_path,'out',outdir,'fig')
