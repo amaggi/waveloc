@@ -30,6 +30,15 @@ due to modification of their academic license, but should be back soon).  They
 also bundle a completely free version, which seems to have all the necessary
 modules. 
 
+Once you've installed the EPD python distribution, you should be able to
+install the obspy modules by running ::
+
+  easy_install -U obspy.core
+  easy_install -U obspy.signal
+  easy_install -U obspy.mseed
+
+and so on for all the other obspy modules you may be interested in.
+
 Installation
 ------------
 
