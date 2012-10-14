@@ -151,7 +151,7 @@ def plotDiracTest(test_info,fig_dir):
             test_info['o_time'].isoformat())
   else:
     fig_filename = os.path.join(fig_dir,"%s.pdf" % 
-            os.path.basename(grid_filename))
+            os.path.splitext(os.path.basename(grid_filename))[0])
 
   # read the stack file
   f=h5py.File(grid_filename,'r')
