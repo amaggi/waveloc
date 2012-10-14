@@ -25,11 +25,12 @@ http://github.com/amaggi/waveloc.
 
 The easiest way to get all the required python modules (except
 for obspy) is to install a recent version of the full Enthought Python Distribution.
-Enthough deliver free licenses for academic use (it is temporarily unavailable
+Enthought deliver free licenses for academic use (it is temporarily unavailable
 due to modification of their academic license, but should be back soon).  
+Enthought also bundle a completely free version, but it does not have all the necessary
+modules (notably h5py). 
 
-Enthough also bundle a completely free version, but it does not have all the necessary
-modules (notably h5py). If your python distribution does not include h5py and you
+If your python distribution does not include h5py and you
 need to compile HDF5 under macosx, make sure that it is configured 32-bit when
 using a 32-bit python distribution. (e.g., CC='cc -m32' ./configure
 --prefix=/usr/local/hdf5).
