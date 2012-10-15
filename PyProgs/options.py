@@ -30,6 +30,7 @@ class WavelocOptions(object):
     self.opdict['loclevel']=50.
     self.opdict['snr_loclevel']=10.
     self.opdict['snr_limit']=10.
+    self.opdict['snr_tr_limit']=10.
     self.opdict['sn_time']=10.
     self.opdict['n_kurt_min']=4
 
@@ -46,6 +47,9 @@ class WavelocOptions(object):
     # clustering
     self.opdict['nbsta']=3
     self.opdict['clus']=0.8
+
+    # double-difference
+    self.opdict['dd_loc']=True
 
   
     # For now, continue to support command-line arguments
@@ -125,6 +129,9 @@ class WavelocOptions(object):
     self.p.add_argument('--snr_limit',action='store',
             default=self.opdict['snr_limit'], type=float,
             help="signal_to_noise level for kurtosis acceptance")
+    self.p.add_argument('--snr_tr_limit',action='store',
+            default=self.opdict['snr_tr_limit'], type=float,
+            help="signal_to_noise level for data acceptance")
     self.p.add_argument('--sn_time',action='store',
             default=self.opdict['sn_time'], type=float, help="time over which \
             to calculate the signal_to_noise ratio for kurtosis acceptance")
@@ -186,6 +193,7 @@ class WavelocOptions(object):
             type=float, 
             help="correlation value over which an event pair is considered")
 
+    self.p.add_argument('--dd_loc',action='store_true',help="create a new location file with double difference locations")
 
   def set_all_arguments(self,args):
     self.opdict['time']=args.time
@@ -226,6 +234,7 @@ class WavelocOptions(object):
     self.opdict['loclevel']=args.loclevel
     self.opdict['snr_loclevel']=args.snr_loclevel
     self.opdict['snr_limit']=args.snr_limit
+    self.opdict['snr_tr_limit']=args.snr_tr_limit
     self.opdict['sn_time']=args.sn_time
     self.opdict['n_kurt_min']=args.n_kurt_min
 
@@ -252,9 +261,7 @@ class WavelocOptions(object):
     self.opdict['clus']=args.clus
     self.opdict['nbsta']=args.nbsta
 
-    self.opdict['new_file']=args.new_file
-    self.opdict['refine']=args.refine
-
+    self.opdict['dd_loc']=args.dd_loc
 
   def set_test_options(self):
     self.opdict['time']=True
@@ -298,6 +305,7 @@ class WavelocOptions(object):
     self.opdict['auto_loclevel']=False
     self.opdict['loclevel']=50.0
     self.opdict['snr_limit']=10.0
+    self.opdict['snr_tr_limit']=10.0
     self.opdict['sn_time']=10.0
     self.opdict['n_kurt_min']=4
 
@@ -311,6 +319,8 @@ class WavelocOptions(object):
 
     self.opdict['clus']=0.8
     self.opdict['nbsta']=3
+
+    self.opdict['dd_loc']=True
 
 
   def verify_base_path(self):
@@ -470,6 +480,10 @@ class WavelocOptions(object):
   def _verify_snr_limit(self):
     if not self.opdict.has_key('snr_limit'):
         raise UserWarning('snr_limit option not set')
+
+  def _verify_snr_tr_limit(self):
+    if not self.opdict.has_key('snr_tr_limit'):
+        raise UserWarning('snr_tr_limit option not set')
 
   def _verify_sn_time(self):
     if not self.opdict.has_key('sn_time'):
@@ -648,6 +662,7 @@ class WavelocOptions(object):
     self._verify_loclevel()
     self._verify_snr_loclevel()
     self._verify_snr_limit()
+    self._verify_snr_tr_limit()
     self._verify_sn_time()
     self._verify_n_kurt_min()
 
@@ -687,11 +702,39 @@ class WavelocOptions(object):
     self._verify_delay()
 
     coeff_file=os.path.join(locdir,self.opdict['corr'])
-    if not os.path.isfile(coeff_file):  
+    if not os.path.isfile(coeff_file):
         raise UserWarning('Cannot find %s'%coeff_file)
     
     delay_file=os.path.join(locdir,self.opdict['delay'])
-    if not os.path.isfile(delay_file):  
+    if not os.path.isfile(delay_file):
+        raise UserWarning('Cannot find %s'%delay_file)
+
+    self._verify_nbsta()
+    self._verify_clus()
+
+
+  def verify_doublediff_options(self):
+
+    self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_outdir()
+    base_path=self.opdict['base_path']
+
+    self._verify_time_grid()
+    self._verify_search_grid()
+
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+
+    self._verify_stations()
+    self._verify_corr()
+    self._verify_delay()
+
+    coeff_file=os.path.join(locdir,self.opdict['corr'])
+    if not os.path.isfile(coeff_file):
+        raise UserWarning('Cannot find %s'%coeff_file)
+   
+    delay_file=os.path.join(locdir,self.opdict['delay'])
+    if not os.path.isfile(delay_file):
         raise UserWarning('Cannot find %s'%delay_file)
 
     self._verify_nbsta()
