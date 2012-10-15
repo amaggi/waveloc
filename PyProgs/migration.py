@@ -18,6 +18,7 @@ def do_migration_setup_and_run(opdict):
   base_path=opdict['base_path']
   verbose=opdict['verbose']
   runtime=opdict['time']
+  reloc=opdict['reloc']
 
   # stations
   stations_filename=os.path.join(base_path,'lib',opdict['stations'])
@@ -70,6 +71,18 @@ def do_migration_setup_and_run(opdict):
     logging.info("Reading data  : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
     data,delta=read_data_compatible_with_time_dict(data_files,time_grids,start_time,end_time)
 
+    print len(data_files)
+
+    if reloc:
+      tr_glob=opdict['kurtglob']
+      files=glob.glob(os.path.join(data_dir,tr_glob))
+      traces,delta=read_data_compatible_with_time_dict(files,time_grids,start_time,end_time)
+      sta_list=sorted(traces)
+      for staname in sta_list:
+        snr=np.max(traces[staname])/np.mean(np.abs(traces[staname]))
+        if snr < 12:
+          data[staname]=np.zeros(len(data[staname]))
+
     # re-read grid_info at each iteration to make sure it is a clean copy
     grid_info=read_hdr_file(search_grid_filename)
 
@@ -99,6 +112,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
   options_verbose=opdict['verbose']
   options_time=opdict['time']
   output_dir=os.path.join(opdict['base_path'],'out',opdict['outdir'])
+  options_reloc=opdict['reloc']
 
   nx=grid_info['nx']
   ny=grid_info['ny']
@@ -119,7 +133,10 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
     t_ref=time()  
 
   # open hdf5 file for stack_grid
-  grid_filename=os.path.join(output_dir,'grid','stack_grid_%s.hdf5'%start_time)
+  if options_reloc:
+    grid_filename=os.path.join(output_dir,'grid','reloc_stack_grid_%s.hdf5'%start_time)
+  else:
+    grid_filename=os.path.join(output_dir,'grid','stack_grid_%s.hdf5'%start_time)
   logging.info('Creating grid file %s'%grid_filename)
   f=h5py.File(grid_filename,'w')
   stack_grid=f.create_dataset('stack_grid',(n_buf,min_npts),'f',chunks=(1,min_npts))
@@ -138,7 +155,10 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
     if options_time:
       t_ref=time()  
 
-    stack_filename=os.path.join(output_dir,'stack','stack_all_%s.hdf5'%start_time)
+    if options_reloc:
+      stack_filename=os.path.join(output_dir,'stack','reloc_stack_all_%s.hdf5'%start_time)
+    else:
+      stack_filename=os.path.join(output_dir,'stack','stack_all_%s.hdf5'%start_time)
     logging.info('Extracting max_val etc. to %s'%stack_filename)
     f_stack = h5py.File(stack_filename,'w')
     # extract maxima

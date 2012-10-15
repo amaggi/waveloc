@@ -51,7 +51,7 @@ def filter_max_stack(st_max,corner):
 
   return st_filt
 
-def number_good_kurtosis_for_location(kurt_files,o_time,snr_limit=10.0,sn_time=10.0):
+def number_good_kurtosis_for_location(kurt_files,dataglob,o_time,snr_limit=10.0,snr_tr_limit=10.0,sn_time=10.0):
   # TODO - Fix this to estimate K-time from o_time and propagation time to station
   n_good_kurt=0
   wf=Waveform()
@@ -61,7 +61,13 @@ def number_good_kurtosis_for_location(kurt_files,o_time,snr_limit=10.0,sn_time=1
     try:
       wf.read_from_file(filename,starttime=start_time,endtime=end_time)
       snr=wf.get_snr(o_time,start_time,end_time)
-      if snr > snr_limit:
+      staname=wf.station
+
+      new_filename=os.path.join(os.path.dirname(filename),"*%s%s"%(staname,dataglob))
+      wf.read_from_file(new_filename,starttime=start_time,endtime=end_time)
+      snr_tr=wf.get_snr(o_time,start_time,end_time)
+
+      if snr > snr_limit and snr_tr > snr_tr_limit:
         n_good_kurt = n_good_kurt + 1
     except UserWarning:
       logging.info('No data around %s for file %s.'%(o_time.isoformat(),filename))
@@ -137,6 +143,8 @@ def do_locations_trigger_setup_and_run(opdict):
   kurt_files=glob.glob(os.path.join(data_dir,opdict['kurtglob']))
   kurt_files.sort()
 
+  dataglob=opdict['dataglob']
+
   logging.info("Starting log for combine_stacks.")
 
   out_path=os.path.join(base_path,'out',opdict['outdir'])
@@ -145,7 +153,7 @@ def do_locations_trigger_setup_and_run(opdict):
   reloc=opdict['reloc']
   if reloc:
     loc_path=os.path.join(out_path,'reloc')
-    stack_files=glob.glob(os.path.join(stack_path),'reloc_stack_all*.hdf5')
+    stack_files=glob.glob(os.path.join(stack_path,'reloc_stack_all*.hdf5'))
     stack_files.sort()
   else:
     loc_path=os.path.join(out_path,'loc')
@@ -153,7 +161,8 @@ def do_locations_trigger_setup_and_run(opdict):
     stack_files.sort()
 
   n_stacks=len(stack_files)
-  if n_stacks == 0 : raise UserWarning('Empty list of stacks in %s'%(stack_path))
+  if n_stacks == 0 :
+    raise UserWarning('Empty list of stacks in %s'%(stack_path))
 
   loc_filename=os.path.join(loc_path,"locations.dat")
   logging.info("Path for stack files : %s"%stack_path)
@@ -162,101 +171,67 @@ def do_locations_trigger_setup_and_run(opdict):
 
   # DO DATA PREP ACCORDING TO RELOC OR NOT
 
+  logging.info("\nDealing with continuous location, so merging stack files directly ...\n")
 
-  if reloc:
+  # get basic info from first file
+  f_stack = h5py.File(stack_files[0],'r')
+  max_val = f_stack['max_val']
+  nt0 = len(max_val)
+  first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
+  dt = max_val.attrs['dt']
+  f_stack.close()
 
-    logging.warn('Relocation may be broken, take extreme care !!')
-    logging.warn('Code under modification ... !!')
-    logging.warn(' !!')
+  # create - assume all stacks are of the same length and will be concatenated end to end 
+  #          (this will give more than enough space) 
+  f = h5py.File(os.path.join(stack_path,'combined_stack_all.hdf5'),'w')
+  cmax_val = f.create_dataset('max_val',(nt0*n_stacks,), 'f', chunks=(nt0,))
+  cmax_x = f.create_dataset('max_x',(nt0*n_stacks,), 'f', chunks=(nt0,))
+  cmax_y = f.create_dataset('max_y',(nt0*n_stacks,), 'f', chunks=(nt0,))
+  cmax_z = f.create_dataset('max_z',(nt0*n_stacks,), 'f', chunks=(nt0,))
 
-    logging.info("\nDealing with relocation, so taper before merging ...\n")
-
-    st_max=read(os.path.join(stack_path,"reloc_stack_max*"))
-    st_max=stream_taper(st_max)
-    st_max.merge(method=1,fill_value='interpolate')
-    st_max.write(os.path.join(stack_path,"combined_reloc_stack_max.mseed"),format='MSEED')
-    st_max_filt=filter_max_stack(st_max,corner)
-    st_max_filt.write(os.path.join(stack_path,"combined_reloc_stack_max_filt.mseed"),format='MSEED')
-
-    st_x=read(os.path.join(stack_path,"reloc_stack_x*"))
-    st_x=stream_taper(st_x)
-    st_x.merge(method=1,fill_value='interpolate')
-    st_x.write(os.path.join(stack_path,"combined_reloc_stack_x.mseed"),format='MSEED')
-
-    st_y=read(os.path.join(stack_path,"reloc_stack_y*"))
-    st_y=stream_taper(st_y)
-    st_y.merge(method=1,fill_value='interpolate')
-    st_y.write(os.path.join(stack_path,"combined_reloc_stack_y.mseed"),format='MSEED')
-
-    st_z=read(os.path.join(stack_path,"reloc_stack_z*"))
-    st_z=stream_taper(st_z)
-    st_z.merge(method=1,fill_value='interpolate')
-    st_z.write(os.path.join(stack_path,"combined_reloc_stack_z.mseed"),format='MSEED')
-
-
-  else:
-
-    logging.info("\nDealing with continuous location, so merging stack files directly ...\n")
-
-
-    # get basic info from first file
-    f_stack = h5py.File(stack_files[0],'r')
+  # concatenate unsmoothed versions of max_val to avoid 
+  # problems at file starts and ends
+  for i in range(n_stacks):
+    f_stack = h5py.File(stack_files[i],'r')
     max_val = f_stack['max_val']
-    nt0 = len(max_val)
-    first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
-    dt = max_val.attrs['dt']
+    max_x = f_stack['max_x']
+    max_y = f_stack['max_y']
+    max_z = f_stack['max_z']
+
+    # get time info for this stack
+    nt = len(max_val)
+    start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
+    ibegin=np.int((start_time-first_start_time)/dt)
+
+    # update final end time
+    end_time = start_time+nt*dt
+
+    # copy data over into the right place
+    cmax_val[ibegin:ibegin+nt] = max_val[:]
+    cmax_x[ibegin:ibegin+nt] = max_x[:]
+    cmax_y[ibegin:ibegin+nt] = max_y[:]
+    cmax_z[ibegin:ibegin+nt] = max_z[:]
+
+    # close the stack
     f_stack.close()
 
-    # create - assume all stacks are of the same length and will be concatenated end to end 
-    #          (this will give more than enough space) 
-    f = h5py.File(os.path.join(stack_path,'combined_stack_all.hdf5'),'w')
-    cmax_val = f.create_dataset('max_val',(nt0*n_stacks,), 'f', chunks=(nt0,))
-    cmax_x = f.create_dataset('max_x',(nt0*n_stacks,), 'f', chunks=(nt0,))
-    cmax_y = f.create_dataset('max_y',(nt0*n_stacks,), 'f', chunks=(nt0,))
-    cmax_z = f.create_dataset('max_z',(nt0*n_stacks,), 'f', chunks=(nt0,))
-
-    # concatenate unsmoothed versions of max_val to avoid 
-    # problems at file starts and ends
-    for i in range(n_stacks):
-      f_stack = h5py.File(stack_files[i],'r')
-      max_val = f_stack['max_val']
-      max_x = f_stack['max_x']
-      max_y = f_stack['max_y']
-      max_z = f_stack['max_z']
-
-      # get time info for this stack
-      nt = len(max_val)
-      start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
-      ibegin=np.int((start_time-first_start_time)/dt)
-
-      # update final end time
-      end_time = start_time+nt*dt
-
-      # copy data over into the right place
-      cmax_val[ibegin:ibegin+nt] = max_val[:]
-      cmax_x[ibegin:ibegin+nt] = max_x[:]
-      cmax_y[ibegin:ibegin+nt] = max_y[:]
-      cmax_z[ibegin:ibegin+nt] = max_z[:]
-
-      # close the stack
-      f_stack.close()
-
-    # end_time now contains the final end_time
-    nt_full=int((end_time - first_start_time)/dt)
-    # resize
-    cmax_val.resize(nt_full,0)
-    cmax_x.resize(nt_full,0)
-    cmax_y.resize(nt_full,0)
-    cmax_z.resize(nt_full,0)
+  # end_time now contains the final end_time
+  nt_full=int((end_time - first_start_time)/dt)
+  # resize
+  cmax_val.resize(nt_full,0)
+  cmax_x.resize(nt_full,0)
+  cmax_y.resize(nt_full,0)
+  cmax_z.resize(nt_full,0)
     
-    # create the smoothed version of the max stack
-    cmax_val_smooth = f.create_dataset('max_val_smooth',(nt_full,), 'f', chunks=(nt_full,))
-    cmax_val_smooth[:] = smooth(np.array(cmax_val),51)
+  # create the smoothed version of the max stack
+  cmax_val_smooth = f.create_dataset('max_val_smooth',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_val_smooth[:] = smooth(np.array(cmax_val),51)
 
-    for name in f:
-      dset=f[name]
-      dset.attrs['dt']=dt
-      dset.attrs['start_time']=first_start_time.isoformat()
+  for name in f:
+    dset=f[name]
+    dset.attrs['dt']=dt
+    dset.attrs['start_time']=first_start_time.isoformat()
+
 
   # DO TRIGGERING AND LOCATION
   if opdict['auto_loclevel']:
@@ -276,13 +251,14 @@ def do_locations_trigger_setup_and_run(opdict):
   loc_file=open(loc_filename,'w')
 
   snr_limit=opdict['snr_limit']
+  snr_tr_limit=opdict['snr_tr_limit']
   sn_time=opdict['sn_time']
   n_kurt_min=opdict['n_kurt_min']
 
   n_ok=0
   locs=[]
   for loc in loc_list:
-    if number_good_kurtosis_for_location(kurt_files,loc['o_time'],snr_limit,sn_time) > n_kurt_min:
+    if number_good_kurtosis_for_location(kurt_files,dataglob,loc['o_time'],snr_limit,snr_tr_limit,sn_time) > n_kurt_min:
       logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km, y=%.4f pm %.4f km, z=%.4f pm %.4f km"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       n_ok=n_ok+1
