@@ -193,21 +193,21 @@ def plotDiracTest(test_info,fig_dir):
   # plot xy plane
   plt.subplot(3,3,1)
   p=plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
-  plt.xlabel('x (km wrt origin)')
-  plt.ylabel('y (km wrt to origin)')
+  plt.xlabel('x (km wrt ref)')
+  plt.ylabel('y (km wrt ref)')
   plt.title('XY plane')
 
   #plot xz plane
   plt.subplot(3,3,2)
   p=plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
-  plt.xlabel('x (km wrt origin)')
+  plt.xlabel('x (km wrt ref)')
   plt.ylabel('z (km up)')
   plt.title('XZ plane')
 
   # plot yz plane
   plt.subplot(3,3,3)
   p=plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
-  plt.xlabel('y (km wrt origin)')
+  plt.xlabel('y (km wrt ref)')
   plt.ylabel('z (km up)')
   plt.title('YZ plane')
 
