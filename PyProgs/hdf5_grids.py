@@ -224,6 +224,7 @@ def get_interpolated_time_grids(opdict):
 
   base_path=opdict['base_path']
   full_time_grids=glob.glob(os.path.join(base_path,'lib',opdict['time_grid']+'*.hdf5'))
+  full_time_grids.sort()
   if len(full_time_grids)==0 : raise UserWarning('No .hdf5 time grids found in directory %s'%(os.path.join(base_path,'lib')))
 
   # read the search grid

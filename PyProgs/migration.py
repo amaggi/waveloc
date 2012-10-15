@@ -11,6 +11,7 @@ from time import time
 from OP_waveforms import read_data_compatible_with_time_dict
 from NllGridLib import read_stations_file,read_hdr_file
 from hdf5_grids import get_interpolated_time_grids
+from filters import smooth
 
 def do_migration_setup_and_run(opdict):
 
@@ -30,6 +31,7 @@ def do_migration_setup_and_run(opdict):
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
   data_glob=opdict['gradglob']
   data_files=glob.glob(os.path.join(data_dir,data_glob))
+  data_files.sort()
   if len(data_files)==0: 
     logging.error('No data files found for %s and %s'%(data_dir,data_glob))
     raise UserWarning
@@ -37,7 +39,6 @@ def do_migration_setup_and_run(opdict):
   # grids
   grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
   search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
-  grid_info=read_hdr_file(search_grid_filename)
   time_grids=get_interpolated_time_grids(opdict)
 
   #start and end times
@@ -69,6 +70,9 @@ def do_migration_setup_and_run(opdict):
     logging.info("Reading data  : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
     data,delta=read_data_compatible_with_time_dict(data_files,time_grids,start_time,end_time)
 
+    # re-read grid_info at each iteration to make sure it is a clean copy
+    grid_info=read_hdr_file(search_grid_filename)
+
     # do migration if have enough data (3 is bare minimum)
     if len(data.keys())>=3:
       logging.info("Migrating data : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
@@ -96,8 +100,20 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
   options_time=opdict['time']
   output_dir=os.path.join(opdict['base_path'],'out',opdict['outdir'])
 
-  n_buf=grid_info['nx']*grid_info['ny']*grid_info['nz']
+  nx=grid_info['nx']
+  ny=grid_info['ny']
+  nz=grid_info['nz']
+  n_buf=nx*ny*nz
   min_npts=min([len(data[key]) for key in data.keys()])
+
+  dx=grid_info['dx']
+  dy=grid_info['dy']
+  dz=grid_info['dz']
+
+  x_orig=grid_info['x_orig']
+  y_orig=grid_info['y_orig']
+  z_orig=grid_info['z_orig']
+
 
   if options_time:
     t_ref=time()  
@@ -134,6 +150,8 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
       dset.attrs['dt']=delta
 
     f_stack.close()
+    # keep the stack_filename
+    grid_info['stack_file']=stack_filename
     if options_time:
       t=time()-t_ref
       logging.info("Time for extracting maxima : %.2f s\n" % (t))
@@ -145,6 +163,16 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
       stack_grid.attrs[key]=value
     stack_grid.attrs['dt']=delta
     stack_grid.attrs['start_time']=stack_start_time.isoformat()
+    # keep the grid_filename
+    grid_info['dat_file']=grid_filename
+
+  # hdf5 files cannot have complex attributes
+  # so add these to grid_info after having added
+  # useful info to stack_grid.attrs
+  grid_info['grid_spacing']=(dx,dy,dz,delta)
+  grid_info['grid_orig']=(x_orig,y_orig,z_orig)
+  grid_info['grid_shape']=(nx,ny,nz,nt)
+  grid_info['start_time']=stack_start_time
 
   # close the hdf5 file for the grid 
   f.close()
@@ -246,6 +274,7 @@ def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
   nb,nt=stack_grid.shape
 
   max_val=f_stack.create_dataset('max_val',(nt,),'f')
+  max_val_smooth=f_stack.create_dataset('max_val_smooth',(nt,),'f')
   max_x=f_stack.create_dataset('max_x',(nt,),'f')
   max_y=f_stack.create_dataset('max_y',(nt,),'f')
   max_z=f_stack.create_dataset('max_z',(nt,),'f')
@@ -278,11 +307,7 @@ def extract_max_values(stack_grid,search_info,f_stack,n_max=5e7):
   max_x[:]=max_ix[:]*dx+x_orig
   max_y[:]=max_iy[:]*dy+y_orig
   max_z[:]=max_iz[:]*dz+z_orig
-
-  logging.debug('In extract_max_values, max_val : %f %f'%(np.max(max_val),np.sum(max_val)))
-  logging.debug('In extract_max_values, max_x : %f %f'%(np.max(max_x),np.sum(max_x)))
-  logging.debug('In extract_max_values, max_y : %f %f'%(np.max(max_y),np.sum(max_y)))
-  logging.debug('In extract_max_values, max_z : %f %f'%(np.max(max_z),np.sum(max_z)))
+  max_val_smooth[:] = smooth(np.array(max_val),51)
 
   # clean up temporary datasets
   del f_stack['max_ib']
