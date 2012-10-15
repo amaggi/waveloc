@@ -47,37 +47,37 @@ def corr_time(Cxy, Cxx, Cyy, dt, v):
   cxx=np.fft.ifft(Cxx)
   cyy=np.fft.ifft(Cyy)
   # time vector
-  tc=np.arange(-len(cxy)*dt/2,len(cxy)*dt/2,dt)
+  tc=np.arange(-np.floor(len(cxy)/2)*dt,np.floor(len(cxy)/2)*dt+dt,dt)
   # normalize the cross-correlation vector (cf Schwartz inequality)
   cxy=cxy/np.sqrt(cxx[0]*cyy[0])
   # rewrite the cross-correlation vector cxy in proper order
   cxy[len(cxy)/2+1:len(cxy)]=cxy[-1:-len(cxy)/2:-1] # "positive" part
   cxy[0:len(cxy)/2+1]=cxy[-len(cxy)/2:-len(cxy)-1:-1] # "negative" part
-  value_t=np.abs(np.max(cxy))
-  tau_t=tc[np.argmax(cxy)]
   if v:
     fig = plt.figure()
     fig.set_facecolor('white')
     plt.plot(cxy,'k')
     #plt.show()
+  value_t=np.abs(np.max(cxy))
+  tau_t=tc[np.argmax(cxy)]
   return value_t, tau_t
 
 def corr_freq(f,Cxy,v):
   # Determine the limits of the amplitude spectrum
   mini, maxi=cum(np.abs(Cxy[0:len(f)/2]),v)
   fmin, fmax = f[mini], f[maxi]
+  f_min_max=f[mini:maxi]
+  # Plot
+  if v:
+    display(Cxy,f,0,f_min_max)
+    plt.show()
 
   # Compute the slope of the phase spectrum where the amplitude is strong...
   # This is only performed after time-realignment - do not unwrap the phase
   phase_min_max=np.angle(Cxy[mini:maxi],deg=False)
-  f_min_max=f[mini:maxi]
   a=sum(f_min_max*phase_min_max)/sum(f_min_max**2)
   # ... and deduce the time delay
   tau_f=a/(2*pi)
-  # Plot
-  if v:
-    display(Cxy,f,a,f_min_max)
-    plt.show()
   return tau_f
 
 def cum(x,v):
@@ -143,7 +143,7 @@ def display(Cxy,f,a,f_min_max):
 def correlate(x,y,dt,v,a):
   Cxy, Cxx, Cyy, f = fourier(x,y,dt)
   if a=='t':
-    corr, tau =  corr_time(Cxy, Cxx, Cyy, dt, v)
+    corr, tau = corr_time(Cxy, Cxx, Cyy, dt, v)
     #tau=np.round(tau*100)/100
     return tau, corr
   if a=='f':
@@ -212,7 +212,7 @@ def do_correlation_setup_and_run(opdict):
       liste.extend(np.zeros(event-1))
       list_tau.extend(np.zeros(event-1))
 
-      for loc_b in locs[event-1:]:  # for every event occurring after the event "event" ; replace by event-1 if the autocorrelation is considered
+      for loc_b in locs[event-1:]: # for every event occurring after the event "event" ; replace by event-1 if the autocorrelation is considered
         compteur=compteur+1
         stack_time_2=loc_b['o_time']-tdeb
         start_time_2=int((stack_time_2-t_before)*1./dt)
@@ -238,6 +238,7 @@ def do_correlation_setup_and_run(opdict):
               plot_waveform(val1,val2,dt,[tau_t,tau_f],event,compteur)
               print "time: %.4f, %.4f"%(value, tau_t)
               print "frequency : %.4f, %.4f"%(value, tau_f)
+              print "final delay : %.4f"%tau
               plt.show()
 
           liste.append(round(value*10**2)/10**2)
