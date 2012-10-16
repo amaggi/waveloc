@@ -10,12 +10,56 @@ Created by Alessia Maggi and Alberto Michelini.
 import numpy as np
 from math import *
 from numpy import ones, zeros, linalg, matrix, array, dot, append, abs, arange, mean
+from itertools import islice
 from scipy.signal import lfilter, hilbert
 from scipy import sqrt, power
 
 #from statlib import stats
 # changed routine for the kurtosis (from scipy.stats)
 import scipy.stats as ss
+
+ 
+def window(seq, n=2):
+    "Returns a sliding window (of width n) over data from the iterable"
+    "   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
+    it = iter(seq)
+    result = tuple(islice(it, n))
+    if len(result) == n:
+        yield result    
+    for elem in it:
+        result = result[1:] + (elem,)
+        yield result
+
+def sw_kurtosis1(x,n):
+    """
+    Returns kurtosis calculated over data set x using sliding windows of length
+    n points.  Length of returned array is len(x)-n+1.
+    """
+    npts=len(x)
+    xs=np.empty(npts-n+1,dtype=float)
+    xs[:]=0.
+    for i in xrange(n,npts - n ):
+        xs[i]=ss.kurtosis(x[i:(i+n)])
+    return xs
+
+def sw_kurtosis2(x,n):
+    """
+    Returns kurtosis calculated over data set x using sliding windows of length
+    n points.  Length of returned array is len(x)-n+1.
+    This version uses filter.window() to slice the data array and is faster
+    than sw_kurtosis1.
+    """
+    npts=len(x)
+    windows=window(x,n)
+    xs=np.empty(npts-n+1,dtype=float)
+    xs[:]=0.
+    k_array=np.empty((npts-n+1,n),dtype=float)
+    i=0
+    for w in windows:
+        k_array[i,0:n]=w
+        i=i+1
+    xs=ss.kurtosis(k_array,axis=1)
+    return xs
 
    
 def lfilter_zi(b,a):
