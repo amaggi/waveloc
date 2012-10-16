@@ -31,24 +31,34 @@ def window(seq, n=2):
         yield result
 
 def sw_kurtosis1(x,n):
+    """
+    Returns kurtosis calculated over data set x using sliding windows of length
+    n points.  Length of returned array is len(x)-n+1.
+    """
     npts=len(x)
-    xs=np.empty(npts,dtype=float)
+    xs=np.empty(npts-n+1,dtype=float)
     xs[:]=0.
-    for i in range(n,npts - n ):
-        xs[i+n]=ss.kurtosis(x[i:(i+n)])
+    for i in xrange(n,npts - n ):
+        xs[i]=ss.kurtosis(x[i:(i+n)])
     return xs
 
 def sw_kurtosis2(x,n):
+    """
+    Returns kurtosis calculated over data set x using sliding windows of length
+    n points.  Length of returned array is len(x)-n+1.
+    This version uses filter.window() to slice the data array and is faster
+    than sw_kurtosis1.
+    """
     npts=len(x)
     windows=window(x,n)
-    xs=np.empty(npts,dtype=float)
+    xs=np.empty(npts-n+1,dtype=float)
     xs[:]=0.
     k_array=np.empty((npts-n+1,n),dtype=float)
     i=0
     for w in windows:
         k_array[i,0:n]=w
         i=i+1
-    xs[n-1:]=ss.kurtosis(k_array,axis=1)
+    xs=ss.kurtosis(k_array,axis=1)
     return xs
 
    

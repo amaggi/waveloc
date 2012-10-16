@@ -658,10 +658,11 @@ class Waveform(object):
     """
     Processing waveform using kurtosis (from statlib package).
     
-    Calls filters.kurto(), and overwrites the waveform.
+    Calls filters.sw_kurtosis2(), and overwrites the waveform.
     
     :param win: length of the window (in seconds) on which to calculate the
                 kurtosis 
+    :param recursive: If ``True`` applies recursive kurtosis calculation
     :param pre_rmean: If ``True`` removes mean of signal before processing.
     :param pre_taper: If ``True`` applies taper to signal before processing.
     :param post_taper: If ``True`` applies taper to signal after processing.
@@ -686,6 +687,7 @@ class Waveform(object):
     # process each trace independently
     for itr in range(self.stream.count()):
       tr=self.stream.traces[itr]
+      starttime=tr.stats.starttime
       x=tr.data
       varx=np.std(x)
 
@@ -698,7 +700,7 @@ class Waveform(object):
         var_value=0
         kurt_value=0
         C=1-dt/win
-        for i in range(npts):
+        for i in xrange(npts):
           mean_value = C*mean_value + (1-C)*x[i]
           var_value=C*var_value+(1-C)*(x[i]-mean_value)**2
           if var_value>varx: 
@@ -709,17 +711,13 @@ class Waveform(object):
 
       else:
 
+        # run the sliding window kurtosis
         nwin=int(win/dt)
-        tref=time()
         xs=sw_kurtosis2(x,nwin)
-        logging.info('Time new kurtosis %.4f'%(time()-tref))
+        # fix up the starttime of the trace
+        tr.stats.starttime = starttime + nwin*dt
 
-        nwin=int(win/dt)+1
-        tref=time()
-        xs=sw_kurtosis1(x,nwin)
-        logging.info('Time standard kurtosis %.4f'%(time()-tref))
-        
-      #xs_filt=lowpass(xs,10*tr.stats.delta,1/tr.stats.delta,zerophase=True)
+      # smooth xs
       xs_filt=smooth(xs)
        
       # Save xs values as waveform 

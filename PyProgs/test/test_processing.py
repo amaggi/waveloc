@@ -5,6 +5,7 @@ from options import WavelocOptions
 
 def suite():
   suite = unittest.TestSuite()
+  suite.addTest(KurtosisTests('test_ss_kurtosis'))
   suite.addTest(ProcessingTests('test_processing'))
   return suite
 
@@ -20,6 +21,30 @@ def waveforms_to_signature(base_path,datadir,dataglob,output_filename):
     (maximum, datasum) = wf.compute_signature()
     sig_file.write("%s \t\t %.6f \t %.6f\n"%(basename,maximum,datasum))
  
+class KurtosisTests(unittest.TestCase):
+
+  def test_ss_kurtosis(self):
+    import numpy as np
+    from filters import sw_kurtosis1, sw_kurtosis2
+
+    npts=1000
+    nkurt=7
+    r=np.random.randn(npts)
+    s=np.zeros(npts)
+    s[npts/2:]=10.0
+    sig=s+r
+
+    k1=sw_kurtosis1(sig,nkurt)
+    k2=sw_kurtosis2(sig,nkurt)
+
+    self.assertEquals(k1.shape,k2.shape)
+    np.testing.assert_allclose(k1,k2,5)
+    self.assertAlmostEquals(np.max(k1), np.max(k2))
+    self.assertEquals(np.argmax(k1), np.argmax(k2))
+    print np.argmax(k1)
+   
+    
+   
 
 class ProcessingTests(unittest.TestCase):
 
