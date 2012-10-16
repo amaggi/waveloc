@@ -25,6 +25,7 @@ from filters import *
 from obspy.core import *
 from obspy.signal import *
 from obspyaux import *
+from time import time
 
 import scipy.stats as ss
 
@@ -707,10 +708,16 @@ class Waveform(object):
           xs[i]=kurt_value-3
 
       else:
-        nwin=int(win/dt)+1
-        for i in range(nwin,npts - nwin ):
-          xs[i+nwin]=ss.kurtosis(x[i:(i+nwin)])
 
+        nwin=int(win/dt)
+        tref=time()
+        xs=sw_kurtosis2(x,nwin)
+        logging.info('Time new kurtosis %.4f'%(time()-tref))
+
+        nwin=int(win/dt)+1
+        tref=time()
+        xs=sw_kurtosis1(x,nwin)
+        logging.info('Time standard kurtosis %.4f'%(time()-tref))
         
       #xs_filt=lowpass(xs,10*tr.stats.delta,1/tr.stats.delta,zerophase=True)
       xs_filt=smooth(xs)
