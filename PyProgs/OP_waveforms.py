@@ -715,7 +715,7 @@ class Waveform(object):
         nwin=int(win/dt)
         xs=sw_kurtosis2(x,nwin)
         # fix up the starttime of the trace
-        tr.stats.starttime = starttime + nwin*dt
+        tr.stats.starttime = starttime + (nwin-1)*dt
 
       # smooth xs
       xs_filt=smooth(xs)
