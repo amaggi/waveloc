@@ -170,14 +170,14 @@ def do_correlation_setup_and_run(opdict):
   locfile=os.path.join(locdir,'locations.dat')
 
   # file containing correlation values
-  coeff_file=os.path.join(locdir,opdict['corr'])
+  coeff_file=os.path.join(locdir,opdict['xcorr_corr'])
   # file containing time delays
-  delay_file=os.path.join(locdir,opdict['delay'])
+  delay_file=os.path.join(locdir,opdict['xcorr_delay'])
 
   # threshold and time window
-  threshold=float(opdict['threshold'])
-  t_before=float(opdict['before'])
-  t_after=float(opdict['after'])
+  threshold=float(opdict['xcorr_threshold'])
+  t_before=float(opdict['xcorr_before'])
+  t_after=float(opdict['xcorr_after'])
 
   # Read location
   locs=read_locs_from_file(locfile)

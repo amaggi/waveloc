@@ -23,9 +23,10 @@ class WavelocOptions(object):
 
     # migration
     self.opdict['load_ttimes_buf']=True
+    self.opdict['reloc']=False
+    self.opdict['reloc_snr']=12.
 
     # location
-    self.opdict['reloc']=False
     self.opdict['auto_loclevel']=False
     self.opdict['loclevel']=50.
     self.opdict['snr_loclevel']=10.
@@ -40,16 +41,16 @@ class WavelocOptions(object):
     self.opdict['syn_kwidth']=0.1
 
     # cross-correlation
-    self.opdict['threshold']=0.7
-    self.opdict['before']=0.5
-    self.opdict['after']=6.0
+    self.opdict['xcorr_threshold']=0.7
+    self.opdict['xcorr_before']=0.5
+    self.opdict['xcorr_after']=6.0
 
     # clustering
     self.opdict['nbsta']=3
     self.opdict['clus']=0.8
 
     # double-difference
-    self.opdict['dd_loc']=True
+    self.opdict['dd_loc']=False
 
   
     # For now, continue to support command-line arguments
@@ -116,7 +117,10 @@ class WavelocOptions(object):
             'load pre-calculated travel-times for the search grid from file')
 
     self.p.add_argument('--reloc', action='store_true',
-            default=self.opdict['reloc'], help='apply to relocated events')
+            default=self.opdict['reloc'], help='select data for migration')
+    self.p.add_argument('--reloc_snr', action='store',
+            default=self.opdict['reloc_snr'], help='signal to noise ratio level over which kurtosis are migrated ')
+
     self.p.add_argument('--auto_loclevel', action='store',
             default=self.opdict['auto_loclevel'], type=float,
             help='automatically set trigger stack level for locations ')
@@ -170,19 +174,19 @@ class WavelocOptions(object):
     self.p.add_argument('--plot_tafter',action='store',type=float, 
             help="time after origin time for plots")
 
-    self.p.add_argument('--threshold',action='store',
-            default=self.opdict['threshold'], type=float, 
+    self.p.add_argument('--xcorr_threshold',action='store',
+            default=self.opdict['xcorr_threshold'], type=float, 
             help="correlation value over which the correlation is computed \
                     again in the Fourier domain")
-    self.p.add_argument('--before',action='store',
-            default=self.opdict['before'], type=float, help=
+    self.p.add_argument('--xcorr_before',action='store',
+            default=self.opdict['xcorr_before'], type=float, help=
             "cross-correlation window: time interval before the origin time")
-    self.p.add_argument('--after',action='store', default=self.opdict['after'],
+    self.p.add_argument('--xcorr_after',action='store', default=self.opdict['xcorr_after'],
             type=float, help="cross-correlation window: time interval after \
                     the origin time")
-    self.p.add_argument('--corr', action='store', 
+    self.p.add_argument('-xcorr_-corr', action='store', 
             help="name of the file containing all correlation values")
-    self.p.add_argument('--delay', action='store', 
+    self.p.add_argument('--xcorr_delay', action='store', 
             help="name of the file containing all time delays")
 
     self.p.add_argument('--nbsta',action='store', default=self.opdict['nbsta'],
@@ -230,6 +234,8 @@ class WavelocOptions(object):
     self.opdict['load_ttimes_buf']=args.load_ttimes_buf
 
     self.opdict['reloc']=args.reloc
+    self.opdict['reloc_snr']=args.reloc_snr
+
     self.opdict['auto_loclevel']=args.auto_loclevel
     self.opdict['loclevel']=args.loclevel
     self.opdict['snr_loclevel']=args.snr_loclevel
@@ -252,16 +258,17 @@ class WavelocOptions(object):
     self.opdict['plot_tbefore']=args.plot_tbefore
     self.opdict['plot_tafter']=args.plot_tafter
 
-    self.opdict['threshold']=args.threshold
-    self.opdict['before']=args.before
-    self.opdict['after']=args.after
-    self.opdict['corr']=args.corr
-    self.opdict['delay']=args.delay
+    self.opdict['xcorr_threshold']=args.xcorr_threshold
+    self.opdict['xcorr_before']=args.xcorr_before
+    self.opdict['xcorr_after']=args.xcorr_after
+    self.opdict['xcorr_corr']=args.xcorr_corr
+    self.opdict['xcorr_delay']=args.xcorr_delay
 
     self.opdict['clus']=args.clus
     self.opdict['nbsta']=args.nbsta
 
     self.opdict['dd_loc']=args.dd_loc
+
 
   def set_test_options(self):
     self.opdict['time']=True
@@ -302,6 +309,8 @@ class WavelocOptions(object):
     self.opdict['load_ttimes_buf']=True
 
     self.opdict['reloc']=False
+    self.opdict['reloc_snr']=12.
+
     self.opdict['auto_loclevel']=False
     self.opdict['loclevel']=50.0
     self.opdict['snr_limit']=10.0
@@ -311,11 +320,11 @@ class WavelocOptions(object):
 
     self.opdict['syn_addnoise']=False
 
-    self.opdict['threshold']=0.7
-    self.opdict['before']=0.5
-    self.opdict['after']=6.0
-    self.opdict['corr']='corr'
-    self.opdict['delay']='delay'
+    self.opdict['xcorr_threshold']=0.7
+    self.opdict['xcorr_before']=0.5
+    self.opdict['xcorr_after']=6.0
+    self.opdict['xcorr_corr']='corr'
+    self.opdict['xcorr_delay']='delay'
 
     self.opdict['clus']=0.8
     self.opdict['nbsta']=3
@@ -511,6 +520,14 @@ class WavelocOptions(object):
     if not os.path.isfile(search_grid) : 
         raise UserWarning('Cannot find %s'%search_grid)
 
+  def _verify_reloc(self):
+    if not self.opdict.has_key('reloc'):
+        raise UserWarning('reloc option not set')
+
+  def _verify_reloc_snr(self):
+    if not self.opdict.has_key('reloc_snr'):
+        raise UserWarning('reloc_snr option not set')
+
   def _verify_auto_loclevel(self):
     if not self.opdict.has_key('auto_loclevel'):
         raise UserWarning('auto_loclevel option not set')
@@ -529,25 +546,25 @@ class WavelocOptions(object):
       if not self.opdict.has_key('loclevel'):
         raise UserWarning('loclevel option not set')
 
-  def _verify_threshold(self):
-    if not self.opdict.has_key('threshold'):
-        raise UserWarning('threshold option not set')
+  def _verify_xcorr_threshold(self):
+    if not self.opdict.has_key('xcorr_threshold'):
+        raise UserWarning('xcorr_threshold option not set')
 
-  def _verify_before(self):
-    if not self.opdict.has_key('before'):
-        raise UserWarning('before option not set')
+  def _verify_xcorr_before(self):
+    if not self.opdict.has_key('xcorr_before'):
+        raise UserWarning('xcorr_before option not set')
 
-  def _verify_after(self):
-    if not self.opdict.has_key('after'):
-        raise UserWarning('after option not set')
+  def _verify_xcorr_after(self):
+    if not self.opdict.has_key('xcorr_after'):
+        raise UserWarning('xcorr_after option not set')
 
-  def _verify_corr(self):
-    if not self.opdict.has_key('corr'):
-        raise UserWarning('corr option not set')
+  def _verify_xcorr_corr(self):
+    if not self.opdict.has_key('xcorr_corr'):
+        raise UserWarning('xcorr_corr option not set')
 
-  def _verify_delay(self):
-    if not self.opdict.has_key('delay'):
-        raise UserWarning('delay option not set')
+  def _verify_xcorr_delay(self):
+    if not self.opdict.has_key('xcorr_delay'):
+        raise UserWarning('xcorr_delay option not set')
 
   def _verify_nbsta(self):
     if not self.opdict.has_key('nbsta'):
@@ -556,6 +573,10 @@ class WavelocOptions(object):
   def _verify_clus(self):
     if not self.opdict.has_key('clus'):
         raise UserWarning('clus option not set')
+  
+  def _verify_dd_loc(self):
+    if not self.opfict.has_key('dd_loc'):
+        raise UserWarning('dd_loc option not set') 
 
   def _verify_syn_addnoise(self):
     if not self.opdict.has_key('syn_addnoise'):
@@ -648,6 +669,10 @@ class WavelocOptions(object):
     self._verify_search_grid()
     self._verify_time_grid()
 
+    self._verify_reloc()
+    if opdict['reloc']:
+      self._verify_reloc_snr()
+
   def verify_location_options(self):
 
     self.verify_base_path()
@@ -667,8 +692,9 @@ class WavelocOptions(object):
     self._verify_n_kurt_min()
 
     self._verify_search_grid()
-
     self._verify_time_grid()
+
+    self._verify_reloc()
 
   def verify_correlation_options(self):
     
@@ -678,11 +704,11 @@ class WavelocOptions(object):
     self._verify_outdir()
 
     self._verify_dataglob()
-    self._verify_threshold()
-    self._verify_before()
-    self._verify_after()
-    self._verify_corr()
-    self._verify_delay()
+    self._verify_xcorr_threshold()
+    self._verify_xcorr_before()
+    self._verify_xcorr_after()
+    self._verify_xcorr_corr()
+    self._verify_xcorr_delay()
 
 
   def verify_cluster_options(self):
@@ -698,14 +724,14 @@ class WavelocOptions(object):
     self._verify_dataglob()
 
     self._verify_stations()
-    self._verify_corr()
-    self._verify_delay()
+    self._verify_xcorr_corr()
+    self._verify_xcorr_delay()
 
-    coeff_file=os.path.join(locdir,self.opdict['corr'])
+    coeff_file=os.path.join(locdir,self.opdict['xcorr_corr'])
     if not os.path.isfile(coeff_file):
         raise UserWarning('Cannot find %s'%coeff_file)
     
-    delay_file=os.path.join(locdir,self.opdict['delay'])
+    delay_file=os.path.join(locdir,self.opdict['xcorr_delay'])
     if not os.path.isfile(delay_file):
         raise UserWarning('Cannot find %s'%delay_file)
 
@@ -739,6 +765,8 @@ class WavelocOptions(object):
 
     self._verify_nbsta()
     self._verify_clus()
+
+    self._verify_dd_loc()
 
 
   def verify_synthetic_options(self):

@@ -4,7 +4,7 @@
 import os, sys, optparse, glob
 import matplotlib.pyplot as plt
 import numpy as np
-import time, cProfile
+import cProfile
 from CZ_Clust_2_color import *
 from CZ_W_2_color import *
 import cPickle
@@ -189,7 +189,6 @@ def do_clustering(event,nbsta,nbmin):
   ind_sommet_first=0
   cluster_ind=0
   CLUSTER={}
-  start=time.time()
   while 1:
     event_index_flagged=[]
     event_index_non_flagged_with_neighbours=[]
@@ -208,9 +207,6 @@ def do_clustering(event,nbsta,nbmin):
       sommet_first=event_index_non_flagged_with_neighbours[0]
     else:
       break
-  end=time.time()
-
-  print "computation time :",end-start
 
   return CLUSTER
 
@@ -287,13 +283,13 @@ def do_clustering_setup_and_run(opdict):
   loc_filename=os.path.join(locdir,'locations.dat')
 
   # file containing correlation values
-  coeff_file=os.path.join(locdir,opdict['corr'])
+  coeff_file=os.path.join(locdir,opdict['xcorr_corr'])
   # Read correlation values
   b=BinaryFile(coeff_file)
   coeff=b.read_binary_file()
 
   # file containing time delays
-  delay_file=os.path.join(locdir,opdict['delay'])
+  delay_file=os.path.join(locdir,opdict['xcorr_delay'])
 
   # INPUT PARAMETERS
   nbmin=int(opdict['nbsta'])
@@ -302,8 +298,6 @@ def do_clustering_setup_and_run(opdict):
   event=len(coeff.values()[0])
   tplot=float(opdict['clus']) # threshold for which we save and plot 
   cluster_file="%s/cluster-%s-%s"%(locdir,str(tplot),str(nbmin))
-
-  temps_ini=time.time()
 
   corr=[opdict['clus']]
   for threshold in corr:
@@ -334,8 +328,6 @@ def do_clustering_setup_and_run(opdict):
 
         # Plot graphs
         #plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold)
-
-  print "temps total", time.time()-temps_ini
 
 # -----------------------------------------------------------------------------------------
 if __name__ == '__main__':

@@ -181,13 +181,28 @@ def do_locations_trigger_setup_and_run(opdict):
   dt = max_val.attrs['dt']
   f_stack.close()
 
+  # get start time
+  f_stack = h5py.File(stack_files[0],'r')
+  max_val = f_stack['max_val']
+  first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
+  dt = max_val.attrs['dt']
+  f_stack.close()
+
+  # get end time
+  f_stack = h5py.File(stack_files[-1],'r')
+  max_val = f_stack['max_val']
+  last_end_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val)
+  f_stack.close()
+
+  nt_full=int((last_end_time-first_start_time)/dt)
+
   # create - assume all stacks are of the same length and will be concatenated end to end 
   #          (this will give more than enough space) 
   f = h5py.File(os.path.join(stack_path,'combined_stack_all.hdf5'),'w')
-  cmax_val = f.create_dataset('max_val',(nt0*n_stacks,), 'f', chunks=(nt0,))
-  cmax_x = f.create_dataset('max_x',(nt0*n_stacks,), 'f', chunks=(nt0,))
-  cmax_y = f.create_dataset('max_y',(nt0*n_stacks,), 'f', chunks=(nt0,))
-  cmax_z = f.create_dataset('max_z',(nt0*n_stacks,), 'f', chunks=(nt0,))
+  cmax_val = f.create_dataset('max_val',(nt_full,), 'f', chunks=(nt0,))
+  cmax_x = f.create_dataset('max_x',(nt_full,), 'f', chunks=(nt0,))
+  cmax_y = f.create_dataset('max_y',(nt_full,), 'f', chunks=(nt0,))
+  cmax_z = f.create_dataset('max_z',(nt_full,), 'f', chunks=(nt0,))
 
   # concatenate unsmoothed versions of max_val to avoid 
   # problems at file starts and ends
@@ -203,9 +218,6 @@ def do_locations_trigger_setup_and_run(opdict):
     start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
     ibegin=np.int((start_time-first_start_time)/dt)
 
-    # update final end time
-    end_time = start_time+nt*dt
-
     # copy data over into the right place
     cmax_val[ibegin:ibegin+nt] = max_val[:]
     cmax_x[ibegin:ibegin+nt] = max_x[:]
@@ -215,14 +227,6 @@ def do_locations_trigger_setup_and_run(opdict):
     # close the stack
     f_stack.close()
 
-  # end_time now contains the final end_time
-  nt_full=int((end_time - first_start_time)/dt)
-  # resize
-  cmax_val.resize(nt_full,0)
-  cmax_x.resize(nt_full,0)
-  cmax_y.resize(nt_full,0)
-  cmax_z.resize(nt_full,0)
-    
   # create the smoothed version of the max stack
   cmax_val_smooth = f.create_dataset('max_val_smooth',(nt_full,), 'f', chunks=(nt_full,))
   cmax_val_smooth[:] = smooth(np.array(cmax_val),51)

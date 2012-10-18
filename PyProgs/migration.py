@@ -80,7 +80,7 @@ def do_migration_setup_and_run(opdict):
       sta_list=sorted(traces)
       for staname in sta_list:
         snr=np.max(traces[staname])/np.mean(np.abs(traces[staname]))
-        if snr < 12:
+        if snr < opdict['reloc_snr']:
           data[staname]=np.zeros(len(data[staname]))
 
     # re-read grid_info at each iteration to make sure it is a clean copy
