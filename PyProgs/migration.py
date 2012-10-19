@@ -29,7 +29,12 @@ def do_migration_setup_and_run(opdict):
 
   # data
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
-  data_glob=opdict['gradglob']
+  if opdict['kderiv']:
+    data_glob=opdict['gradglob']
+    if opdict['gauss']:
+      data_glob=opdict['gaussglob']
+  else:
+    data_glob=opdict['kurtglob']
   data_files=glob.glob(os.path.join(data_dir,data_glob))
   data_files.sort()
   if len(data_files)==0: 
