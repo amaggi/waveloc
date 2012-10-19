@@ -20,6 +20,7 @@ class WavelocOptions(object):
     self.opdict['resample']=False
     self.opdict['krec']=False
     self.opdict['kderiv']=False
+    self.opdict['gauss']=False
 
     # migration
     self.opdict['load_ttimes_buf']=True
@@ -92,10 +93,19 @@ class WavelocOptions(object):
             help="use recursive kurtosis calculation (faster but less precise)")
     self.p.add_argument('--kderiv',action='store_true',
             default=self.opdict['kderiv'], help="use derivative of kurtosis")
+    self.p.add_argument('--gauss',action='store_true',
+            default=self.opdict['gauss'], help="replace kurtosis by gaussian distribution")
+    self.p.add_argument('--gthreshold',action='store',type=float,  
+            help="threshold over which the kurtosis is replaced by a gaussian distribution")
+    self.p.add_argument('--mu',action='store',type=float,  
+            help="expected value of the gaussian distribution")
+    self.p.add_argument('--sigma',action='store',type=float,  
+            help="aperture of the gaussian distribution")
 
     self.p.add_argument('--dataglob',action='store',help="data glob")
     self.p.add_argument('--kurtglob',action='store',help="kurtosis glob")
     self.p.add_argument('--gradglob',action='store',help="gradient glob")
+    self.p.add_argument('--gaussglob',action='store',help="gaussian glob")
 
     self.p.add_argument('--starttime', action='store', 
             help="start time for data e.g. 2010-10-14T00:00:00.0Z")
@@ -218,10 +228,15 @@ class WavelocOptions(object):
     self.opdict['kwin']=args.kwin
     self.opdict['krec']=args.krec
     self.opdict['kderiv']=args.kderiv
+    self.opdict['gauss']=args.gauss
+    self.opdict['gthreshold']=args.gthreshold
+    self.opdict['mu']=args.mu
+    self.opdict['sigma']=args.sigma
 
     self.opdict['dataglob']=args.dataglob
     self.opdict['kurtglob']=args.kurtglob
     self.opdict['gradglob']=args.gradglob
+    self.opdict['gaussglob']=args.gaussglob
 
     self.opdict['starttime']=args.starttime
     self.opdict['endtime']=args.endtime
@@ -269,7 +284,6 @@ class WavelocOptions(object):
 
     self.opdict['dd_loc']=args.dd_loc
 
-
   def set_test_options(self):
     self.opdict['time']=True
     self.opdict['verbose']=False
@@ -298,6 +312,10 @@ class WavelocOptions(object):
     self.opdict['kwin']=4
     self.opdict['krec']=False
     self.opdict['kderiv']=True
+    self.opdict['gauss']=False
+    self.opdict['gthreshold']=0.1
+    self.opdict['mu']=0
+    self.opdict['sigma']=0.1
 
     self.opdict['data_length']=600
     self.opdict['data_overlap']=20
@@ -305,6 +323,7 @@ class WavelocOptions(object):
     self.opdict['dataglob']='*filt.mseed'
     self.opdict['kurtglob']='*kurt.mseed'
     self.opdict['gradglob']='*grad.mseed'
+    self.opdict['gaussglob']='*gauss.mseed'
 
     self.opdict['load_ttimes_buf']=True
 
@@ -436,6 +455,18 @@ class WavelocOptions(object):
     if not self.opdict.has_key('kwin'):
         raise UserWarning('kwin option not set')
 
+  def _verify_gthreshold(self):
+    if not self.opdict.has_key('gthreshold'):
+        raise UserWarning('gthreshold option not set')
+
+  def _verify_mu(self):
+    if not self.opdict.has_key('mu'):
+        raise UserWarning('mu option not set')
+
+  def _verify_sigma(self):
+    if not self.opdict.has_key('sigma'):
+        raise UserWarning('sigma option not set')
+
   def _verify_dataglob(self):
     if not self.opdict.has_key('dataglob'):
         raise UserWarning('dataglob option not set')
@@ -465,6 +496,16 @@ class WavelocOptions(object):
     grad_names=glob.glob(os.path.join(datadir,self.opdict['gradglob']))
     if len(grad_names)==0: 
         raise UserWarning('No kurtosis gradient files found : %s'%grad_names)
+
+  def _verify_gaussglob(self):
+    if not self.opdict.has_key('gaussglob'):
+        raise UserWarning('gaussglob option not set')
+    self._verify_datadir()
+    base_path=self.opdict['base_path']
+    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    gauss_names=glob.glob(os.path.join(datadir,self.opdict['gaussglob']))
+    if len(gauss_names)==0: 
+        raise UserWarning('No gaussian files found : %s'%gauss_names)
 
   def _verify_time_grid(self):
     if not self.opdict.has_key('time_grid'):
@@ -651,6 +692,10 @@ class WavelocOptions(object):
     self._verify_c2()
     self._verify_kwin()
 
+    if self.opdict['gauss']:
+      self._verify_gthreshold()
+      self._verify_mu()
+      self._verify_sigma()
 
   def verify_migration_options(self):
 
@@ -659,7 +704,12 @@ class WavelocOptions(object):
     self._verify_datadir()
     self._verify_outdir()
 
-    self._verify_gradglob()
+    self._verify_kurtglob()
+    if self.opdict['kderiv']:
+      self._verify_gradglob()
+      if self.opdict['gauss']:
+        self._verify_gaussglob()
+
     self._verify_starttime()
     self._verify_endtime()
     self._verify_data_length()
@@ -681,8 +731,6 @@ class WavelocOptions(object):
     self._verify_outdir()
 
     self._verify_kurtglob()
-    self._verify_gradglob()
-
 
     self._verify_loclevel()
     self._verify_snr_loclevel()

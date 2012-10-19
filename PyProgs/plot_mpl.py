@@ -2,6 +2,7 @@ import os, h5py, logging
 import numpy as np
 import scipy.integrate as si
 import matplotlib.pyplot as plt
+from matplotlib import mpl
 from integrate4D import *
 from filters import smooth
 from copy import deepcopy
@@ -176,7 +177,6 @@ def plotDiracTest(test_info,fig_dir):
   max_y=f_stack['max_y']
   max_z=f_stack['max_z']
   
-  plt.clf()
 
   # set up the 4 axes
   x=np.arange(nx)*dx
@@ -188,28 +188,54 @@ def plotDiracTest(test_info,fig_dir):
   else:
     t=np.arange(nt)*dt
 
+  # set time origin to o_time
+  #t=t-it_true*dt
+
   # do plot
+  plt.clf()
+  fig=plt.figure()
+
+
+  if test_info.has_key('true_values') and test_info.has_key('o_time'): 
+    fig.suptitle('%s   x = %.2fkm  y = %.2fkm  z = %.2fkm'%(test_info['o_time'].isoformat(), x_true, y_true, z_true))
 
   # plot xy plane
-  plt.subplot(3,3,1)
-  p=plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
-  plt.xlabel('x (km wrt ref)')
-  plt.ylabel('y (km wrt ref)')
-  plt.title('XY plane')
+  p=plt.subplot(2,2,1)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0]-0.08,pos[1]+pos[3], '(a)', fontsize=12)
+  plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
+ # if test_info.has_key('x_err'):
+ #     x_low,x_high=test_info['x_err']
+ #     plt.vlines(x_low,np.min(y),np.max(y),'w',linewidth=1)
+ #     plt.vlines(x_high,np.min(y),np.max(y),'w',linewidth=1)
+  p.tick_params(labelsize=10)
+  p.xaxis.set_ticks_position('top')
+  plt.xlabel('x (km wrt ref)',size=10)
+  plt.ylabel('y (km wrt ref)',size=10)
+  #plt.title('XY plane')
 
   #plot xz plane
-  plt.subplot(3,3,2)
-  p=plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
-  plt.xlabel('x (km wrt ref)')
-  plt.ylabel('z (km up)')
-  plt.title('XZ plane')
+  p=plt.subplot(4,2,5)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0]-0.08,pos[1]+pos[3], '(b)', fontsize=12)
+  plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
+  p.tick_params(labelsize=10)
+  p.xaxis.set_ticks_position('top')
+  p.xaxis.set_ticks(())
+  #plt.xlabel('x (km wrt ref)')
+  plt.ylabel('z (km up)',size=10)
+  #plt.title('XZ plane')
 
   # plot yz plane
-  plt.subplot(3,3,3)
-  p=plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
-  plt.xlabel('y (km wrt ref)')
-  plt.ylabel('z (km up)')
-  plt.title('YZ plane')
+  p=plt.subplot(4,2,7)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0]-0.08,pos[1]+pos[3], '(c)', fontsize=12)
+  plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
+  p.xaxis.set_ticks_position('bottom')
+  p.tick_params(labelsize=10)
+  plt.xlabel('y (km wrt ref)',size=10)
+  plt.ylabel('z (km up)',size=10)
+  #plt.title('YZ plane')
 
   # choose portion of time series to plot
   if test_info.has_key('true_values'):
@@ -219,14 +245,25 @@ def plotDiracTest(test_info,fig_dir):
     llim = t[it_true]-2.0
     rlim = t[it_true]+2.0
 
+  illim = int((llim-t[0])/dt)
+  irlim = int((rlim-t[0])/dt)
+
   # plot max value
-  p=plt.subplot(3,1,2)
+  p=plt.subplot(4,2,2, frameon=False)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0],pos[1]+pos[3], '(d)', fontsize=12)
+  p.tick_params(labelsize=10)
   plt.plot(t,max_val)
-  plt.xlabel('t (s)')
-  plt.ylabel('Stack max ')
-  plt.title('Maximum of stack')
+  #plt.xlabel('t (s)')
+  p.xaxis.set_ticks_position('none')
+  p.xaxis.set_ticks(())
+  plt.ylabel('Stack max',size=10)
+  p.yaxis.set_ticks_position('right')
+  #plt.title('Maximum of stack')
   p.set_xlim(llim,rlim)
   p.set_ylim(0,max(max_val))
+  #p.xaxis.set_ticks_position('bottom')
+  #p.xaxis.set_ticks()
   plt.vlines(t[it_true],0,max(max_val),'r',linewidth=2)
   if test_info.has_key('t_err'):
       t_left,t_right=test_info['t_err']
@@ -238,16 +275,24 @@ def plotDiracTest(test_info,fig_dir):
   z=np.arange(nz)*dz+z_orig
 
   # plot max x
-  p=plt.subplot(3,3,7)
-  plt.plot(t,max_x)
-  plt.xticks([llim,t[it_true],rlim])
-  plt.xlabel('t (s)')
-  plt.ylabel('x (km) ')
-  plt.title('x at maximum')
+  p=plt.subplot(4,2,4, frameon=False)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0],pos[1]+pos[3], '(e)', fontsize=12)
+  p.tick_params(labelsize=10)
+  #plt.plot(t,max_x,'b.',clip_on=False)
+  plt.scatter(t[illim:irlim],max_x[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
+  #plt.xticks([llim,t[it_true],rlim])
+  #plt.xlabel('t (s)')
+  p.xaxis.set_ticks_position('none')
+  p.xaxis.set_ticks(())
+  plt.ylabel('x (km)',size=10)
+  p.yaxis.set_ticks_position('right')
+  #plt.title('x at maximum')
   p.set_xlim(llim,rlim)
   if test_info.has_key('true_values'):
-    plt.vlines(t_true,min(max_x),max(max_x),'r',linewidth=2)
-    plt.hlines(x_true,llim,rlim,'r',linewidth=2)
+    if not test_info.has_key('t_err'):
+      plt.hlines(x_true,llim,rlim,'r',linewidth=2)
+      plt.vlines(t_true,min(max_x),max(max_x),'r',linewidth=2)
   else:
     plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
     plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
@@ -259,16 +304,24 @@ def plotDiracTest(test_info,fig_dir):
       plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   # plot max y
-  p=plt.subplot(3,3,8)
-  plt.plot(t,max_y)
-  plt.xticks([llim,t[it_true],rlim])
-  plt.xlabel('t (s)')
-  plt.ylabel('y (km) ')
-  plt.title('y at maximum')
+  p=plt.subplot(4,2,6, frameon=False)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0],pos[1]+pos[3], '(f)', fontsize=12)
+  p.tick_params(labelsize=10)
+  #plt.plot(t,max_y,'b.')
+  plt.scatter(t[illim:irlim],max_y[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
+  #plt.xticks([llim,t[it_true],rlim])
+  #plt.xlabel('t (s)')
+  p.xaxis.set_ticks_position('none')
+  p.xaxis.set_ticks(())
+  plt.ylabel('y (km)',size=10)
+  p.yaxis.set_ticks_position('right')
+  #plt.title('y at maximum')
   p.set_xlim(llim,rlim)
   if test_info.has_key('true_values'):
-    plt.hlines(y_true,llim,rlim,'r',linewidth=2)
-    plt.vlines(t_true,min(max_y),max(max_y),'r',linewidth=2)
+    if not test_info.has_key('t_err'):
+      plt.hlines(y_true,llim,rlim,'r',linewidth=2)
+      plt.vlines(t_true,min(max_y),max(max_y),'r',linewidth=2)
   else:
     plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
     plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
@@ -280,16 +333,23 @@ def plotDiracTest(test_info,fig_dir):
       plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   # plot max z
-  p=plt.subplot(3,3,9)
-  plt.plot(t,max_z)
-  plt.xticks([llim,t[it_true],rlim])
-  plt.xlabel('t (s)')
-  plt.ylabel('z (km down) ')
-  plt.title('z at maximum')
+  p=plt.subplot(4,2,8, frameon=False)
+  pos=list(p.get_position().bounds)
+  fig.text(pos[0],pos[1]+pos[3], '(g)', fontsize=12)
+  p.tick_params(labelsize=10)
+  #plt.plot(t,max_z,'b.')
+  plt.scatter(t[illim:irlim],max_z[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
+  #plt.xticks([llim,t[it_true],rlim])
+  plt.xlabel('Time (s)',size=10)
+  p.xaxis.set_ticks_position('bottom')
+  plt.ylabel('z (km down)',size=10)
+  p.yaxis.set_ticks_position('right')
+  #plt.title('z at maximum')
   p.set_xlim(llim,rlim)
   if test_info.has_key('true_values'):
-    plt.hlines(z_true,llim,rlim,'r',linewidth=2)
-    plt.vlines(t_true,min(max_z),max(max_z),'r',linewidth=2)
+    if not test_info.has_key('t_err'):
+      plt.hlines(z_true,llim,rlim,'r',linewidth=2)
+      plt.vlines(t_true,min(max_z),max(max_z),'r',linewidth=2)
   else:
     plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
     plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
@@ -300,7 +360,17 @@ def plotDiracTest(test_info,fig_dir):
       t_left,t_right=test_info['t_err']
       plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
-  plt.tight_layout()
+  # add independent colorbar
+  ax1 = fig.add_axes([0.40, 0.03, 0.2, 0.015])
+  ax1.tick_params(labelsize=8)
+  ax1.xaxis.set_ticks_position('bottom')
+  cmap = mpl.cm.jet
+  norm = mpl.colors.Normalize(vmin=min(max_val), vmax=max(max_val))
+  cb = mpl.colorbar.ColorbarBase(ax1, cmap=cmap, norm=norm, orientation='horizontal')
+  pos=list(ax1.get_position().bounds)
+  fig.text(pos[0]+pos[2]/2.,pos[1]+pos[3]+0.01, 'Stack max', fontsize=8, horizontalalignment='center', verticalalignment='bottom')
+
+  #plt.tight_layout()
   plt.savefig(fig_filename)
 
   f.close()

@@ -9,8 +9,7 @@ import logging
 
 def do_SDS_processing_setup_and_run(opdict):
 
-  #get waveloc path from environment
-  base_path=os.getenv('WAVELOC_PATH')
+  base_path=opdict['base_path']
 
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
 
@@ -58,7 +57,16 @@ def do_SDS_processing_setup_and_run(opdict):
               logging.debug("Processing to create %s" % (kurt_grad_filename))
               wf.take_positive_derivative(pre_taper=True,post_taper=True)
               wf.write_to_file_filled(kurt_grad_filename,format='MSEED',fill_value=0)
-  
+
+            if opdict['gauss']:
+              thres=opdict['gthreshold']
+              mu=opdict['mu']
+              sigma=opdict['sigma']
+              gauss_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt_grad_gauss.mseed"%(start_time.isoformat(),net,sta,comp))
+              logging.debug("Processing to create %s" % (gauss_filename))
+              wf.process_gaussian(thres,mu,sigma)
+              wf.write_to_file_filled(gauss_filename,format='MSEED',fill_value=0)
+
           except UserWarning:
             logging.info('No data within time limits for %s %s %s'%(net,sta,comp))
 

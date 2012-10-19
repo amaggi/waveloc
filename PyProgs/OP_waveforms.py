@@ -734,6 +734,46 @@ class Waveform(object):
     # set the process flag
     self.proc='Kurtosis'
 
+
+  def process_gaussian(self,threshold,mu=0,sigma=0.1):
+    """
+    Replace local maxima by a series of dirac and convolve them with a gaussian distribution    
+    
+    Overwrites the waveform.
+    
+    :param threshold: value over which the convolution is applied
+    :param mu: expected value of the gaussian distribution
+    :param sigma: variance of the gaussian distribution
+    """
+
+    logging.info("Convolving traces with a gaussian distribution\n")
+
+    dt=self.dt
+
+    y=compute_gauss(dt,mu,sigma)
+
+    # process each trace independently
+    for itr in range(self.stream.count()):
+      tr=self.stream.traces[itr]
+
+      tr_dirac=np.zeros(len(tr))
+      tr_new=np.zeros(len(tr))
+
+      trigs=trigger.triggerOnset(tr.data,threshold,threshold)
+      for trig in trigs:
+        istart=trig[0] 
+        iend=trig[-1]
+        if istart != iend:
+          imax=np.argmax(tr.data[istart:iend+1])+istart
+        else:
+          imax=istart
+        tr_dirac[imax]=np.max(tr.data[imax])
+
+      tr.data=np.convolve(tr_dirac,y,mode='same')
+
+      self.stream.traces[itr]=tr
+
+
 #########################
 # Functions
 #########################
@@ -835,6 +875,10 @@ def process_all_data_kurtosis(files, start_time, end_time, filter_c1, filter_c2,
     wf.write_to_file_filled(file_kurtosis, format='SAC')
  
 
-
+def compute_gauss(dt,mu,sig):
+  win=4*sig
+  x=np.array(np.arange(-win,win,dt))
+  y=1/(sig*np.sqrt(2*np.pi))*np.exp(-(x-mu)**2/(2*sig**2))
+  return y/np.max(y)
 
 
