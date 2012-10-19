@@ -59,13 +59,12 @@ def do_SDS_processing_setup_and_run(opdict):
               wf.write_to_file_filled(kurt_grad_filename,format='MSEED',fill_value=0)
 
             if opdict['gauss']:
-              gwin=opdict['gwin']
               thres=opdict['gthreshold']
               mu=opdict['mu']
               sigma=opdict['sigma']
               gauss_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt_grad_gauss.mseed"%(start_time.isoformat(),net,sta,comp))
               logging.debug("Processing to create %s" % (gauss_filename))
-              wf.process_gaussian(gwin,thres,mu,sigma)
+              wf.process_gaussian(thres,mu,sigma)
               wf.write_to_file_filled(gauss_filename,format='MSEED',fill_value=0)
 
           except UserWarning:
