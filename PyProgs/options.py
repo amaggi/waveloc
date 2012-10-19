@@ -720,7 +720,7 @@ class WavelocOptions(object):
     self._verify_time_grid()
 
     self._verify_reloc()
-    if opdict['reloc']:
+    if self.opdict['reloc']:
       self._verify_reloc_snr()
 
   def verify_location_options(self):

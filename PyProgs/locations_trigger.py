@@ -194,7 +194,7 @@ def do_locations_trigger_setup_and_run(opdict):
   last_end_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val)
   f_stack.close()
 
-  nt_full=int((last_end_time-first_start_time)/dt)
+  nt_full=int((last_end_time-first_start_time)/dt)+1
 
   # create - assume all stacks are of the same length and will be concatenated end to end 
   #          (this will give more than enough space) 

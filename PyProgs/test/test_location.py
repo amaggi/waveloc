@@ -49,7 +49,7 @@ class TriggeringTests(unittest.TestCase):
     from filters import smooth
 
     x=np.arange(100)
-    max_val=10.*np.exp(-(x-50.)*(x-50.)/(10.*10.))+np.random.rand(100)
+    max_val=100.*np.exp(-(x-50.)*(x-50.)/(10.*10.))+np.random.rand(100)
     max_x=np.random.rand(100)
     max_y=np.random.rand(100)
     max_z=np.random.rand(100)

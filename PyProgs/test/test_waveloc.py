@@ -56,19 +56,21 @@ class SetupTests(unittest.TestCase):
 
 if __name__ == '__main__':
 
-  import test_processing, test_migration, test_location, test_hdf5, test_nllstuff
+  import test_processing, test_migration, test_location, test_hdf5, test_nllstuff, test_correlation
   import logging
   logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
 
-  suite01 = suite()
-  suite02 = test_processing.suite()
-  suite03 = test_migration.suite()
-  suite04 = test_location.suite()
-  suite05 = test_hdf5.suite()
-  suite06 = test_nllstuff.suite()
+  suite_list=[suite(),
+    test_processing.suite(),
+    test_migration.suite(),
+    test_location.suite(),
+    test_hdf5.suite(),
+    test_nllstuff.suite(),
+    test_correlation.suite(),
+    ]
 
-  alltests=unittest.TestSuite([suite01, suite02, suite03, suite04, suite05, suite06])
+  alltests=unittest.TestSuite(suite_list)
 
   unittest.TextTestRunner(verbosity=2).run(alltests)
  
