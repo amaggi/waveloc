@@ -88,36 +88,6 @@ def lfilter_zi(b,a):
     
     return array(zi_return)
 
-def narrowband(x,f,bw):
-    """
-    Narrow-band filter x around normalized frequency f with normalized
-    band-with bw
-    """
-    b,a = _get_narrowband_ba(x,f,bw)
-    xs=lfilter(b,a,x)
-    return xs
-
-def _get_narrowband_ba(x,f,bw):
-    """
-    Calculates the a and b coefficients for a recursive iir narrowband filter,
-    for use with scipy.filter.lfilter.
-    Central frequency f and bandwidth bw are both a-dimensional (normalized by
-    sampling frequency.
-    Implements formula from Eq. 19-6 of The Scientists and Engineer's guide to
-    Digital Signal Processing.
-    """
-    R = 1 - 3*bw
-    K = (1 - 2*R*np.cos(2*np.pi*f) + R*R) / (2-2*np.cos(2*np.pi*f))
-    b0 = 1-K
-    b1 = 2*(K-R)*np.cos(2*np.pi*f)
-    b2 = R*R-K
-    a0 = 1.0
-    a1 = 2*R*np.cos(2*np.pi*f)
-    a2 = -R*R
-    return np.array([b0, b1, b2]), np.array([a0, a1, a2])
-    
-
-
     
 def filtfilt(b,a,x):
     """
