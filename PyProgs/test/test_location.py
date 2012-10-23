@@ -3,6 +3,7 @@ import numpy as np
 from options import WavelocOptions
 from OP_waveforms import Waveform
 from locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
+from locations_prob import do_locations_prob_setup_and_run
 from NllGridLib import *
 from integrate4D import *
 
@@ -10,9 +11,10 @@ def suite():
   suite = unittest.TestSuite()
   suite.addTest(IntegrationTests('test_integration'))
   suite.addTest(IntegrationTests('test_expected_values'))
+  suite.addTest(IntegrationTests('test_reshaping'))
   suite.addTest(LocationTests('test_locations_trigger'))
   suite.addTest(LocationTests('test_locations_trigger_fullRes'))
-#  suite.addTest(LocationTests('test_locations_prob'))
+  suite.addTest(LocationTests('test_locations_prob'))
 #  suite.addTest(LocationTests('test_locations_prob_fullRes'))
   suite.addTest(TriggeringTests('test_simple_trigger'))
   suite.addTest(TriggeringTests('test_smoothing'))
@@ -108,7 +110,6 @@ class IntegrationTests(unittest.TestCase):
     my_exp3=x3[7]
 
 
-    #grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
     exp0,exp1,exp2,exp3,cov_matrix = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3)
     var_x0=cov_matrix[0,0]
     var_x1=cov_matrix[1,1]
@@ -124,6 +125,17 @@ class IntegrationTests(unittest.TestCase):
     self.assertAlmostEqual(var_x1,0.0,7)
     self.assertAlmostEqual(var_x2,0.0210,4)
     self.assertAlmostEqual(var_x3,0.0,7)
+
+  def test_reshaping(self):
+    true_dims=(20,30,40,50)
+    dims_2D  =(20*30*40,50)
+    array_2D = np.zeros(dims_2D)
+    array_2D[:,20]=1
+
+    array_4D=array_2D.reshape(true_dims)
+    np.testing.assert_allclose(array_4D.shape, true_dims)
+    np.testing.assert_allclose(array_4D[:,:,:,20], np.ones((20,30,40)))
+    np.testing.assert_allclose(array_4D[:,:,:,21], np.zeros((20,30,40)))
 
 #@unittest.skip('Skipping location tests')
 class LocationTests(unittest.TestCase):
@@ -179,30 +191,20 @@ class LocationTests(unittest.TestCase):
 
     self.assertEquals(lines,exp_lines)
 
-#  @unittest.skip('Not bothering with low res test')
   def test_locations_prob(self):
 
-    self.wo.opdict['search_grid'] = 'test_grid.search.hdr'
     self.wo.opdict['outdir']='TEST'
-
     self.wo.verify_location_options()
-    self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']
-    test_datadir=self.wo.opdict['test_datadir']
     outdir=self.wo.opdict['outdir']
 
-    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_locations_prob.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
+    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
+    prob_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
 
     do_locations_prob_setup_and_run(self.wo.opdict)
 
-    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
-
-    self.assertEquals(lines,exp_lines)
+    self.assertTrue(False)
 
 
 #  @unittest.skip('Not bothering with high res test')

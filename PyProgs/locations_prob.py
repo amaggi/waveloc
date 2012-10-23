@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys, optparse, glob, logging
+import os, sys, optparse, h5py
+import glob, logging
 import numpy as np
-from obspy.core import *
-from obspy.signal import *
-from filters import smooth
-from locations_trigger import filter_max_stack, number_good_kurtosis_for_location
-from grids_paths import StationList, ChannelList, QDTimeGrid, QDGrid
-from OP_waveforms import Waveform, read_data_compatible_with_time_dict
-from sub_PdF_waveloc import do_innermost_migration_loop
-from integrate4D import *
-from plot_mpl import *
 
+from OP_waveforms import Waveform
+from obspy.core import read, UTCDateTime
+from locations_trigger import read_locs_from_file
+from NllGridLib import read_stations_file,read_hdr_file
+from hdf5_grids import get_interpolated_time_grids
+from migration import do_migration_loop_continuous
+from OP_waveforms import read_data_compatible_with_time_dict
+from integrate4D import compute_expected_coordinates4D
 
 def trigger_detections(st_max,loc_level):
 
@@ -151,58 +151,132 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
 
 def do_locations_prob_setup_and_run(opdict):
 
+  # get / set info
   base_path=opdict['base_path']
-  outdir=opdict['outdir']
-  datadir=opdict['datadir']
-  kurtglob=opdict['kurtglob']
-  # set up some paths
-  data_path= os.path.join(base_path,'data',datadir)
-  stack_path=os.path.join(base_path,'out',outdir,'stack')
-  loc_path=  os.path.join(base_path,'out',outdir,'loc')
-  loc_filename=os.path.join(loc_path,'locations_prob.dat')
 
-  kurt_files=glob.glob(os.path.join(data_path,kurtglob))
+  locfile=os.path.join(base_path,'out',opdict['outdir'],'loc','locations.dat')
+  locfile_prob=os.path.join(base_path,'out',opdict['outdir'],'loc','locations_prob.dat')
+  f_prob=open(locfile_prob,'w')
+
+  # if locfile does not exist then make it by running trigger location
+  if not os.path.exists(locfile):
+    logging.info('No location found at %s.  Running trigger location first...'%locfile)
+    do_locations_trigger_setup_and_run(opdict)
+
+  # directories
+  grid_dir=os.path.join(base_path,'out',opdict['outdir'],'grid')
+  output_dir=os.path.join(base_path,'out',opdict['outdir'])
+
+  # data files
+  data_dir=os.path.join(base_path,'data',opdict['datadir'])
+  data_glob=opdict['dataglob']
+  kurt_glob=opdict['kurtglob']
+  grad_glob=opdict['gradglob']
+  data_files=glob.glob(os.path.join(data_dir,data_glob))
+  kurt_files=glob.glob(os.path.join(data_dir,kurt_glob))
+  grad_files=glob.glob(os.path.join(data_dir,grad_glob))
+  data_files.sort()
   kurt_files.sort()
+  grad_files.sort()
 
-  logging.info("Path for stack files : %s"%stack_path)
-  logging.info("Path for loc files : %s"%loc_path)
-  logging.info("Location file : %s"%loc_filename)
+  # stations
+  stations_filename=os.path.join(base_path,'lib',opdict['stations'])
+  stations=read_stations_file(stations_filename)
 
-  logging.info("Merging and filtering stack files ...")
-  st_max=read(os.path.join(stack_path,"stack_max*"))
-  st_max.write(os.path.join(stack_path,"combined_stack_max.mseed"),format='MSEED')
+  # grids
+  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
+  search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
 
-  st_max_filt=filter_max_stack(st_max,1.0)
-  st_max_filt.write(os.path.join(stack_path,"combined_stack_max_filt.mseed"),format='MSEED')
+  # read time grid information
+  time_grids=get_interpolated_time_grids(opdict)
 
-  loclevel=opdict['loclevel']
-  detection_list=trigger_detections(st_max_filt,loclevel)
+  # read locations
+  locs=read_locs_from_file(locfile)
 
-  logging.debug(detection_list)
 
-  locs=[]
-  for (starttime,endtime) in detection_list:
+  # iterate over locations
+  for loc in locs:
+
+    # create the appropriate grid on the fly
+
+    # generate the grids
+    o_time=loc['o_time']
+    start_time=o_time-loc['o_err_left']
+    end_time=o_time+loc['o_err_right']
+
+    # make a buffer for migration
+    start_time_migration = start_time - 10.0
+    end_time_migration   =   end_time + 10.0
+
+    # re-read grid info to ensure clean copy
+    grid_info=read_hdr_file(search_grid_filename)
+ 
+    # read data
+    grad_dict,delta = read_data_compatible_with_time_dict(grad_files,
+          time_grids, start_time_migration, end_time_migration)
+
+    # do migration (all metadata on grid is added to grid_info)
+    do_migration_loop_continuous(opdict, grad_dict, delta,
+          start_time_migration, grid_info, time_grids, keep_grid=True)
+
+
+    # integrate to get the marginal probability density distributions
+
+    # get required info
+    grid_starttime=grid_info['start_time']
+    nx,ny,nz,nt=grid_info['grid_shape']
+    dx,dy,dz,dt=grid_info['grid_spacing']
+    x_orig,y_orig,z_orig=grid_info['grid_orig']
+
+    # we are only interested in the time around the origin time of the event
+    it_left  = np.int(np.round((start_time - grid_starttime)/dt))
+    it_right = np.int(np.round((end_time   - grid_starttime)/dt))
+    nt=(it_right-it_left)+1
+
+    # set up integration axes (wrt reference)
+    x=np.arange(nx)*dx
+    y=np.arange(ny)*dy
+    z=np.arange(nz)*dz
+    t=np.arange(nt)*dt
+
+    # open the grid file
+    grid_filename=grid_info['dat_file']
+    f=h5py.File(grid_filename,'r')
+    stack_grid=f['stack_grid']
+
+    # extract the portion of interest (copy data)
+    stack_4D=np.empty((nx,ny,nz,nt))
+    stack_4D[:] = stack_grid[:,it_left:it_right+1].reshape(nx,ny,nz,nt)
+
+    # close the grid file
+    f.close()
+
+    # Get expected values (normalizes grid internally)
+    exp_x, exp_y, exp_z, exp_t, cov_matrix, prob_dict = \
+      compute_expected_coordinates4D(stack_4D,x,y,z,t,return_2Dgrids=True)
     
-    loc=compute_stats_from_4Dgrid(opdict,starttime,endtime)
-    locs.append(loc)
+    # save the marginals to a hdf5 file in loc subdirectory
+
+    # put reference location back
+    exp_x = exp_x + x_orig
+    exp_y = exp_y + y_orig
+    exp_z = exp_z + z_orig
+    exp_t = start_time + exp_t
+
+    # extract uncertainties from covariance matrix
+    sig_x,sig_y,sig_z,sig_t = np.sqrt(np.diagonal(cov_matrix))
 
 
-  # write to file
-  loc_file=open(loc_filename,'w')
 
-  snr_limit=opdict['snr_limit']
-  sn_time=opdict['sn_time']
-  n_kurt_min=opdict['n_kurt_min']
+    # write the expected values to a plain text locations file
 
+    f_prob.write("PROB DENSITY : Time %s s pm %.2fs, x=%.4f pm %.4f, \
+      y=%.4f pm %.4f, z=%.4f pm %.4f\n" % (exp_t.isoformat(), sig_t, \
+      exp_x, sig_x, exp_y, sig_y, exp_z, sig_z))
 
-  n_ok=0
-  for (exp_otime,sigma_t,exp_x,sigma_x,exp_y,sigma_y,exp_z,sigma_z) in locs:
-    if number_good_kurtosis_for_location(kurt_files,exp_otime,snr_limit,sn_time) > n_kurt_min:
-      logging.info("PROB DENSITY : Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f"%(exp_otime.isoformat(),sigma_t, exp_x, sigma_x,exp_y,sigma_y,exp_z,sigma_z))
-      loc_file.write("PROB DENSITY : Time %s s pm %.2fs, x=%.4f pm %.4f, y=%.4f pm %.4f, z=%.4f pm %.4f\n"%(exp_otime.isoformat(),sigma_t, exp_x, sigma_x,exp_y,sigma_y,exp_z,sigma_z))
-      n_ok=n_ok+1
-  loc_file.close()
-  logging.info('Wrote %d locations to file %s.'%(n_ok,loc_filename))
+  # close location file
+  f_prob.close()
+
 
 
 if __name__=='__main__':
