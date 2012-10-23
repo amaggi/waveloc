@@ -176,27 +176,25 @@ def do_locations_trigger_setup_and_run(opdict):
   # get basic info from first file
   f_stack = h5py.File(stack_files[0],'r')
   max_val = f_stack['max_val']
-  nt0 = len(max_val)
-  first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
   dt = max_val.attrs['dt']
   f_stack.close()
 
-  # get start time
-  f_stack = h5py.File(stack_files[0],'r')
-  max_val = f_stack['max_val']
-  first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
-  dt = max_val.attrs['dt']
-  f_stack.close()
-
-  # get end time
-  f_stack = h5py.File(stack_files[-1],'r')
-  max_val = f_stack['max_val']
-  last_end_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val)
-  f_stack.close()
-
+  # get start times  (get first and last times)
+  start_times=[]
+  end_times=[]
+  for fname in stack_files:
+    f_stack = h5py.File(fname,'r')
+    max_val = f_stack['max_val']
+    start_times.append(utcdatetime.UTCDateTime(max_val.attrs['start_time']))
+    end_times.append(  utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val))
+    f_stack.close()
+  
+  #import pdb; pdb.set_trace()
+  first_start_time = min(start_times)
+  last_end_time = max(end_times)
+    
   nt_full=int((last_end_time-first_start_time)/dt)+1
 
-  import pdb; pdb.set_trace()
 
   # create - assume all stacks are of the same length and will be concatenated end to end 
   #          (this will give more than enough space) 

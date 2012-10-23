@@ -2,7 +2,8 @@ import os, glob, unittest
 import numpy as np
 from options import WavelocOptions
 from OP_waveforms import Waveform
-from locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
+from locations_trigger import do_locations_trigger_setup_and_run, \
+    trigger_locations_inner, read_locs_from_file
 from locations_prob import do_locations_prob_setup_and_run
 from NllGridLib import *
 from integrate4D import *
@@ -158,16 +159,26 @@ class LocationTests(unittest.TestCase):
     outdir=self.wo.opdict['outdir']
 
     exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_locations.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
+    exp_locs=read_locs_from_file(exp_loc_fname)
 
     do_locations_trigger_setup_and_run(self.wo.opdict)
 
     loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
+    locs=read_locs_from_file(loc_fname)
 
-    self.assertEquals(lines,exp_lines)
+    self.assertEqual(len(locs),len(exp_locs))
+    for i in xrange(len(locs)):
+      loc=locs[i]
+      exp_loc=exp_locs[i]
+      self.assertGreater(loc['o_time'] , exp_loc['o_time']-exp_loc['o_err_left'])
+      self.assertLess(loc['o_time'] ,    exp_loc['o_time']+exp_loc['o_err_right'])
+      self.assertLess(np.abs(loc['x_mean']-exp_loc['x_mean']), exp_loc['x_sigma'])
+      self.assertLess(np.abs(loc['x_mean']-exp_loc['x_mean']),     loc['x_sigma'])
+      self.assertLess(np.abs(loc['y_mean']-exp_loc['y_mean']), exp_loc['y_sigma'])
+      self.assertLess(np.abs(loc['y_mean']-exp_loc['y_mean']),     loc['y_sigma'])
+      self.assertLess(np.abs(loc['z_mean']-exp_loc['z_mean']), exp_loc['z_sigma'])
+      self.assertLess(np.abs(loc['z_mean']-exp_loc['z_mean']),     loc['z_sigma'])
+
 
   @unittest.skip('Not running full resolution trigger test')
   def test_locations_trigger_fullRes(self):
