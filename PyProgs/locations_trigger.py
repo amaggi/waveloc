@@ -189,7 +189,6 @@ def do_locations_trigger_setup_and_run(opdict):
     end_times.append(  utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val))
     f_stack.close()
   
-  #import pdb; pdb.set_trace()
   first_start_time = min(start_times)
   last_end_time = max(end_times)
     

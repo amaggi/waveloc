@@ -1,4 +1,4 @@
-import os, glob, unittest
+import os, glob, unittest, h5py
 import numpy as np
 from options import WavelocOptions
 from OP_waveforms import Waveform
@@ -189,11 +189,13 @@ class LocationTests(unittest.TestCase):
 
     loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
     prob_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
+    hdf5_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.hdf5')
 
-    do_locations_prob_setup_and_run(self.wo.opdict)
+    do_locations_prob_setup_and_run(self.wo.opdict, space_only=True)
 
     locs=read_locs_from_file(loc_fname)
     prob_locs=read_prob_locs_from_file(prob_fname)
+    f_marginals = h5py.File(hdf5_fname,'r')
 
     self.assertEqual(len(locs),len(prob_locs))
     for i in xrange(len(locs)):
@@ -206,12 +208,31 @@ class LocationTests(unittest.TestCase):
       self.assertLess(np.abs(loc['y_mean']-prob_loc['y_mean']), prob_loc['y_sigma'])
       self.assertLess(np.abs(loc['z_mean']-prob_loc['z_mean']), prob_loc['z_sigma'])
 
+      grp=f_marginals[prob_loc['o_time'].isoformat()]
+      nx=grp['x'].shape[0]
+      ny=grp['y'].shape[0]
+      nz=grp['z'].shape[0]
+      self.assertEqual(grp['prob_x'].shape,  (nx,))
+      self.assertEqual(grp['prob_y'].shape,  (ny,))
+      self.assertEqual(grp['prob_z'].shape,  (nz,))
+      self.assertEqual(grp['prob_xy'].shape, (nx,ny))
+      self.assertEqual(grp['prob_xz'].shape, (nx,nz))
+      self.assertEqual(grp['prob_yz'].shape, (ny,nz))
+      # if is a 4D grid
+      if 't' in grp :
+        nt=grp['t'].shape[0]
+        self.assertEqual(grp['prob_t'].shape,  (nt,))
+        self.assertEqual(grp['prob_xt'].shape, (nx,nt))
+        self.assertEqual(grp['prob_yt'].shape, (ny,nt))
+        self.assertEqual(grp['prob_zt'].shape, (nz,nt))
+
       # for now, trigger uncertainties are rather too small for comparison
       #self.assertLess(np.abs(loc['x_mean']-prob_loc['x_mean']),      loc['x_sigma'])
       #self.assertLess(np.abs(loc['y_mean']-prob_loc['y_mean']),      loc['y_sigma'])
       #self.assertLess(np.abs(loc['z_mean']-prob_loc['z_mean']),      loc['z_sigma'])
 
 
+    f_marginals.close()
 
 
 if __name__ == '__main__':
