@@ -196,13 +196,15 @@ def do_locations_trigger_setup_and_run(opdict):
 
   nt_full=int((last_end_time-first_start_time)/dt)+1
 
+  import pdb; pdb.set_trace()
+
   # create - assume all stacks are of the same length and will be concatenated end to end 
   #          (this will give more than enough space) 
   f = h5py.File(os.path.join(stack_path,'combined_stack_all.hdf5'),'w')
-  cmax_val = f.create_dataset('max_val',(nt_full,), 'f', chunks=(nt0,))
-  cmax_x = f.create_dataset('max_x',(nt_full,), 'f', chunks=(nt0,))
-  cmax_y = f.create_dataset('max_y',(nt_full,), 'f', chunks=(nt0,))
-  cmax_z = f.create_dataset('max_z',(nt_full,), 'f', chunks=(nt0,))
+  cmax_val = f.create_dataset('max_val',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_x = f.create_dataset('max_x',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_y = f.create_dataset('max_y',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_z = f.create_dataset('max_z',(nt_full,), 'f', chunks=(nt_full,))
 
   # concatenate unsmoothed versions of max_val to avoid 
   # problems at file starts and ends
