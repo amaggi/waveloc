@@ -12,8 +12,34 @@ from NllGridLib import read_stations_file,read_hdr_file
 from hdf5_grids import get_interpolated_time_grids
 from migration import do_migration_loop_continuous
 from OP_waveforms import read_data_compatible_with_time_dict
-from integrate4D import compute_expected_coordinates4D
+from integrate4D import compute_expected_coordinates4D, \
+                        compute_expected_coordinates3D
 
+def read_prob_locs_from_file(filename):
+  from obspy.core import utcdatetime
+
+  locs=[]
+
+  f=open(filename,'r')
+  lines=f.readlines()
+  f.close()
+
+  for line in lines:
+    loc={}
+
+    loc['o_time']=utcdatetime.UTCDateTime(line.split()[5])
+    loc['o_err']=np.float(line.split()[8])
+    loc['x_mean']=np.float(line.split()[11])
+    loc['x_sigma']=np.float(line.split()[13])
+    loc['y_mean']=np.float(line.split()[16])
+    loc['y_sigma']=np.float(line.split()[18])
+    loc['z_mean']=np.float(line.split()[21])
+    loc['z_sigma']=np.float(line.split()[23])
+
+    locs.append(loc)
+
+  return locs
+ 
 def trigger_detections(st_max,loc_level):
 
   logging.debug('Detecting using loc_level = %.2f'%loc_level)
@@ -149,7 +175,7 @@ def compute_stats_from_4Dgrid(opdict,starttime,endtime):
 
   return loc
 
-def do_locations_prob_setup_and_run(opdict):
+def do_locations_prob_setup_and_run(opdict,space_only=True):
 
   # get / set info
   base_path=opdict['base_path']
@@ -201,8 +227,12 @@ def do_locations_prob_setup_and_run(opdict):
 
     # generate the grids
     o_time=loc['o_time']
-    start_time=o_time-loc['o_err_left']
-    end_time=o_time+loc['o_err_right']
+    if space_only:
+        start_time=o_time
+        end_time  =o_time
+    else:
+        start_time=o_time-3*loc['o_err_left']
+        end_time=o_time+3*loc['o_err_right']
 
     # make a buffer for migration
     start_time_migration = start_time - 10.0
@@ -231,13 +261,15 @@ def do_locations_prob_setup_and_run(opdict):
     # we are only interested in the time around the origin time of the event
     it_left  = np.int(np.round((start_time - grid_starttime)/dt))
     it_right = np.int(np.round((end_time   - grid_starttime)/dt))
+    it_true  = np.int(np.round((o_time     - grid_starttime)/dt))
     nt=(it_right-it_left)+1
 
     # set up integration axes (wrt reference)
     x=np.arange(nx)*dx
     y=np.arange(ny)*dy
     z=np.arange(nz)*dz
-    t=np.arange(nt)*dt
+    if not space_only:
+      t=np.arange(nt)*dt
 
     # open the grid file
     grid_filename=grid_info['dat_file']
@@ -245,15 +277,23 @@ def do_locations_prob_setup_and_run(opdict):
     stack_grid=f['stack_grid']
 
     # extract the portion of interest (copy data)
-    stack_4D=np.empty((nx,ny,nz,nt))
-    stack_4D[:] = stack_grid[:,it_left:it_right+1].reshape(nx,ny,nz,nt)
+    if space_only:
+        stack_3D=np.empty((nx,ny,nz))
+        stack_3D[:] = stack_grid[:,it_true].reshape(nx,ny,nz)
+    else:
+        stack_4D=np.empty((nx,ny,nz,nt))
+        stack_4D[:] = stack_grid[:,it_left:it_right+1].reshape(nx,ny,nz,nt)
 
     # close the grid file
     f.close()
 
     # Get expected values (normalizes grid internally)
-    exp_x, exp_y, exp_z, exp_t, cov_matrix, prob_dict = \
-      compute_expected_coordinates4D(stack_4D,x,y,z,t,return_2Dgrids=True)
+    if space_only:
+        exp_x, exp_y, exp_z, cov_matrix, prob_dict = \
+            compute_expected_coordinates3D(stack_3D,x,y,z,return_2Dgrids=True)
+    else:
+        exp_x, exp_y, exp_z, exp_t, cov_matrix, prob_dict = \
+            compute_expected_coordinates4D(stack_4D,x,y,z,t,return_2Dgrids=True)
     
     # save the marginals to a hdf5 file in loc subdirectory
 
@@ -261,17 +301,24 @@ def do_locations_prob_setup_and_run(opdict):
     exp_x = exp_x + x_orig
     exp_y = exp_y + y_orig
     exp_z = exp_z + z_orig
-    exp_t = start_time + exp_t
+    if space_only:
+        exp_t = o_time
+    else:
+        exp_t = start_time + exp_t
 
     # extract uncertainties from covariance matrix
-    sig_x,sig_y,sig_z,sig_t = np.sqrt(np.diagonal(cov_matrix))
+    if space_only:
+        sig_x,sig_y,sig_z = np.sqrt(np.diagonal(cov_matrix))
+        sig_t = (loc['o_err_left']+loc['o_err_right'])/2.
+    else:
+        sig_x,sig_y,sig_z,sig_t = np.sqrt(np.diagonal(cov_matrix))
 
 
 
     # write the expected values to a plain text locations file
 
-    f_prob.write("PROB DENSITY : Time %s s pm %.2fs, x=%.4f pm %.4f, \
-      y=%.4f pm %.4f, z=%.4f pm %.4f\n" % (exp_t.isoformat(), sig_t, \
+    f_prob.write("PROB DENSITY : T = %s s pm %.2f s, x= %.4f pm %.4f km, \
+y= %.4f pm %.4f km, z= %.4f pm %.4f km\n" % (exp_t.isoformat(), sig_t, \
       exp_x, sig_x, exp_y, sig_y, exp_z, sig_z))
 
   # close location file

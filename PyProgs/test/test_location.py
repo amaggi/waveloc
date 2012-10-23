@@ -4,7 +4,8 @@ from options import WavelocOptions
 from OP_waveforms import Waveform
 from locations_trigger import do_locations_trigger_setup_and_run, \
     trigger_locations_inner, read_locs_from_file
-from locations_prob import do_locations_prob_setup_and_run
+from locations_prob import do_locations_prob_setup_and_run, \
+    read_prob_locs_from_file
 from NllGridLib import *
 from integrate4D import *
 
@@ -14,9 +15,7 @@ def suite():
   suite.addTest(IntegrationTests('test_expected_values'))
   suite.addTest(IntegrationTests('test_reshaping'))
   suite.addTest(LocationTests('test_locations_trigger'))
-  suite.addTest(LocationTests('test_locations_trigger_fullRes'))
   suite.addTest(LocationTests('test_locations_prob'))
-#  suite.addTest(LocationTests('test_locations_prob_fullRes'))
   suite.addTest(TriggeringTests('test_simple_trigger'))
   suite.addTest(TriggeringTests('test_smoothing'))
   suite.addTest(TriggeringTests('test_gaussian_trigger'))
@@ -180,28 +179,6 @@ class LocationTests(unittest.TestCase):
       self.assertLess(np.abs(loc['z_mean']-exp_loc['z_mean']),     loc['z_sigma'])
 
 
-  @unittest.skip('Not running full resolution trigger test')
-  def test_locations_trigger_fullRes(self):
-
-    self.wo.opdict['outdir']='TEST_fullRes'
-    self.wo.verify_location_options()
-
-    base_path=self.wo.opdict['base_path']
-    test_datadir=self.wo.opdict['test_datadir']
-    outdir=self.wo.opdict['outdir']
-
-    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_fullRes_locations.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
-
-    do_locations_trigger_setup_and_run(self.wo.opdict)
-
-    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
-
-    self.assertEquals(lines,exp_lines)
-
   def test_locations_prob(self):
 
     self.wo.opdict['outdir']='TEST'
@@ -215,33 +192,27 @@ class LocationTests(unittest.TestCase):
 
     do_locations_prob_setup_and_run(self.wo.opdict)
 
-    self.assertTrue(False)
+    locs=read_locs_from_file(loc_fname)
+    prob_locs=read_prob_locs_from_file(prob_fname)
+
+    self.assertEqual(len(locs),len(prob_locs))
+    for i in xrange(len(locs)):
+      loc=locs[i]
+      prob_loc=prob_locs[i]
+      self.assertGreater(prob_loc['o_time'] , loc['o_time']-loc['o_err_left'])
+      self.assertLess(   prob_loc['o_time'] , loc['o_time']+loc['o_err_right'])
+      self.assertLess(np.abs(loc['o_time']-prob_loc['o_time']), prob_loc['o_err'])
+      self.assertLess(np.abs(loc['x_mean']-prob_loc['x_mean']), prob_loc['x_sigma'])
+      self.assertLess(np.abs(loc['y_mean']-prob_loc['y_mean']), prob_loc['y_sigma'])
+      self.assertLess(np.abs(loc['z_mean']-prob_loc['z_mean']), prob_loc['z_sigma'])
+
+      # for now, trigger uncertainties are rather too small for comparison
+      #self.assertLess(np.abs(loc['x_mean']-prob_loc['x_mean']),      loc['x_sigma'])
+      #self.assertLess(np.abs(loc['y_mean']-prob_loc['y_mean']),      loc['y_sigma'])
+      #self.assertLess(np.abs(loc['z_mean']-prob_loc['z_mean']),      loc['z_sigma'])
 
 
-#  @unittest.skip('Not bothering with high res test')
-  def test_locations_prob_fullRes(self):
 
-    self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
-    self.wo.opdict['outdir']='TEST_fullRes'
-
-    self.wo.verify_location_options()
-    self.wo.verify_migration_options()
-
-    base_path=self.wo.opdict['base_path']
-    test_datadir=self.wo.opdict['test_datadir']
-    outdir=self.wo.opdict['outdir']
-
-    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_fullRes_locations_prob.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
-
-    do_locations_prob_setup_and_run(self.wo.opdict)
-
-    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
-
-    self.assertEquals(lines,exp_lines)
 
 if __name__ == '__main__':
 
