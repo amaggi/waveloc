@@ -176,33 +176,32 @@ def do_locations_trigger_setup_and_run(opdict):
   # get basic info from first file
   f_stack = h5py.File(stack_files[0],'r')
   max_val = f_stack['max_val']
-  nt0 = len(max_val)
-  first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
   dt = max_val.attrs['dt']
   f_stack.close()
 
-  # get start time
-  f_stack = h5py.File(stack_files[0],'r')
-  max_val = f_stack['max_val']
-  first_start_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])
-  dt = max_val.attrs['dt']
-  f_stack.close()
-
-  # get end time
-  f_stack = h5py.File(stack_files[-1],'r')
-  max_val = f_stack['max_val']
-  last_end_time = utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val)
-  f_stack.close()
-
+  # get start times  (get first and last times)
+  start_times=[]
+  end_times=[]
+  for fname in stack_files:
+    f_stack = h5py.File(fname,'r')
+    max_val = f_stack['max_val']
+    start_times.append(utcdatetime.UTCDateTime(max_val.attrs['start_time']))
+    end_times.append(  utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val))
+    f_stack.close()
+  
+  first_start_time = min(start_times)
+  last_end_time = max(end_times)
+    
   nt_full=int((last_end_time-first_start_time)/dt)+1
+
 
   # create - assume all stacks are of the same length and will be concatenated end to end 
   #          (this will give more than enough space) 
   f = h5py.File(os.path.join(stack_path,'combined_stack_all.hdf5'),'w')
-  cmax_val = f.create_dataset('max_val',(nt_full,), 'f', chunks=(nt0,))
-  cmax_x = f.create_dataset('max_x',(nt_full,), 'f', chunks=(nt0,))
-  cmax_y = f.create_dataset('max_y',(nt_full,), 'f', chunks=(nt0,))
-  cmax_z = f.create_dataset('max_z',(nt_full,), 'f', chunks=(nt0,))
+  cmax_val = f.create_dataset('max_val',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_x = f.create_dataset('max_x',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_y = f.create_dataset('max_y',(nt_full,), 'f', chunks=(nt_full,))
+  cmax_z = f.create_dataset('max_z',(nt_full,), 'f', chunks=(nt_full,))
 
   # concatenate unsmoothed versions of max_val to avoid 
   # problems at file starts and ends

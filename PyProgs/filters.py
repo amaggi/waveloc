@@ -88,8 +88,6 @@ def lfilter_zi(b,a):
     
     return array(zi_return)
 
-
-
     
 def filtfilt(b,a,x):
     """
