@@ -1,8 +1,11 @@
-import os, glob, unittest
+import os, glob, unittest, h5py
 import numpy as np
 from options import WavelocOptions
 from OP_waveforms import Waveform
-from locations_trigger import do_locations_trigger_setup_and_run, trigger_locations_inner
+from locations_trigger import do_locations_trigger_setup_and_run, \
+    trigger_locations_inner, read_locs_from_file
+from locations_prob import do_locations_prob_setup_and_run, \
+    read_prob_locs_from_file
 from NllGridLib import *
 from integrate4D import *
 
@@ -10,10 +13,9 @@ def suite():
   suite = unittest.TestSuite()
   suite.addTest(IntegrationTests('test_integration'))
   suite.addTest(IntegrationTests('test_expected_values'))
+  suite.addTest(IntegrationTests('test_reshaping'))
   suite.addTest(LocationTests('test_locations_trigger'))
-  suite.addTest(LocationTests('test_locations_trigger_fullRes'))
-#  suite.addTest(LocationTests('test_locations_prob'))
-#  suite.addTest(LocationTests('test_locations_prob_fullRes'))
+  suite.addTest(LocationTests('test_locations_prob'))
   suite.addTest(TriggeringTests('test_simple_trigger'))
   suite.addTest(TriggeringTests('test_smoothing'))
   suite.addTest(TriggeringTests('test_gaussian_trigger'))
@@ -108,7 +110,6 @@ class IntegrationTests(unittest.TestCase):
     my_exp3=x3[7]
 
 
-    #grid4D = grid4D / compute_integral4D(grid4D,x0,x1,x2,x3)
     exp0,exp1,exp2,exp3,cov_matrix = compute_expected_coordinates4D(grid4D,x0,x1,x2,x3)
     var_x0=cov_matrix[0,0]
     var_x1=cov_matrix[1,1]
@@ -124,6 +125,17 @@ class IntegrationTests(unittest.TestCase):
     self.assertAlmostEqual(var_x1,0.0,7)
     self.assertAlmostEqual(var_x2,0.0210,4)
     self.assertAlmostEqual(var_x3,0.0,7)
+
+  def test_reshaping(self):
+    true_dims=(20,30,40,50)
+    dims_2D  =(20*30*40,50)
+    array_2D = np.zeros(dims_2D)
+    array_2D[:,20]=1
+
+    array_4D=array_2D.reshape(true_dims)
+    np.testing.assert_allclose(array_4D.shape, true_dims)
+    np.testing.assert_allclose(array_4D[:,:,:,20], np.ones((20,30,40)))
+    np.testing.assert_allclose(array_4D[:,:,:,21], np.zeros((20,30,40)))
 
 #@unittest.skip('Skipping location tests')
 class LocationTests(unittest.TestCase):
@@ -146,89 +158,82 @@ class LocationTests(unittest.TestCase):
     outdir=self.wo.opdict['outdir']
 
     exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_locations.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
+    exp_locs=read_locs_from_file(exp_loc_fname)
 
     do_locations_trigger_setup_and_run(self.wo.opdict)
 
     loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
+    locs=read_locs_from_file(loc_fname)
 
-    self.assertEquals(lines,exp_lines)
+    self.assertEqual(len(locs),len(exp_locs))
+    for i in xrange(len(locs)):
+      loc=locs[i]
+      exp_loc=exp_locs[i]
+      self.assertGreater(loc['o_time'] , exp_loc['o_time']-exp_loc['o_err_left'])
+      self.assertLess(loc['o_time'] ,    exp_loc['o_time']+exp_loc['o_err_right'])
+      self.assertLess(np.abs(loc['x_mean']-exp_loc['x_mean']), exp_loc['x_sigma'])
+      self.assertLess(np.abs(loc['x_mean']-exp_loc['x_mean']),     loc['x_sigma'])
+      self.assertLess(np.abs(loc['y_mean']-exp_loc['y_mean']), exp_loc['y_sigma'])
+      self.assertLess(np.abs(loc['y_mean']-exp_loc['y_mean']),     loc['y_sigma'])
+      self.assertLess(np.abs(loc['z_mean']-exp_loc['z_mean']), exp_loc['z_sigma'])
+      self.assertLess(np.abs(loc['z_mean']-exp_loc['z_mean']),     loc['z_sigma'])
 
-  @unittest.skip('Not running full resolution trigger test')
-  def test_locations_trigger_fullRes(self):
 
-    self.wo.opdict['outdir']='TEST_fullRes'
-    self.wo.verify_location_options()
-
-    base_path=self.wo.opdict['base_path']
-    test_datadir=self.wo.opdict['test_datadir']
-    outdir=self.wo.opdict['outdir']
-
-    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_fullRes_locations.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
-
-    do_locations_trigger_setup_and_run(self.wo.opdict)
-
-    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
-
-    self.assertEquals(lines,exp_lines)
-
-#  @unittest.skip('Not bothering with low res test')
   def test_locations_prob(self):
 
-    self.wo.opdict['search_grid'] = 'test_grid.search.hdr'
     self.wo.opdict['outdir']='TEST'
-
     self.wo.verify_location_options()
-    self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']
-    test_datadir=self.wo.opdict['test_datadir']
     outdir=self.wo.opdict['outdir']
 
-    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_locations_prob.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
+    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations.dat')
+    prob_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
+    hdf5_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.hdf5')
 
-    do_locations_prob_setup_and_run(self.wo.opdict)
+    do_locations_prob_setup_and_run(self.wo.opdict, space_only=True)
 
-    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
+    locs=read_locs_from_file(loc_fname)
+    prob_locs=read_prob_locs_from_file(prob_fname)
+    f_marginals = h5py.File(hdf5_fname,'r')
 
-    self.assertEquals(lines,exp_lines)
+    self.assertEqual(len(locs),len(prob_locs))
+    for i in xrange(len(locs)):
+      loc=locs[i]
+      prob_loc=prob_locs[i]
+      self.assertGreater(prob_loc['o_time'] , loc['o_time']-loc['o_err_left'])
+      self.assertLess(   prob_loc['o_time'] , loc['o_time']+loc['o_err_right'])
+      self.assertLess(np.abs(loc['o_time']-prob_loc['o_time']), prob_loc['o_err'])
+      self.assertLess(np.abs(loc['x_mean']-prob_loc['x_mean']), prob_loc['x_sigma'])
+      self.assertLess(np.abs(loc['y_mean']-prob_loc['y_mean']), prob_loc['y_sigma'])
+      self.assertLess(np.abs(loc['z_mean']-prob_loc['z_mean']), prob_loc['z_sigma'])
+
+      grp=f_marginals[prob_loc['o_time'].isoformat()]
+      nx=grp['x'].shape[0]
+      ny=grp['y'].shape[0]
+      nz=grp['z'].shape[0]
+      self.assertEqual(grp['prob_x'].shape,  (nx,))
+      self.assertEqual(grp['prob_y'].shape,  (ny,))
+      self.assertEqual(grp['prob_z'].shape,  (nz,))
+      self.assertEqual(grp['prob_xy'].shape, (nx,ny))
+      self.assertEqual(grp['prob_xz'].shape, (nx,nz))
+      self.assertEqual(grp['prob_yz'].shape, (ny,nz))
+      # if is a 4D grid
+      if 't' in grp :
+        nt=grp['t'].shape[0]
+        self.assertEqual(grp['prob_t'].shape,  (nt,))
+        self.assertEqual(grp['prob_xt'].shape, (nx,nt))
+        self.assertEqual(grp['prob_yt'].shape, (ny,nt))
+        self.assertEqual(grp['prob_zt'].shape, (nz,nt))
+
+      # for now, trigger uncertainties are rather too small for comparison
+      #self.assertLess(np.abs(loc['x_mean']-prob_loc['x_mean']),      loc['x_sigma'])
+      #self.assertLess(np.abs(loc['y_mean']-prob_loc['y_mean']),      loc['y_sigma'])
+      #self.assertLess(np.abs(loc['z_mean']-prob_loc['z_mean']),      loc['z_sigma'])
 
 
-#  @unittest.skip('Not bothering with high res test')
-  def test_locations_prob_fullRes(self):
+    f_marginals.close()
 
-    self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
-    self.wo.opdict['outdir']='TEST_fullRes'
-
-    self.wo.verify_location_options()
-    self.wo.verify_migration_options()
-
-    base_path=self.wo.opdict['base_path']
-    test_datadir=self.wo.opdict['test_datadir']
-    outdir=self.wo.opdict['outdir']
-
-    exp_loc_fname = os.path.join(base_path,test_datadir,'TEST_fullRes_locations_prob.dat')
-    exp_loc_file = open(exp_loc_fname,'r') 
-    exp_lines=exp_loc_file.readlines()
-
-    do_locations_prob_setup_and_run(self.wo.opdict)
-
-    loc_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
-    loc_file = open(loc_fname,'r') 
-    lines=loc_file.readlines()
-
-    self.assertEquals(lines,exp_lines)
 
 if __name__ == '__main__':
 
