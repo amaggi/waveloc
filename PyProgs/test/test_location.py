@@ -182,6 +182,7 @@ class LocationTests(unittest.TestCase):
   def test_locations_prob(self):
 
     self.wo.opdict['outdir']='TEST'
+    self.wo.opdict['probloc_spaceonly']=True
     self.wo.verify_location_options()
 
     base_path=self.wo.opdict['base_path']
@@ -191,7 +192,7 @@ class LocationTests(unittest.TestCase):
     prob_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.dat')
     hdf5_fname = os.path.join(base_path,'out',outdir,'loc','locations_prob.hdf5')
 
-    do_locations_prob_setup_and_run(self.wo.opdict, space_only=True)
+    do_locations_prob_setup_and_run(self.wo.opdict)
 
     locs=read_locs_from_file(loc_fname)
     prob_locs=read_prob_locs_from_file(prob_fname)

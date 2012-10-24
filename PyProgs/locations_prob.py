@@ -41,10 +41,11 @@ def read_prob_locs_from_file(filename):
   return locs
  
 
-def do_locations_prob_setup_and_run(opdict,space_only=True):
+def do_locations_prob_setup_and_run(opdict):
 
   # get / set info
   base_path=opdict['base_path']
+  space_only = opdict['probloc_spaceonly']
 
   locfile=os.path.join(base_path,'out',opdict['outdir'],'loc','locations.dat')
   locfile_prob=os.path.join(base_path,'out',opdict['outdir'],'loc','locations_prob.dat')

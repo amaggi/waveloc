@@ -36,6 +36,9 @@ class WavelocOptions(object):
     self.opdict['sn_time']=10.
     self.opdict['n_kurt_min']=4
 
+    # prob density location
+    self.opdict['probloc_spaceonly']=True
+
     # synthetic
     self.opdict['syn_addnoise']=False
     self.opdict['syn_amplitude']=1.
@@ -587,6 +590,10 @@ class WavelocOptions(object):
       if not self.opdict.has_key('loclevel'):
         raise UserWarning('loclevel option not set')
 
+  def _verify_probloc_spaceonly(self):
+    if not self.opdict.has_key('probloc_spaceonly'):
+        raise UserWarning('probloc_spaceonly option not set')
+
   def _verify_xcorr_threshold(self):
     if not self.opdict.has_key('xcorr_threshold'):
         raise UserWarning('xcorr_threshold option not set')
@@ -738,6 +745,7 @@ class WavelocOptions(object):
     self._verify_snr_tr_limit()
     self._verify_sn_time()
     self._verify_n_kurt_min()
+    self._verify_probloc_spaceonly()
 
     self._verify_search_grid()
     self._verify_time_grid()
@@ -868,3 +876,29 @@ class WavelocOptions(object):
 
 
     self._verify_stations()
+
+
+  def verify_probloc_plotting_options(self):
+
+    self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
+
+    base_path=self.opdict['base_path']
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+
+    locfile=os.path.join(locdir,'locations.dat')
+    if not os.path.isfile(locfile): 
+        raise UserWarning('Locations file %s does not exist.'%locfile)
+
+    locfile=os.path.join(locdir,'locations_prob.dat')
+    if not os.path.isfile(locfile): 
+        raise UserWarning('Locations file %s does not exist.'%locfile)
+
+    locfile=os.path.join(locdir,'locations_prob.hdf5')
+    if not os.path.isfile(locfile): 
+        raise UserWarning('Locations file %s does not exist.'%locfile)
+
+
+   
