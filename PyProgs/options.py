@@ -284,6 +284,7 @@ class WavelocOptions(object):
 
     self.opdict['dd_loc']=args.dd_loc
 
+
   def set_test_options(self):
     self.opdict['time']=True
     self.opdict['verbose']=False
@@ -616,7 +617,7 @@ class WavelocOptions(object):
         raise UserWarning('clus option not set')
   
   def _verify_dd_loc(self):
-    if not self.opfict.has_key('dd_loc'):
+    if not self.opdict.has_key('dd_loc'):
         raise UserWarning('dd_loc option not set') 
 
   def _verify_syn_addnoise(self):
@@ -800,14 +801,14 @@ class WavelocOptions(object):
     locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
 
     self._verify_stations()
-    self._verify_corr()
-    self._verify_delay()
+    self._verify_xcorr_corr()
+    self._verify_xcorr_delay()
 
-    coeff_file=os.path.join(locdir,self.opdict['corr'])
+    coeff_file=os.path.join(locdir,self.opdict['xcorr_corr'])
     if not os.path.isfile(coeff_file):
         raise UserWarning('Cannot find %s'%coeff_file)
    
-    delay_file=os.path.join(locdir,self.opdict['delay'])
+    delay_file=os.path.join(locdir,self.opdict['xcorr_delay'])
     if not os.path.isfile(delay_file):
         raise UserWarning('Cannot find %s'%delay_file)
 
