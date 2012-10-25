@@ -146,10 +146,11 @@ class MigrationTests(unittest.TestCase):
     expected_signature_file = open(expected_signature_filename,'r') 
     expected_lines=expected_signature_file.readlines()
 
+
     do_migration_setup_and_run(self.wo.opdict)
 
     #waveforms_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*mseed','stack_signature.dat')
-    hdf5_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack*hdf5','stack_signature.dat')
+    hdf5_to_signature(base_path,os.path.join('out',outdir,'stack'),'stack_all_2010-10-14T00:14:00.000000Z.hdf5','stack_signature.dat')
     signature_filename=os.path.join(base_path,'out',outdir,'stack','stack_signature.dat')
     signature_file = open(signature_filename,'r') 
     lines=signature_file.readlines()

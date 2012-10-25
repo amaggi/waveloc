@@ -6,7 +6,6 @@ import numpy as np
 
 from obspy.core import utcdatetime
 import time
-from mayavi import mlab
 
 from locations_trigger import read_locs_from_file
 from correlation import BinaryFile
@@ -45,16 +44,14 @@ def fill_matrix(cluster,x,y,z,t_orig,stations,t_th,t_arr,coeff,delay,threshold):
     for n in range(N):
       ev1=[x[n],y[n],z[n]]
       e1=cluster[n]
-      #dp1=time_grid_deriv.value_at_point(xev1,yev1,zev1,grid_id,type=1)
       dp1 = partial_deriv(coord,ev1,t_th[staname][n]) 
-      
+
       for nn in range(n+1,N):
         e2=cluster[nn]
         if delay[staname][e1-1][e2-1]!='NaN' and coeff[staname][e1-1][e2-1] >= threshold:
           # fill G
           G.append(np.zeros(4*N))
           ev2=[x[nn],y[nn],z[nn]]
-          #dp2=time_grid_deriv.value_at_point(xev2,yev2,zev2,grid_id,type=1)
           dp2 = partial_deriv(coord,ev2,t_th[staname][nn])
           dp2=[-elt for elt in dp2]
 
@@ -85,7 +82,7 @@ def centroid_constraint(G,d,W):
   W=np.diag(W)
   return np.matrix(G),np.transpose(np.matrix(d)),np.matrix(W)
 # ----------------------------------------------------------------------------------------
-# Invert the problem and compute the matrix m
+# Inversion: computation of the matrix m
 def inversion(G,d,W):
   Gt=np.transpose(G)
   Winv=W.getI()
@@ -107,6 +104,8 @@ def coord_cluster(cluster,locs):
 # ----------------------------------------------------------------------------------------
 # Plot old and new locations
 def plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area):
+  from mayavi import mlab
+
   # Stations coordinates
   xsta,ysta,zsta=[],[],[]
   for sta in stations.keys():
@@ -114,9 +113,10 @@ def plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area):
     ysta.append(stations[sta]['y'])
     zsta.append(stations[sta]['elev'])
 
+  z_ph=[-elt for elt in z]
+
   # Initial hypocentral parameters
   xini, yini, zini, zini_ph, to_ini = coord_cluster(cluster[i],locs)
-  z_ph=[-elt for elt in z]
 
   s=mlab.figure(i,bgcolor=(1,1,1),fgcolor=(0,0,0),size=(1000,900))
   mlab.clf()
@@ -175,7 +175,7 @@ def do_double_diff_setup_and_run(opdict):
   grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
   grid_info=read_hdr_file(search_grid_filename)
   time_grids=get_interpolated_time_grids(opdict)
-  
+
   # Extract the UTM coordinates of the area of study
   xstart=grid_info['x_orig']
   xend=xstart+grid_info['nx']*grid_info['dx']
@@ -189,11 +189,11 @@ def do_double_diff_setup_and_run(opdict):
   threshold=float(opdict['clus'])
 
   # Correlation, time delay and cluster files
-  corr_file=os.path.join(locdir,opdict['corr'])
+  corr_file=os.path.join(locdir,opdict['xcorr_corr'])
   cfile=BinaryFile(corr_file)
   coeff=cfile.read_binary_file()
 
-  delay_file=os.path.join(locdir,opdict['delay'])
+  delay_file=os.path.join(locdir,opdict['xcorr_delay'])
   dfile=BinaryFile(delay_file)
   delay=dfile.read_binary_file()
 
@@ -237,7 +237,7 @@ def do_double_diff_setup_and_run(opdict):
           locs[j-1]['o_err_right']=0
           locs[j-1]['o_err_left']=0
           ind+=1
-   
+
   if dd_loc:
     new_loc_filename=os.path.join(locdir,'relocations.dat')
     new_loc_file=open(new_loc_filename,'w')
@@ -255,7 +255,8 @@ if __name__ == '__main__':
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  wo.set_all_arguments(args)
+  #wo.set_all_arguments(args)
+  wo.set_options()
   wo.verify_doublediff_options()
 
   do_double_diff_setup_and_run(wo.opdict)

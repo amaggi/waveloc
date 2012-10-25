@@ -750,14 +750,22 @@ class Waveform(object):
       tr_new=np.zeros(len(tr))
 
       trigs=trigger.triggerOnset(tr.data,threshold,threshold)
+      trig_prec=[0,0]
+
       for trig in trigs:
+        if trig[-1]-trig_prec[0] < 20:
+          trig=[trig_prec[0],trig[-1]]
+
         istart=trig[0] 
         iend=trig[-1]
         if istart != iend:
           imax=np.argmax(tr.data[istart:iend+1])+istart
         else:
           imax=istart
+        tr_dirac[istart:iend]=0
         tr_dirac[imax]=np.max(tr.data[imax])
+
+        trig_prec=trig
 
       tr.data=np.convolve(tr_dirac,y,mode='same')
 
