@@ -696,18 +696,8 @@ class Waveform(object):
       xs=np.zeros(npts)    
 
       if recursive:
-        mean_value=0
-        var_value=0
-        kurt_value=0
         C=1-dt/win
-        for i in xrange(npts):
-          mean_value = C*mean_value + (1-C)*x[i]
-          var_value=C*var_value+(1-C)*(x[i]-mean_value)**2
-          if var_value>varx: 
-            kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/var_value**2
-          else : 
-            kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/varx**2
-          xs[i]=kurt_value-3
+        xs=rec_kurtosis(x,C)
 
       else:
 

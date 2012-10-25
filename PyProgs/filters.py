@@ -61,6 +61,24 @@ def sw_kurtosis2(x,n):
     xs=ss.kurtosis(k_array,axis=1)
     return xs
 
+def rec_kurtosis(x,C):
+    npts=len(x)
+    varx=np.std(x)
+    mean_value=0
+    var_value=0
+    kurt_value=0
+    xs=np.empty(npts)
+    for i in xrange(npts):
+      mean_value = C*mean_value + (1-C)*x[i]
+      var_value=C*var_value+(1-C)*(x[i]-mean_value)**2
+      if var_value>varx: 
+        kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/var_value**2
+      else : 
+        kurt_value=C*kurt_value+(1-C)*(x[i]-mean_value)**4/varx**2
+      xs[i]=kurt_value-3
+
+    return xs
+
    
 def lfilter_zi(b,a):
     """
