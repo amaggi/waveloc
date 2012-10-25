@@ -189,7 +189,7 @@ def do_locations_prob_setup_and_run(opdict):
     grp = f_marginals.create_group(exp_t.isoformat())
     grp.create_dataset('x',data=x+x_orig)
     grp.create_dataset('y',data=y+y_orig)
-    grp.create_dataset('z',data=z+y_orig)
+    grp.create_dataset('z',data=z+z_orig)
     grp.create_dataset('prob_x',data=prob_dict['prob_x0'])
     grp.create_dataset('prob_y',data=prob_dict['prob_x1'])
     grp.create_dataset('prob_z',data=prob_dict['prob_x2'])
