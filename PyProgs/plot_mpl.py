@@ -386,23 +386,25 @@ def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
 
   x=marginals['x'][:]
   y=marginals['y'][:]
-  z=marginals['z'][:]
+  z=marginals['z'][:]*(-1)
+  z.sort()
   prob_x=marginals['prob_x'][:]
   prob_y=marginals['prob_y'][:]
   prob_z=marginals['prob_z'][:]
+  prob_z_rev=prob_z[::-1] # reverse array for plot (z is up in plot)
   prob_xy=marginals['prob_xy'][:,:]
   prob_xz=marginals['prob_xz'][:,:]
   prob_yz=marginals['prob_yz'][:,:]
 
   x_low   = loc['x_mean'] - loc['x_sigma'] 
   y_low   = loc['y_mean'] - loc['y_sigma']
-  z_low   = loc['z_mean'] - loc['z_sigma']
+  z_low   = -loc['z_mean'] - loc['z_sigma']
   x_high  = loc['x_mean'] + loc['x_sigma']
   y_high  = loc['y_mean'] + loc['y_sigma']
-  z_high  = loc['z_mean'] + loc['z_sigma']
+  z_high  = -loc['z_mean'] + loc['z_sigma']
   prob_x_prob = gaussian(x,prob_loc['x_mean'],prob_loc['x_sigma'])
   prob_y_prob = gaussian(y,prob_loc['y_mean'],prob_loc['y_sigma'])
-  prob_z_prob = gaussian(z,prob_loc['z_mean'],prob_loc['z_sigma'])
+  prob_z_prob = gaussian(z,-prob_loc['z_mean'],prob_loc['z_sigma'])
 
 
   if not space_only:
@@ -416,35 +418,98 @@ def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
   o_time=prob_loc['o_time']
   fig_filename = os.path.join(fig_dir,"probloc_%s.pdf"%o_time.isoformat())
 
-  plt.figure(1, figsize=(8,8))
+  plt.figure(1, figsize=(18,6))
 
-  # simple plot
-  left, width = 0.1, 0.65
-  bottom, height = 0.1, 0.65
-  bottom_h = left_h = left + width 
 
+  # XY plot
+  left, width = 0.05, 0.2
+  left_h = left + width 
+  bottom, height = 0.1, 0.6
+  bottom_h = bottom + height
+
+  # XY plot
   rect_2D  = [left, bottom, width, height]
   rect_top = [left, bottom_h, width, 0.2]
-  rect_rig = [left_h, bottom, 0.2, height]
+  rect_rig = [left_h, bottom, 0.075, height]
 
   ax_2D  = plt.axes(rect_2D)
   ax_2D.tick_params(labelsize=10)
   ax_top = plt.axes(rect_top, sharex=ax_2D)
   ax_top.tick_params(labelsize=10)
   ax_top.xaxis.set_ticks_position('top')
+  ax_top.yaxis.set_ticks(())
   ax_rig = plt.axes(rect_rig, sharey=ax_2D)
   ax_rig.tick_params(labelsize=10)
   ax_rig.yaxis.set_ticks_position('right')
+  ax_rig.xaxis.set_ticks(())
 
-  # do the plot
   ax_2D.imshow(prob_xy.T,origin='lower',interpolation='none',\
     extent = [np.min(x), np.max(x), np.min(y), np.max(y)])
   ax_top.plot(x,prob_x,'b')
-  ax_top.plot(x,prob_x_prob,'b--')
+  #ax_top.plot(x,prob_x_prob,'b--')
   ax_top.axvspan(x_low,x_high,facecolor='r', alpha=0.2)
   ax_rig.plot(prob_y,y,'b')
-  ax_rig.plot(prob_y_prob,y,'b--')
+  #ax_rig.plot(prob_y_prob,y,'b--')
   ax_rig.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
+
+  #XZ plot
+  left, width = left_h+0.05+0.075, 0.2
+  left_h = left + width 
+
+  rect_2D  = [left, bottom, width, height]
+  rect_top = [left, bottom_h, width, 0.2]
+  rect_rig = [left_h, bottom, 0.075, height]
+
+  ax_2D_2  = plt.axes(rect_2D)
+  ax_2D_2.tick_params(labelsize=10)
+  ax_top_2 = plt.axes(rect_top, sharex=ax_2D_2)
+  ax_top_2.tick_params(labelsize=10)
+  ax_top_2.xaxis.set_ticks_position('top')
+  ax_top_2.yaxis.set_ticks(())
+  ax_rig_2 = plt.axes(rect_rig, sharey=ax_2D_2)
+  ax_rig_2.tick_params(labelsize=10)
+  ax_rig_2.yaxis.set_ticks_position('right')
+  ax_rig_2.xaxis.set_ticks(())
+
+  ax_2D_2.imshow(prob_xz.T,origin='upper',interpolation='none',\
+    extent = [np.min(x), np.max(x), np.min(z), np.max(z)])
+  ax_top_2.plot(x,prob_x,'b')
+  #ax_top_2.plot(x,prob_x_prob,'b--')
+  ax_top_2.axvspan(x_low,x_high,facecolor='r', alpha=0.2)
+  ax_rig_2.plot(prob_z_rev,z,'b')
+  #ax_rig_2.plot(prob_z_prob,z,'b--')
+  ax_rig_2.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
+
+  #XZ plot
+  left, width = left_h+0.05+0.075, 0.2
+  left_h = left + width 
+
+  rect_2D  = [left, bottom, width, height]
+  rect_top = [left, bottom_h, width, 0.2]
+  rect_rig = [left_h, bottom, 0.075, height]
+
+  ax_2D_3  = plt.axes(rect_2D)
+  ax_2D_3.tick_params(labelsize=10)
+  ax_top_3 = plt.axes(rect_top, sharex=ax_2D_3)
+  ax_top_3.tick_params(labelsize=10)
+  ax_top_3.xaxis.set_ticks_position('top')
+  ax_top_3.yaxis.set_ticks(())
+  ax_rig_3 = plt.axes(rect_rig, sharey=ax_2D_3)
+  ax_rig_3.tick_params(labelsize=10)
+  ax_rig_3.yaxis.set_ticks_position('right')
+  ax_rig_3.xaxis.set_ticks(())
+
+  ax_2D_3.imshow(prob_yz.T,origin='upper',interpolation='none',\
+    extent = [np.min(y), np.max(y), np.min(z), np.max(z)])
+  ax_top_3.plot(y,prob_y,'b')
+  #ax_top_3.plot(y,prob_y_prob,'b--')
+  ax_top_3.axvspan(y_low,y_high,facecolor='r', alpha=0.2)
+  ax_rig_3.plot(prob_z_rev,z,'b')
+  #ax_rig_3.plot(prob_z_prob,z,'b--')
+  ax_rig_3.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
+
+
+
 
   plt.savefig(fig_filename)
   plt.clf()
