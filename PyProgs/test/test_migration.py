@@ -36,7 +36,6 @@ class SyntheticMigrationTests(unittest.TestCase):
 
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
-    from plot_mpl import plot_probloc_mpl, plotDiracTest
     from filters import smooth
 
     wo=WavelocOptions()
@@ -67,13 +66,6 @@ class SyntheticMigrationTests(unittest.TestCase):
 
     logging.info('Running synthetic test case generation...')
     test_info=generateSyntheticDirac(wo.opdict)
-    logging.debug(test_info)
-
-    # plot synthetic tests
-    figdir=os.path.join(wo.opdict['base_path'],'out',wo.opdict['outdir'],'fig')
-    # reset the origin for nice-to-read plots
-    #test_info['grid_orig']=(0,0,-2.5)
-    plotDiracTest(test_info,figdir)
     logging.debug(test_info)
 
     # retrieve info
