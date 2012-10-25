@@ -86,10 +86,3 @@ do_locations_trigger_setup_and_run(wo.opdict)
 wo.verify_plotting_options()
 do_plotting_setup_and_run(wo.opdict,plot_wfm=True,plot_grid=True)
 
-# do probability density location 
-wo.verify_location_options()
-do_locations_prob_setup_and_run(wo.opdict)
-
-# plot probability density location
-wo.verify_probloc_plotting_options()
-do_probloc_plotting_setup_and_run(wo.opdict)
