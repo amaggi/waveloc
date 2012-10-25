@@ -6,7 +6,6 @@ import numpy as np
 
 from obspy.core import utcdatetime
 import time
-from mayavi import mlab
 
 from locations_trigger import read_locs_from_file
 from correlation import BinaryFile
@@ -105,6 +104,8 @@ def coord_cluster(cluster,locs):
 # ----------------------------------------------------------------------------------------
 # Plot old and new locations
 def plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area):
+  from mayavi import mlab
+
   # Stations coordinates
   xsta,ysta,zsta=[],[],[]
   for sta in stations.keys():
