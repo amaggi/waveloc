@@ -41,10 +41,11 @@ def read_prob_locs_from_file(filename):
   return locs
  
 
-def do_locations_prob_setup_and_run(opdict,space_only=True):
+def do_locations_prob_setup_and_run(opdict):
 
   # get / set info
   base_path=opdict['base_path']
+  space_only = opdict['probloc_spaceonly']
 
   locfile=os.path.join(base_path,'out',opdict['outdir'],'loc','locations.dat')
   locfile_prob=os.path.join(base_path,'out',opdict['outdir'],'loc','locations_prob.dat')
@@ -188,7 +189,7 @@ def do_locations_prob_setup_and_run(opdict,space_only=True):
     grp = f_marginals.create_group(exp_t.isoformat())
     grp.create_dataset('x',data=x+x_orig)
     grp.create_dataset('y',data=y+y_orig)
-    grp.create_dataset('z',data=z+y_orig)
+    grp.create_dataset('z',data=z+z_orig)
     grp.create_dataset('prob_x',data=prob_dict['prob_x0'])
     grp.create_dataset('prob_y',data=prob_dict['prob_x1'])
     grp.create_dataset('prob_z',data=prob_dict['prob_x2'])

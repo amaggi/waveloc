@@ -3,7 +3,9 @@ from waveloc.options import WavelocOptions
 from waveloc.SDS_processing import do_SDS_processing_setup_and_run
 from waveloc.migration import do_migration_setup_and_run
 from waveloc.locations_trigger import do_locations_trigger_setup_and_run
-from waveloc.plot_locations2 import do_plotting_setup_and_run
+from waveloc.locations_prob import do_locations_prob_setup_and_run
+from waveloc.plot_locations2 import do_plotting_setup_and_run, \
+                                    do_probloc_plotting_setup_and_run
 
 
 logging.basicConfig(level=logging.INFO, 
@@ -16,7 +18,9 @@ wo = WavelocOptions()
 # set base path to $WAVELOC_PATH 
 wo.verify_base_path()
 
+##########################################
 # set waveloc options
+##########################################
 
 wo.opdict['time']=True
 wo.opdict['verbose']=False
@@ -64,7 +68,9 @@ wo.opdict['n_kurt_min']=4
 wo.opdict['plot_tbefore']=4
 wo.opdict['plot_tafter']=6
 
+##########################################
 # end of option setting - start processing
+##########################################
 
 wo.verify_SDS_processing_options()
 do_SDS_processing_setup_and_run(wo.opdict)
@@ -72,11 +78,11 @@ do_SDS_processing_setup_and_run(wo.opdict)
 wo.verify_migration_options()
 do_migration_setup_and_run(wo.opdict)
 
+# do trigger location 
 wo.verify_location_options()
 do_locations_trigger_setup_and_run(wo.opdict)
 
-wo.verify_plotting_options()
 # This will do plotting of grids and stacks for locations
+wo.verify_plotting_options()
 do_plotting_setup_and_run(wo.opdict,plot_wfm=True,plot_grid=True)
-
 

@@ -376,199 +376,142 @@ def plotDiracTest(test_info,fig_dir):
   f.close()
   f_stack.close()
 
-def plot_test(curve_tuple,axes_tuple,filename_base):
-  stack_x, stack_y, stack_z, stack_t = curve_tuple
-  x,y,z,t = axes_tuple
-
-  stack_x = stack_x / compute_integral1D(stack_x,x)
-  stack_y = stack_y / compute_integral1D(stack_y,y)
-  stack_z = stack_z / compute_integral1D(stack_z,z)
-  stack_t = stack_t / compute_integral1D(stack_t,t)
-
-  # do 1D plots
-  plt.clf()
-  plt.plot(x,stack_x)
-  plt.xlabel('x (km)')
-  plt.ylabel('p(x)')
-  plt.title('Marginal probability density over x (at maximum)')
-  plt.savefig(filename_base+'_test_stack_x.pdf')
-
-  plt.clf()
-  plt.plot(y,stack_y)
-  plt.xlabel('y (km)')
-  plt.ylabel('p(y)')
-  plt.title('Marginal probability density over y (at maximum)')
-  plt.savefig(filename_base+'_test_stack_y.pdf')
-
-  plt.clf()
-  plt.plot(z,stack_z)
-  plt.xlabel('z (km)')
-  plt.ylabel('p(z)')
-  plt.title('Marginal probability density over z (at maximum)')
-  plt.savefig(filename_base+'_test_stack_z.pdf')
-
-  plt.clf()
-  plt.plot(t,stack_t)
-  plt.xlabel('t (km)')
-  plt.ylabel('p(t)')
-  plt.title('Marginal probability density over t (at maximum)')
-  plt.savefig(filename_base+'_test_stack_t.pdf')
-
-def plot_probloc_mpl3D(grid_dict,x_list,base_filename):
-
-  #print grid_dict.keys()
-
-  x0,x1,x2 = x_list
-
-  # create filenames for plots
-  files_dict={}
-  for key in grid_dict.keys():
-    files_dict[key] = base_filename + '_' + key + '.pdf'
-  
-  logging.debug('PLOTTING : Type x0 = %s'%x0.dtype)
-  logging.debug('PLOTTING : Type prob_x0 = %s'%grid_dict['prob_x0'].dtype)
-  
-  # do 1D plots
-  plt.clf()
-  plt.plot(x0,grid_dict['prob_x0'])
-  plt.xlabel('x (km)')
-  plt.ylabel('p(x)')
-  plt.title('Marginal probability density over x')
-  plt.savefig(files_dict['prob_x0'])
-
-
-  plt.clf()
-  plt.plot(x1,grid_dict['prob_x1'])
-  plt.xlabel('y (km)')
-  plt.ylabel('p(y)')
-  plt.title('Marginal probability density over y')
-  plt.savefig(files_dict['prob_x1'])
-
-  plt.clf()
-  plt.plot(x2,grid_dict['prob_x2'])
-  plt.xlabel('z (km)')
-  plt.ylabel('p(z)')
-  plt.title('Marginal probability density over z')
-  plt.savefig(files_dict['prob_x2'])
-
-
-  # 2D plots
-  plt.clf()
-  p=plt.contourf(x0,x1,grid_dict['prob_x0_x1'].T)
-  plt.colorbar(p)
-  plt.xlabel('x (km)')
-  plt.ylabel('y (km)')
-  plt.title('Marginal probability density over x and y')
-  plt.savefig(files_dict['prob_x0_x1'])
+def gaussian(x,mu,sigma):
+  return ( 1. / (sigma*np.sqrt(2.*np.pi))) * \
+    np.exp(-1*(x-mu)*(x-mu)/(2*sigma*sigma))
  
-  plt.clf()
-  p=plt.contourf(x0,x2,grid_dict['prob_x0_x2'].T)
-  plt.colorbar(p)
-  plt.xlabel('x (km)')
-  plt.ylabel('z (km)')
-  plt.title('Marginal probability density over x and z')
-  plt.savefig(files_dict['prob_x0_x2'])
-
-  plt.clf()
-  p=plt.contourf(x1,x2,grid_dict['prob_x1_x2'].T)
-  plt.colorbar(p)
-  plt.xlabel('y (km)')
-  plt.ylabel('z (km)')
-  plt.title('Marginal probability density over y and z')
-  plt.savefig(files_dict['prob_x1_x2'])
- 
-
-def plot_probloc_mpl(grid_dict,x_list,base_filename):
-
-  #print grid_dict.keys()
-
-  x0,x1,x2,x3 = x_list
-
-  # create filenames for plots
-  files_dict={}
-  for key in grid_dict.keys():
-    files_dict[key] = base_filename + '_' + key + '.pdf'
+def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
   
-  logging.debug('PLOTTING : Type x0 = %s'%x0.dtype)
-  logging.debug('PLOTTING : Type prob_x0 = %s'%grid_dict['prob_x0'].dtype)
-  
-  # do 1D plots
-  plt.clf()
-  plt.plot(x0,grid_dict['prob_x0'])
-  plt.xlabel('x (km)')
-  plt.ylabel('p(x)')
-  plt.title('Marginal probability density over x')
-  plt.savefig(files_dict['prob_x0'])
+  # get basic parameters
 
-  logging.debug('Integral over x0 = %.3f'%si.trapz(grid_dict['prob_x0'],x=x0))
+  x=marginals['x'][:]
+  y=marginals['y'][:]
+  z=marginals['z'][:]*(-1)
+  z.sort()
+  prob_x=marginals['prob_x'][:]
+  prob_y=marginals['prob_y'][:]
+  prob_z=marginals['prob_z'][:]
+  prob_z_rev=prob_z[::-1] # reverse array for plot (z is up in plot)
+  prob_xy=marginals['prob_xy'][:,:]
+  prob_xz=marginals['prob_xz'][:,:]
+  prob_yz=marginals['prob_yz'][:,:]
 
-  plt.clf()
-  plt.plot(x1,grid_dict['prob_x1'])
-  plt.xlabel('y (km)')
-  plt.ylabel('p(y)')
-  plt.title('Marginal probability density over y')
-  plt.savefig(files_dict['prob_x1'])
+  x_low   = loc['x_mean'] - loc['x_sigma'] 
+  y_low   = loc['y_mean'] - loc['y_sigma']
+  z_low   = -loc['z_mean'] - loc['z_sigma']
+  x_high  = loc['x_mean'] + loc['x_sigma']
+  y_high  = loc['y_mean'] + loc['y_sigma']
+  z_high  = -loc['z_mean'] + loc['z_sigma']
+  prob_x_prob = gaussian(x,prob_loc['x_mean'],prob_loc['x_sigma'])
+  prob_y_prob = gaussian(y,prob_loc['y_mean'],prob_loc['y_sigma'])
+  prob_z_prob = gaussian(z,-prob_loc['z_mean'],prob_loc['z_sigma'])
 
-  plt.clf()
-  plt.plot(x2,grid_dict['prob_x2'])
-  plt.xlabel('z (km)')
-  plt.ylabel('p(z)')
-  plt.title('Marginal probability density over z')
-  plt.savefig(files_dict['prob_x2'])
 
-  plt.clf()
-  plt.plot(x3,grid_dict['prob_x3'])
-  plt.xlabel('time (s)')
-  plt.ylabel('p(t)')
-  plt.title('Marginal probability density over time')
-  plt.savefig(files_dict['prob_x3'])
+  if not space_only:
+    t=marginals['t'][:]
+    prob_t=marginals['prob_t'][:]
+    prob_xt=marginals['prob_xt'][:,:]
+    prob_yt=marginals['prob_yt'][:,:]
+    prob_zt=marginals['prob_zt'][:,:]
 
-  # 2D plots
-  plt.clf()
-  p=plt.contourf(x0,x3,grid_dict['prob_x0_x3'].T)
-  plt.colorbar(p)
-  plt.xlabel('x (km)')
-  plt.ylabel('time (s)')
-  plt.title('Marginal probability density over x and time')
-  plt.savefig(files_dict['prob_x0_x3'])
-  
-  plt.clf()
-  p=plt.contourf(x1,x3,grid_dict['prob_x1_x3'].T)
-  plt.colorbar(p)
-  plt.xlabel('y (km)')
-  plt.ylabel('time (s)')
-  plt.title('Marginal probability density over y and time')
-  plt.savefig(files_dict['prob_x1_x3'])
+  # set filename
+  o_time=prob_loc['o_time']
+  fig_filename = os.path.join(fig_dir,"probloc_%s.pdf"%o_time.isoformat())
 
-  plt.clf()
-  p=plt.contourf(x2,x3,grid_dict['prob_x2_x3'].T)
-  plt.colorbar(p)
-  plt.xlabel('z (km)')
-  plt.ylabel('time (s)')
-  plt.title('Marginal probability density over z and time')
-  plt.savefig(files_dict['prob_x2_x3'])
- 
-  plt.clf()
-  p=plt.contourf(x0,x1,grid_dict['prob_x0_x1'].T)
-  plt.colorbar(p)
-  plt.xlabel('x (km)')
-  plt.ylabel('y (km)')
-  plt.title('Marginal probability density over x and y')
-  plt.savefig(files_dict['prob_x0_x1'])
- 
-  plt.clf()
-  p=plt.contourf(x0,x2,grid_dict['prob_x0_x2'].T)
-  plt.colorbar(p)
-  plt.xlabel('x (km)')
-  plt.ylabel('z (km)')
-  plt.title('Marginal probability density over x and z')
-  plt.savefig(files_dict['prob_x0_x2'])
+  plt.figure(1, figsize=(18,6))
 
+
+  # XY plot
+  left, width = 0.05, 0.2
+  left_h = left + width 
+  bottom, height = 0.1, 0.6
+  bottom_h = bottom + height
+
+  # XY plot
+  rect_2D  = [left, bottom, width, height]
+  rect_top = [left, bottom_h, width, 0.2]
+  rect_rig = [left_h, bottom, 0.075, height]
+
+  ax_2D  = plt.axes(rect_2D)
+  ax_2D.tick_params(labelsize=10)
+  ax_top = plt.axes(rect_top, sharex=ax_2D)
+  ax_top.tick_params(labelsize=10)
+  ax_top.xaxis.set_ticks_position('top')
+  ax_top.yaxis.set_ticks(())
+  ax_rig = plt.axes(rect_rig, sharey=ax_2D)
+  ax_rig.tick_params(labelsize=10)
+  ax_rig.yaxis.set_ticks_position('right')
+  ax_rig.xaxis.set_ticks(())
+
+  ax_2D.imshow(prob_xy.T,origin='lower',interpolation='none',\
+    extent = [np.min(x), np.max(x), np.min(y), np.max(y)])
+  ax_top.plot(x,prob_x,'b')
+  #ax_top.plot(x,prob_x_prob,'b--')
+  ax_top.axvspan(x_low,x_high,facecolor='r', alpha=0.2)
+  ax_rig.plot(prob_y,y,'b')
+  #ax_rig.plot(prob_y_prob,y,'b--')
+  ax_rig.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
+
+  #XZ plot
+  left, width = left_h+0.05+0.075, 0.2
+  left_h = left + width 
+
+  rect_2D  = [left, bottom, width, height]
+  rect_top = [left, bottom_h, width, 0.2]
+  rect_rig = [left_h, bottom, 0.075, height]
+
+  ax_2D_2  = plt.axes(rect_2D)
+  ax_2D_2.tick_params(labelsize=10)
+  ax_top_2 = plt.axes(rect_top, sharex=ax_2D_2)
+  ax_top_2.tick_params(labelsize=10)
+  ax_top_2.xaxis.set_ticks_position('top')
+  ax_top_2.yaxis.set_ticks(())
+  ax_rig_2 = plt.axes(rect_rig, sharey=ax_2D_2)
+  ax_rig_2.tick_params(labelsize=10)
+  ax_rig_2.yaxis.set_ticks_position('right')
+  ax_rig_2.xaxis.set_ticks(())
+
+  ax_2D_2.imshow(prob_xz.T,origin='upper',interpolation='none',\
+    extent = [np.min(x), np.max(x), np.min(z), np.max(z)])
+  ax_top_2.plot(x,prob_x,'b')
+  #ax_top_2.plot(x,prob_x_prob,'b--')
+  ax_top_2.axvspan(x_low,x_high,facecolor='r', alpha=0.2)
+  ax_rig_2.plot(prob_z_rev,z,'b')
+  #ax_rig_2.plot(prob_z_prob,z,'b--')
+  ax_rig_2.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
+
+  #XZ plot
+  left, width = left_h+0.05+0.075, 0.2
+  left_h = left + width 
+
+  rect_2D  = [left, bottom, width, height]
+  rect_top = [left, bottom_h, width, 0.2]
+  rect_rig = [left_h, bottom, 0.075, height]
+
+  ax_2D_3  = plt.axes(rect_2D)
+  ax_2D_3.tick_params(labelsize=10)
+  ax_top_3 = plt.axes(rect_top, sharex=ax_2D_3)
+  ax_top_3.tick_params(labelsize=10)
+  ax_top_3.xaxis.set_ticks_position('top')
+  ax_top_3.yaxis.set_ticks(())
+  ax_rig_3 = plt.axes(rect_rig, sharey=ax_2D_3)
+  ax_rig_3.tick_params(labelsize=10)
+  ax_rig_3.yaxis.set_ticks_position('right')
+  ax_rig_3.xaxis.set_ticks(())
+
+  ax_2D_3.imshow(prob_yz.T,origin='upper',interpolation='none',\
+    extent = [np.min(y), np.max(y), np.min(z), np.max(z)])
+  ax_top_3.plot(y,prob_y,'b')
+  #ax_top_3.plot(y,prob_y_prob,'b--')
+  ax_top_3.axvspan(y_low,y_high,facecolor='r', alpha=0.2)
+  ax_rig_3.plot(prob_z_rev,z,'b')
+  #ax_rig_3.plot(prob_z_prob,z,'b--')
+  ax_rig_3.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
+
+
+
+
+  plt.savefig(fig_filename)
   plt.clf()
-  p=plt.contourf(x1,x2,grid_dict['prob_x1_x2'].T)
-  plt.colorbar(p)
-  plt.xlabel('y (km)')
-  plt.ylabel('z (km)')
-  plt.title('Marginal probability density over y and z')
-  plt.savefig(files_dict['prob_x1_x2'])
- 
+
+

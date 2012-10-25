@@ -32,12 +32,6 @@ def compute_expected_coordinates3D(grid,x0,x1,x2,return_2Dgrids=False):
   grid_integral= compute_integral3D(grid,x0,x1,x2)
   grid = grid / grid_integral
 
-  sanity_check=compute_integral3D(grid,x0,x1,x2)
-  logging.debug('Integral over raw stuff : %.3f'%grid_integral)
-  logging.debug('This integral should be 1.0 : %.3f'%sanity_check)
-  logging.debug('Type grid = %s'%grid.dtype)
-  print grid.shape
-
   # get 1D marginals, expected values and variances
   prob_x0=si.trapz(si.trapz(grid,x=x1,axis=1),x=x2,axis=1)
   exp_x0=si.trapz(x0*prob_x0,x=x0)

@@ -5,11 +5,12 @@ import numpy as np
 from OP_waveforms import Waveform
 from obspy.core import read, UTCDateTime
 from locations_trigger import read_locs_from_file
+from locations_prob import read_prob_locs_from_file
 from NllGridLib import read_stations_file,read_hdr_file
 from hdf5_grids import get_interpolated_time_grids
 from migration import do_migration_loop_continuous
 from OP_waveforms import read_data_compatible_with_time_dict
-from plot_mpl import plotLocationGrid, plotLocationWaveforms
+from plot_mpl import plotLocationGrid, plotLocationWaveforms, plotProbLoc
 
 def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
 
@@ -146,6 +147,42 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
   f_stack.close()
 
 
+def do_probloc_plotting_setup_and_run(opdict):
+
+  # get / set info
+  base_path=opdict['base_path']
+  space_only=opdict['probloc_spaceonly']
+
+  locfile=os.path.join(base_path,'out',opdict['outdir'],'loc','locations.dat')
+  problocfile=os.path.join(base_path,'out',opdict['outdir'],'loc','locations_prob.dat')
+  problocgrid=os.path.join(base_path,'out',opdict['outdir'],'loc','locations_prob.hdf5')
+  output_dir=os.path.join(base_path,'out',opdict['outdir'])
+
+
+  figdir=os.path.join(base_path,'out',opdict['outdir'],'fig')
+
+  # read locations
+  locs=read_locs_from_file(locfile)
+  prob_locs=read_prob_locs_from_file(problocfile)
+
+  # open hdf5 file
+  f = h5py.File(problocgrid,'r')
+
+  # for each loc
+  for i in xrange(len(locs)):
+    loc      =      locs[i]
+    prob_loc = prob_locs[i]
+
+    otime=prob_loc['o_time']
+    # hdf5 group name is prob loc origin time as string
+    grp = f[prob_loc['o_time'].isoformat()]
+
+    # do plotting
+    plotProbLoc(grp,prob_loc,loc,figdir, space_only)
+
+ 
+  # close hdf5 file
+  f.close()
 
 if __name__ == '__main__':
 
