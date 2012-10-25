@@ -400,17 +400,9 @@ def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
   x_high  = loc['x_mean'] + loc['x_sigma']
   y_high  = loc['y_mean'] + loc['y_sigma']
   z_high  = loc['z_mean'] + loc['z_sigma']
-  #prob_x_prob = gaussian(x,prob_loc['x_mean'],prob_loc['x_sigma'])
-  #prob_y_prob = gaussian(y,prob_loc['y_mean'],prob_loc['y_sigma'])
-  #prob_z_prob = gaussian(z,prob_loc['z_mean'],prob_loc['z_sigma'])
-  #prob_x_loc  = gaussian(x,loc['x_mean'],loc['x_sigma'])
-  #prob_y_loc  = gaussian(y,loc['y_mean'],loc['y_sigma'])
-  #prob_z_loc  = gaussian(z,loc['z_mean'],loc['z_sigma'])
-
-  # normalize prob_?_loc for plotting purposes
-#  prob_x_loc = prob_x_loc * max(prob_x_prob) / max(prob_x_loc)
-#  prob_y_loc = prob_y_loc * max(prob_y_prob) / max(prob_y_loc)
-#  prob_z_loc = prob_z_loc * max(prob_z_prob) / max(prob_z_loc)
+  prob_x_prob = gaussian(x,prob_loc['x_mean'],prob_loc['x_sigma'])
+  prob_y_prob = gaussian(y,prob_loc['y_mean'],prob_loc['y_sigma'])
+  prob_z_prob = gaussian(z,prob_loc['z_mean'],prob_loc['z_sigma'])
 
 
   if not space_only:
@@ -448,16 +440,11 @@ def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
   ax_2D.imshow(prob_xy.T,origin='lower',interpolation='none',\
     extent = [np.min(x), np.max(x), np.min(y), np.max(y)])
   ax_top.plot(x,prob_x,'b')
+  ax_top.plot(x,prob_x_prob,'b--')
   ax_top.axvspan(x_low,x_high,facecolor='r', alpha=0.2)
-#  ax_top.fill_between(x,prob_x_prob,facecolor='b',alpha=0.2)
-#  ax_top.fill_between(x,prob_x_loc,facecolor='r',alpha=0.2)
-  ax_rig.plot(prob_y,y)
+  ax_rig.plot(prob_y,y,'b')
+  ax_rig.plot(prob_y_prob,y,'b--')
   ax_rig.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
-#  ax_rig.fill_betweenx(y,0,prob_y_prob,facecolor='b',alpha=0.2)
-#  ax_rig.fill_betweenx(y,0,prob_y_loc,facecolor='r',alpha=0.2)
-
-  #ax_top.xaxis.set_ticks_position('none')
-  #ax_rig.yaxis.set_ticks_position('none')
 
   plt.savefig(fig_filename)
   plt.clf()
