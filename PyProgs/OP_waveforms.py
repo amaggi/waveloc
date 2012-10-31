@@ -644,7 +644,7 @@ class Waveform(object):
     if pre_taper:
       self.taper()
 
-    self.stream=stream_positive_derivative(self.stream)
+    self.stream=stream_positive_derivative(self.stream,self.dt)
     try:
       self.trace=self.stream[0]
     except IndexError:
@@ -703,7 +703,7 @@ class Waveform(object):
 
         # run the sliding window kurtosis
         nwin=int(win/dt)
-        xs=sw_kurtosis2(x,nwin)
+        xs=sw_kurtosis1(x,nwin)
         # fix up the starttime of the trace
         tr.stats.starttime = starttime + (nwin-1)*dt
 
@@ -767,7 +767,7 @@ class Waveform(object):
 
         trig_prec=trig
 
-      tr.data=np.convolve(tr_dirac,y,mode='same')
+      tr.data=np.append(np.convolve(tr_dirac,y,mode='same')[1:],0)
 
       self.stream.traces[itr]=tr
 
@@ -784,14 +784,14 @@ def stream_rmean(st):
     tr.data=t_tr
   return st
 
-def stream_positive_derivative(st):
+def stream_positive_derivative(st,dt):
   """
   Takes first time derivative of a stream (iterates over all available traces) and keep only positive values (set negative values to zero).
   """
   for tr in st:
     xs=tr.data
     try:
-      xtemp=np.gradient(xs)
+      xtemp=np.gradient(xs,dt)
       for i in range(len(xtemp)):
         if xtemp[i]<0 :
           xtemp[i]=0 
