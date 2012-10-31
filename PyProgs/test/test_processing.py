@@ -1,11 +1,14 @@
 import unittest, os, glob
+import numpy as np
 from SDS_processing import do_SDS_processing_setup_and_run
 from OP_waveforms import Waveform
 from options import WavelocOptions
 
+
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(KurtosisTests('test_ss_kurtosis'))
+  suite.addTest(ProcessingTests('test_positive_gradient'))
   suite.addTest(ProcessingTests('test_processing'))
   return suite
 
@@ -41,7 +44,6 @@ class KurtosisTests(unittest.TestCase):
     np.testing.assert_allclose(k1,k2,5)
     self.assertAlmostEquals(np.max(k1), np.max(k2))
     self.assertEquals(np.argmax(k1), np.argmax(k2))
-    print np.argmax(k1)
    
     
    
@@ -54,7 +56,30 @@ class ProcessingTests(unittest.TestCase):
     self.wo.set_test_options()
     self.wo.verify_SDS_processing_options()
 
+  def test_positive_gradient(self):
+    from OP_waveforms import stream_positive_derivative
+    from obspy.core import read
 
+    base_path=self.wo.opdict['base_path']
+    test_datadir=self.wo.opdict['test_datadir']
+
+    st=read(os.path.join(base_path,test_datadir,'raw_data','YA.UV15.00.HHZ.MSEED'))
+    tr=st[0]
+    npts= len(tr.data)
+    dt  = tr.stats.delta
+    x = np.arange(npts)*dt
+
+    # set up a polynomial function
+    y = (3 + 2*x +4*x*x +5*x*x*x)
+    dy_exp = (2 + 8*x +15*x*x)
+
+    tr.data=y
+    st=stream_positive_derivative(st)
+    np.testing.assert_almost_equal(tr.data[20:100], dy_exp[20:100],2)
+
+
+  @unittest.expectedFailure
+  @unittest.skip('Skip for now')
   def test_processing(self):
 
     base_path=self.wo.opdict['base_path']

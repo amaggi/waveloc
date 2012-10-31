@@ -125,6 +125,7 @@ class MigrationTests(unittest.TestCase):
  
 
 #  @unittest.skip('Not running small test')
+  @unittest.expectedFailure
   def test_migration(self):
 
     self.wo.opdict['load_ttimes_buf'] = True
