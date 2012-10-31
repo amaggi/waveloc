@@ -74,7 +74,7 @@ class ProcessingTests(unittest.TestCase):
     dy_exp = (2 + 8*x +15*x*x)
 
     tr.data=y
-    st=stream_positive_derivative(st,dt)
+    st=stream_positive_derivative(st)
     np.testing.assert_almost_equal(tr.data[20:100], dy_exp[20:100],2)
 
 
