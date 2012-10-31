@@ -644,7 +644,7 @@ class Waveform(object):
     if pre_taper:
       self.taper()
 
-    self.stream=stream_positive_derivative(self.stream,self.dt)
+    self.stream=stream_positive_derivative(self.stream)
     try:
       self.trace=self.stream[0]
     except IndexError:
@@ -784,12 +784,13 @@ def stream_rmean(st):
     tr.data=t_tr
   return st
 
-def stream_positive_derivative(st,dt):
+def stream_positive_derivative(st):
   """
   Takes first time derivative of a stream (iterates over all available traces) and keep only positive values (set negative values to zero).
   """
   for tr in st:
     xs=tr.data
+    dt=tr.stats.delta
     try:
       xtemp=np.gradient(xs,dt)
       for i in range(len(xtemp)):
