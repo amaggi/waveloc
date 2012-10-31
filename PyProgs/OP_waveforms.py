@@ -703,7 +703,7 @@ class Waveform(object):
 
         # run the sliding window kurtosis
         nwin=int(win/dt)
-        xs=sw_kurtosis2(x,nwin)
+        xs=sw_kurtosis1(x,nwin)
         # fix up the starttime of the trace
         tr.stats.starttime = starttime + (nwin-1)*dt
 
@@ -767,7 +767,7 @@ class Waveform(object):
 
         trig_prec=trig
 
-      tr.data=np.convolve(tr_dirac,y,mode='same')
+      tr.data=np.append(np.convolve(tr_dirac,y,mode='same')[1:],0)
 
       self.stream.traces[itr]=tr
 
@@ -790,8 +790,9 @@ def stream_positive_derivative(st):
   """
   for tr in st:
     xs=tr.data
+    dt=tr.stats.delta
     try:
-      xtemp=np.gradient(xs)
+      xtemp=np.gradient(xs,dt)
       for i in range(len(xtemp)):
         if xtemp[i]<0 :
           xtemp[i]=0 
