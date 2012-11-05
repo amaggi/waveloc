@@ -23,7 +23,7 @@ def setUpModule():
   make_SDS_data_links(test_data_dir,'*MSEED',data_dir)
 
   # make link for test grid file etc
-  test_files=['test_grid.search.hdr', 'coord_stations_test', 'grid.Taisne.search.hdr']
+  test_files=['test_grid.search.hdr', 'coord_stations_test', 'grid.Taisne.search.hdr', 'test_channel_file']
   for tfile in test_files:
     try:
       os.symlink(os.path.join(base_path,'test_data',tfile),os.path.join(base_path,'lib',tfile))
