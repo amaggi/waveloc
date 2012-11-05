@@ -104,6 +104,8 @@ def generateSyntheticDirac(opdict,time_grids=None):
         s=np.zeros(s_npts)
       atime=s_t0+delay
       i_atime=np.int(atime/s_delta)
+      if i_atime+s_nkwidth > len(s) :
+        logging.error('syn_datalength is too small compared with geographical size of network ')
       s[i_atime:i_atime+s_nkwidth]=s_amplitude-np.arange(s_nkwidth)*(s_amplitude/float(s_nkwidth))
       data[key]=s
       

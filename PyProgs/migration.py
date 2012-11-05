@@ -251,6 +251,8 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid):
 
   # sill fix the length of the stack to the shortest possible length given all the previous travel time information
   norm_stack_len=shortest_n_len-iextreme_max_time
+  if norm_stack_len < 0 :
+    logging.error('Data length too short for coherent migration across network')
 
   # the actual migration loop
   # cannot seem to vectorize this any more... too bad !!
