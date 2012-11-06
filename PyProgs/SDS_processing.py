@@ -6,6 +6,17 @@ import numpy as np
 from OP_waveforms import *
 import logging
 
+def read_channel_file(fname):
+     # read the channel file
+    f=open(fname,'r')
+    lines=f.readlines()
+    f.close()
+    triplet_list=[]
+    for line in lines:
+        net,sta,comp=line.split()
+        triplet_list.append((net,sta,comp))
+    return triplet_list 
+
 
 def do_SDS_processing_setup_and_run(opdict):
 
@@ -25,14 +36,23 @@ def do_SDS_processing_setup_and_run(opdict):
   logging.debug('Station list = %s'%opdict['sta_list'])
   logging.debug('Component list = %s'%opdict['comp_list'])
 
-  net_list=opdict['net_list'].split(',')
-  sta_list=opdict['sta_list'].split(',')
-  comp_list=opdict['comp_list'].split(',')
+  # if have a channel file then read it
+  if opdict.has_key('channel_file'):
+    fname=os.path.join(base_path,'lib',opdict['channel_file'])
+    triplet_list=read_channel_file(fname) 
+  else:
+    # else make triplet list from net, sta, comp lists
+    triplet_list=[]
+    net_list=opdict['net_list'].split(',')
+    sta_list=opdict['sta_list'].split(',')
+    comp_list=opdict['comp_list'].split(',')
+    for net in net_list:
+      for sta in sta_list:
+        for comp in comp_list:
+          triplet_list.append((net,sta,comp))
 
   # loop over data
-  for net in net_list:
-    for sta in sta_list:
-      for comp in comp_list:
+  for net,sta,comp in triplet_list:
         full_path=os.path.join(data_dir,net,sta,"%s.D"%comp)
         logging.debug("Full path : %s"%full_path)
         if os.path.exists(full_path):

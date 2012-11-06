@@ -80,6 +80,9 @@ class WavelocOptions(object):
     self.p.add_argument('--comp_list',action='store',
             help="list of component names (e.g. \"HHZ,LHZ\") ")
 
+    self.p.add_argument('--channel_file',action='store',
+            help="file containing ordered list of NET STA COMP values (e.g. \"YA FLR HHZ\") ")
+
     self.p.add_argument('--resample',action='store_true',
             default=self.opdict['resample'], help="resample data")
     self.p.add_argument('--fs',      action='store', type=float,
@@ -222,6 +225,7 @@ class WavelocOptions(object):
     self.opdict['net_list']=args.net_list
     self.opdict['sta_list']=args.sta_list
     self.opdict['comp_list']=args.comp_list
+    self.opdict['channel_file']=args.channel_file
 
     self.opdict['resample']=args.resample
     self.opdict['fs']=args.fs
@@ -427,6 +431,15 @@ class WavelocOptions(object):
   def _verify_comp_list(self):
     if not self.opdict.has_key('comp_list'):
         raise UserWarning('comp_list option not set')
+
+  def _verify_channel_file(self):
+    if not self.opdict.has_key('channel_file'):
+        raise UserWarning('channel_file option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    filename=os.path.join(base_path,'lib',self.opdict['channel_file'])
+    if not os.path.isfile(filename) : 
+        raise UserWarning('Cannot find %s'%filename)
 
   def _verify_starttime(self):
     if not self.opdict.has_key('starttime'):
@@ -688,9 +701,14 @@ class WavelocOptions(object):
     self.verify_base_path()
     self._verify_datadir()
 
-    self._verify_net_list()
-    self._verify_sta_list()
-    self._verify_comp_list()
+    # if have channel_file option, check that
+    if self.opdict.has_key('channel_file'):
+      self._verify_channel_file()
+    # else check net sta comp lists are set
+    else:
+      self._verify_net_list()
+      self._verify_sta_list()
+      self._verify_comp_list()
 
     self._verify_starttime()
     self._verify_endtime()
