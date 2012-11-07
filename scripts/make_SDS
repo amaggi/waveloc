@@ -3,7 +3,7 @@
 
 import os, sys, optparse, glob
 import logging
-from make_SDS_data_links import make_SDS_data_links
+from waveloc.make_SDS_data_links import make_SDS_data_links
 
 p=optparse.OptionParser()
 
