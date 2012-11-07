@@ -32,10 +32,6 @@ def do_SDS_processing_setup_and_run(opdict):
   start_time=utcdatetime.UTCDateTime(opdict['starttime'])
   end_time=utcdatetime.UTCDateTime(opdict['endtime'])
 
-  logging.debug('Network list = %s'%opdict['net_list'])
-  logging.debug('Station list = %s'%opdict['sta_list'])
-  logging.debug('Component list = %s'%opdict['comp_list'])
-
   # if have a channel file then read it
   if opdict.has_key('channel_file'):
     fname=os.path.join(base_path,'lib',opdict['channel_file'])
