@@ -145,7 +145,7 @@ class Waveform(object):
       # add to list if start or end time are within our requested limits
       if (first_start < endtime and last_end > starttime):
         fnames_within_times.append(fname)
-    logging.debug("Found %d files to read"%len(fnames_within_times)
+    logging.debug("Found %d files to read"%len(fnames_within_times))
 
     # now read the full data only for the relevant files
     st=Stream()
@@ -544,10 +544,7 @@ class Waveform(object):
       logging.warn('Cannot import scikits.samlerate.resample - using obsy.downsample instead')
       factor=np.int(np.round(1/ratio))
       logging.info('Downsampling from %.2f to %.2f by factor %d'%(old_samplerate, new_samplerate, factor))
-      for itr in range(self.stream.count()) :
-        tr=self.stream.traces[itr]
-        tr.downsample(decimation_factor=factor, strict_length=False, no_filter=True)
-        self.stream.traces[itr]=tr
+      self.stream.decimate(factor=factor,no_filter=True)
 
 
      
