@@ -70,8 +70,18 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
     dy=grid_info['dy']
     dz=grid_info['dz']
 
-    start_time_migration=start_time-10.0
-    end_time_migration=end_time+10.0
+    x=loc['x_mean']
+    y=loc['y_mean']
+    z=loc['z_mean']
+    # get the corresponding travel-times for time-shifting
+    ttimes={}
+    for sta in time_grids.keys():
+        ttimes[sta]=time_grids[sta].value_at_point(x,y,z)
+
+    tshift_migration=max(ttimes.values())
+
+    start_time_migration=start_time-tshift_migration
+    end_time_migration=end_time+tshift_migration
 
     if plot_grid:
       logging.info('Plotting grid for location %s'%o_time.isoformat())
@@ -97,15 +107,6 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
 #      iy=np.int(np.round((loc['y_mean']-grid_info['y_orig'])/dy))
 #      iz=np.int(np.round((loc['z_mean']-grid_info['z_orig'])/dz))
 #      ib= ix*ny*nz + iy*nz + iz
-
-      x=loc['x_mean']
-      y=loc['y_mean']
-      z=loc['z_mean']
-      # get the corresponding travel-times for time-shifting
-      ttimes={}
-      for sta in time_grids.keys():
-          #ttimes[sta]=time_grids[sta].grid_data[ib]
-          ttimes[sta]=time_grids[sta].value_at_point(x,y,z)
 
       # read data
       data_dict,delta = read_data_compatible_with_time_dict(data_files,
