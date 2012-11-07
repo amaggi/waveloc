@@ -122,11 +122,37 @@ class Waveform(object):
 
     """
     logging.info("Reading from SDS structure %s %s %s ..."%(net_name,sta_name,comp_name))
+    # get the complete file list
     filename=os.path.join(sds_root,net_name,sta_name,"%s.D"%comp_name,"*")
+    logging.debug("Reading %s between %s and %s"%(filename,starttime.isoformat(),endtime.isoformat()))
     if os.path.isdir(glob.glob(filename)[0]):
       filename=os.path.join(filename,"*")
-    logging.debug(filename)
-    st=stream.read(filename,starttime=starttime, endtime=endtime)
+    file_glob=glob.glob(filename)
+
+    # read header time info for each file into a dictionnary
+    fnames_within_times=[]
+    for fname in file_glob:
+      st_head=stream.read(fname,headonly=True)
+      # retrieve first_start and last_end time for the stream
+      # without making any assumptions on order of traces
+      first_start=st_head[0].stats.starttime
+      last_end   =st_head[0].stats.endtime
+      for tr in st_head:
+        if tr.stats.starttime < first_start : 
+            first_start = tr.stats.starttime
+        if tr.stats.endtime > last_end : 
+            last_end = tr.stats.endtime
+      # add to list if start or end time are within our requested limits
+      if (first_start < endtime and last_end > starttime):
+        fnames_within_times.append(fname)
+
+    # now read the full data only for the relevant files
+    st=Stream()
+    for fname in fnames_within_times:
+      st_tmp=read(fname,starttime=starttime, endtime=endtime)
+      for tr in st_tmp:
+        st.append(tr)
+    # and merge overlaps
     st.merge(method=-1)
 
     if st.count()>1: # There are gaps after sensible cleanup merging

@@ -91,7 +91,7 @@ class ProcessingTests(unittest.TestCase):
     self.assertEquals(triplet_list[0][1],'ECH')
     self.assertEquals(triplet_list[-1][2],'UHZ')
 
-  @unittest.skip('Skip for now')
+  #@unittest.skip('Skip for now')
   def test_processing(self):
 
     base_path=self.wo.opdict['base_path']
