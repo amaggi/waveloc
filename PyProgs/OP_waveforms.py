@@ -735,9 +735,10 @@ class Waveform(object):
 
         # run the sliding window kurtosis
         nwin=int(win/dt)
-        xs=sw_kurtosis1(x,nwin)
-        # fix up the starttime of the trace
-        tr.stats.starttime = starttime + (nwin-1)*dt
+        if len(x)>nwin:
+          xs=sw_kurtosis1(x,nwin)
+          # fix up the starttime of the trace
+          tr.stats.starttime = starttime + (nwin-1)*dt
 
       # smooth xs
       xs_filt=smooth(xs)
