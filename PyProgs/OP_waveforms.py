@@ -153,7 +153,7 @@ class Waveform(object):
       st_tmp=read(fname,starttime=starttime, endtime=endtime)
       for tr in st_tmp:
         st.append(tr)
-    # and merge overlaps
+    # and merge nicely
     st.merge(method=-1)
 
     if st.count()>1: # There are gaps after sensible cleanup merging
@@ -690,7 +690,7 @@ class Waveform(object):
     """
     Processing waveform using kurtosis (from statlib package).
     
-    Calls filters.sw_kurtosis2(), and overwrites the waveform.
+    Calls filters.sw_kurtosis1(), and overwrites the waveform.
     
     :param win: length of the window (in seconds) on which to calculate the
                 kurtosis 
@@ -730,18 +730,21 @@ class Waveform(object):
       if recursive:
         C=1-dt/win
         xs=rec_kurtosis(x,C)
+        # smooth xs
+        xs_filt=smooth(xs)
 
       else:
 
         # run the sliding window kurtosis
         nwin=int(win/dt)
-        if len(x)>nwin:
+        if len(x)>3*nwin:
           xs=sw_kurtosis1(x,nwin)
+          xs_filt=smooth(xs)
           # fix up the starttime of the trace
           tr.stats.starttime = starttime + (nwin-1)*dt
+        else:
+          xs_filt=xs
 
-      # smooth xs
-      xs_filt=smooth(xs)
        
       # Save xs values as waveform 
       tr.data=xs_filt
