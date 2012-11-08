@@ -31,7 +31,7 @@ def plotLocationWaveforms(loc,start_time,dt,data_dict,grad_dict,stack_wfm,fig_di
     fig=plt.figure()
     ax=fig.add_subplot(n_traces,2,1,title='Data')
     ax.set_axis_off()
-    ax=fig.add_subplot(n_traces,2,2,title='Kurtosis Gradient')
+    ax=fig.add_subplot(n_traces,2,2,title='Characteristic function')
     ax.set_axis_off()
 
     i=0
