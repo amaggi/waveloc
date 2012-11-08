@@ -718,7 +718,7 @@ class WavelocOptions(object):
     self.verify_base_path()
     self._verify_datadir()
 
-    self._verify_channel_net_sta_comp(self)
+    self._verify_channel_net_sta_comp()
 
     self._verify_starttime()
     self._verify_endtime()
@@ -740,7 +740,7 @@ class WavelocOptions(object):
     self._verify_datadir()
     self._verify_outdir()
 
-    self._verify_channel_net_sta_comp(self)
+    self._verify_channel_net_sta_comp()
 
     self._verify_kurtglob()
     if self.opdict['kderiv']:
