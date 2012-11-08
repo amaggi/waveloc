@@ -23,16 +23,27 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
   output_dir=os.path.join(base_path,'out',opdict['outdir'])
 
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
-  data_glob=opdict['dataglob']
-  kurt_glob=opdict['kurtglob']
-  grad_glob=opdict['gradglob']
-  data_files=glob.glob(os.path.join(data_dir,data_glob))
-  kurt_files=glob.glob(os.path.join(data_dir,kurt_glob))
-  grad_files=glob.glob(os.path.join(data_dir,grad_glob))
-  data_files.sort()
-  kurt_files.sort()
-  grad_files.sort()
 
+  data_glob=opdict['dataglob']
+  data_files=glob.glob(os.path.join(data_dir,data_glob))
+  data_files.sort()
+
+  kurt_glob=opdict['kurtglob']
+  kurt_files=glob.glob(os.path.join(data_dir,kurt_glob))
+  kurt_files.sort()
+  mig_files=kurt_files
+
+  if opdict['kderiv']:
+    grad_glob=opdict['gradglob']
+    grad_files=glob.glob(os.path.join(data_dir,grad_glob))
+    grad_files.sort()
+    mig_files=grad_files
+
+    if opdict['gauss']:
+      gauss_glob=opdict['gaussglob']
+      gauss_files=glob.glob(os.path.join(data_dir,gauss_glob))
+      gauss_files.sort()
+      mig_files=gauss_files
 
   figdir=os.path.join(base_path,'out',opdict['outdir'],'fig')
 
@@ -88,11 +99,11 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       # TODO implement a rough estimation of the stack shift based on propagation time across the whole network
 
       # read data
-      grad_dict,delta = read_data_compatible_with_time_dict(grad_files,
+      mig_dict,delta = read_data_compatible_with_time_dict(mig_files,
             time_grids, start_time_migration, end_time_migration)
 
       # do migration
-      do_migration_loop_continuous(opdict, grad_dict, delta,
+      do_migration_loop_continuous(opdict, mig_dict, delta,
             start_time_migration, grid_info, time_grids, keep_grid=True)
 
       # plot
