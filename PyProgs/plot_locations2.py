@@ -96,7 +96,7 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
             start_time_migration, grid_info, time_grids, keep_grid=True)
 
       # plot
-      plotLocationGrid(loc,grid_info,figdir)
+      plotLocationGrid(loc,grid_info,figdir,opdict['plot_otime_window'])
 
     if plot_wfm:
 

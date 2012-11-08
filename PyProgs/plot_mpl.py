@@ -85,7 +85,7 @@ def plotLocationWaveforms(loc,start_time,dt,data_dict,grad_dict,stack_wfm,fig_di
     plt.clf()
 
 
-def plotLocationGrid(loc,grid_info,fig_dir):
+def plotLocationGrid(loc,grid_info,fig_dir,otime_window):
 
   # set up plot using info from grid_info
   nx,ny,nz,nt = grid_info['grid_shape']
@@ -133,9 +133,9 @@ def plotLocationGrid(loc,grid_info,fig_dir):
   plot_info['y_err'] = (y_low, y_high)
   plot_info['z_err'] = (z_low, z_high)
 
-  plotDiracTest(plot_info,fig_dir)
+  plotDiracTest(plot_info,fig_dir,otime_window)
 
-def plotDiracTest(test_info,fig_dir):
+def plotDiracTest(test_info,fig_dir,otime_window):
 
   # set up plot using info from test_info
   nx,ny,nz,nt = test_info['grid_shape']
@@ -239,11 +239,11 @@ def plotDiracTest(test_info,fig_dir):
 
   # choose portion of time series to plot
   if test_info.has_key('true_values'):
-    llim = t_true-2.0
-    rlim = t_true+2.0
+    llim = t_true-otime_window
+    rlim = t_true+otime_window
   else:
-    llim = t[it_true]-2.0
-    rlim = t[it_true]+2.0
+    llim = t[it_true]-otime_window
+    rlim = t[it_true]+otime_window
 
   illim = int((llim-t[0])/dt)
   irlim = int((rlim-t[0])/dt)
