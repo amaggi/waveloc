@@ -122,7 +122,7 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       # read data
       data_dict,delta = read_data_compatible_with_time_dict(data_files,
             time_grids, start_time_migration, end_time_migration)
-      grad_dict,delta = read_data_compatible_with_time_dict(grad_files,
+      mig_dict,delta = read_data_compatible_with_time_dict(mig_files,
             time_grids, start_time_migration, end_time_migration)
 
       # cut desired portion out of data
@@ -137,8 +137,8 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
           if iend   > len(tmp) : iend = len(tmp)
           data_dict[sta]=tmp[istart:iend]
           # do slice
-          tmp=grad_dict[sta]
-          grad_dict[sta]=tmp[istart:iend]
+          tmp=mig_dict[sta]
+          mig_dict[sta]=tmp[istart:iend]
 
       # retrieve relevant portion of stack max
       istart=np.int(np.round(
@@ -154,7 +154,7 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       stack_wfm=max_val[istart:iend]
 
       # plot
-      plotLocationWaveforms(loc,start_time,delta,data_dict,grad_dict,stack_wfm,figdir)
+      plotLocationWaveforms(loc,start_time,delta,data_dict,mig_dict,stack_wfm,figdir)
 
   f_stack.close()
 
