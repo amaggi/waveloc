@@ -807,7 +807,10 @@ class Waveform(object):
 
         trig_prec=trig
 
-      tr.data=np.append(np.convolve(tr_dirac,y,mode='same')[1:],0)
+      try:
+        tr.data=np.append(np.convolve(tr_dirac,y,mode='same')[1:],0)
+      except ValueError:
+        logging.warn('Empty data segment in gaussian convolution')
 
       self.stream.traces[itr]=tr
 
