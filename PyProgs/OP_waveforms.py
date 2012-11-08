@@ -732,7 +732,10 @@ class Waveform(object):
         C=1-dt/win
         xs=rec_kurtosis(x,C)
         # smooth xs
-        xs_filt=smooth(xs)
+        try:
+          xs_filt=smooth(xs)
+        except ValueError:
+	  xs_filt=xs
 
       else:
 
