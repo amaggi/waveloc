@@ -51,20 +51,20 @@ def filter_max_stack(st_max,corner):
 
   return st_filt
 
-def number_good_kurtosis_for_location(kurt_files,dataglob,o_time,snr_limit=10.0,snr_tr_limit=10.0,sn_time=10.0):
+def number_good_kurtosis_for_location(kurt_files,data_files,o_time,snr_limit=10.0,snr_tr_limit=10.0,sn_time=10.0):
   # TODO - Fix this to estimate K-time from o_time and propagation time to station
   n_good_kurt=0
   wf=Waveform()
   start_time=o_time-sn_time
   end_time=o_time+sn_time 
-  for filename in kurt_files:
+  for ifile in xrange(len(kurt_files)):
+    kfilename=kurt_files[ifile]
+    dfilename=data_files[ifile]
     try:
-      wf.read_from_file(filename,starttime=start_time,endtime=end_time)
+      wf.read_from_file(kfilename,starttime=start_time,endtime=end_time)
       snr=wf.get_snr(o_time,start_time,end_time)
-      staname=wf.station
 
-      new_filename=os.path.join(os.path.dirname(filename),"*%s%s"%(staname,dataglob))
-      wf.read_from_file(new_filename,starttime=start_time,endtime=end_time)
+      wf.read_from_file(dfilename,starttime=start_time,endtime=end_time)
       snr_tr=wf.get_snr(o_time,start_time,end_time)
 
       if snr > snr_limit and snr_tr > snr_tr_limit:
@@ -141,7 +141,9 @@ def do_locations_trigger_setup_and_run(opdict):
   # parse command line
   data_dir=os.path.join(base_path,'data',opdict['datadir'])
   kurt_files=glob.glob(os.path.join(data_dir,opdict['kurtglob']))
+  data_files=glob.glob(os.path.join(data_dir,opdict['dataglob']))
   kurt_files.sort()
+  data_files.sort()
 
   dataglob=opdict['dataglob']
 
@@ -261,7 +263,7 @@ def do_locations_trigger_setup_and_run(opdict):
   n_ok=0
   locs=[]
   for loc in loc_list:
-    if number_good_kurtosis_for_location(kurt_files,dataglob,loc['o_time'],snr_limit,snr_tr_limit,sn_time) > n_kurt_min:
+    if number_good_kurtosis_for_location(kurt_files,data_files,loc['o_time'],snr_limit,snr_tr_limit,sn_time) > n_kurt_min:
       logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km, y=%.4f pm %.4f km, z=%.4f pm %.4f km"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       n_ok=n_ok+1

@@ -533,6 +533,7 @@ class Waveform(object):
     ratio=new_samplerate/old_samplerate
     try:
       from scikits.samplerate import resample as sci_resample
+      logging.info('Resampling from %.2f to %.2f by ratio %.2f'%(old_samplerate, new_samplerate, ratio))
       for itr in range(self.stream.count()) :
         tr=self.stream.traces[itr]
         xs=sci_resample(tr.data,ratio,resample_type,verbose=True)
@@ -731,7 +732,10 @@ class Waveform(object):
         C=1-dt/win
         xs=rec_kurtosis(x,C)
         # smooth xs
-        xs_filt=smooth(xs)
+        try:
+          xs_filt=smooth(xs)
+        except ValueError:
+	  xs_filt=xs
 
       else:
 
@@ -803,7 +807,10 @@ class Waveform(object):
 
         trig_prec=trig
 
-      tr.data=np.append(np.convolve(tr_dirac,y,mode='same')[1:],0)
+      try:
+        tr.data=np.append(np.convolve(tr_dirac,y,mode='same')[1:],0)
+      except ValueError:
+        logging.warn('Empty data segment in gaussian convolution')
 
       self.stream.traces[itr]=tr
 
@@ -882,7 +889,7 @@ def read_data_compatible_with_time_dict(filenames, time_dict, starttime, endtime
   if len(u) > 1 :
     logging.error('Sampling frequency differs between stations.  Fix this before migrating.')
     for i in xrange(len(deltas)):
-      logging.error('Delta %.2f for file %s'%(deltas[i],filenames[i]))
+      logging.error('Delta %.4f for file %s'%(deltas[i],filenames[i]))
     raise UserWarning
   
   return data, u[0]

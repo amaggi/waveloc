@@ -6,7 +6,6 @@
 !/test_data/*.buf
 *.ttimes
 /lib/*.hdr
-!/lib/*search.hdr
 /sphinx/_*
 /PyProgs/*.dat
 *.mat

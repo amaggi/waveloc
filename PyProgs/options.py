@@ -186,9 +186,11 @@ class WavelocOptions(object):
             help="filename for synthetic grid")
 
     self.p.add_argument('--plot_tbefore',action='store',type=float, 
-            help="time before origin time for plots")
+            help="time before origin time for waveform plots")
     self.p.add_argument('--plot_tafter',action='store',type=float, 
-            help="time after origin time for plots")
+            help="time after origin time for waveform plots")
+    self.p.add_argument('--plot_otime_window',action='store',type=float, 
+            help="time before and after origin time for grid plots")
 
     self.p.add_argument('--xcorr_threshold',action='store',
             default=self.opdict['xcorr_threshold'], type=float, 
@@ -279,6 +281,7 @@ class WavelocOptions(object):
 
     self.opdict['plot_tbefore']=args.plot_tbefore
     self.opdict['plot_tafter']=args.plot_tafter
+    self.opdict['plot_otime_window']=args.plot_otime_window
 
     self.opdict['xcorr_threshold']=args.xcorr_threshold
     self.opdict['xcorr_before']=args.xcorr_before
@@ -695,12 +698,11 @@ class WavelocOptions(object):
     if not self.opdict.has_key('plot_tafter'):
         raise UserWarning('plot_tafter option not set')
 
+  def _verify_plot_otime_window(self):
+    if not self.opdict.has_key('plot_otime_window'):
+        raise UserWarning('plot_otime_window option not set')
 
-  def verify_SDS_processing_options(self):
-
-    self.verify_base_path()
-    self._verify_datadir()
-
+  def _verify_channel_net_sta_comp(self):
     # if have channel_file option, check that
     if self.opdict.has_key('channel_file'):
       self._verify_channel_file()
@@ -709,6 +711,14 @@ class WavelocOptions(object):
       self._verify_net_list()
       self._verify_sta_list()
       self._verify_comp_list()
+
+
+  def verify_SDS_processing_options(self):
+
+    self.verify_base_path()
+    self._verify_datadir()
+
+    self._verify_channel_net_sta_comp()
 
     self._verify_starttime()
     self._verify_endtime()
@@ -729,6 +739,8 @@ class WavelocOptions(object):
     self._verify_lib_path()
     self._verify_datadir()
     self._verify_outdir()
+
+    self._verify_channel_net_sta_comp()
 
     self._verify_kurtglob()
     if self.opdict['kderiv']:
@@ -889,6 +901,7 @@ class WavelocOptions(object):
 
     self._verify_plot_tbefore()
     self._verify_plot_tafter()
+    self._verify_plot_otime_window()
 
     self._verify_search_grid()
     self._verify_time_grid()
