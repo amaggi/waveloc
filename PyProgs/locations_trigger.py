@@ -9,6 +9,8 @@ from filters import smooth
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
+from OP_waveforms import read_data_compatible_with_time_dict
+from hdf5_grids import get_interpolated_time_grids
 
 def plot_location_triggers(trace,trig_start,trig_end,trig_95_start, trig_95_end, show=True):
     df = trace.stats.sampling_rate
@@ -51,28 +53,39 @@ def filter_max_stack(st_max,corner):
 
   return st_filt
 
-def number_good_kurtosis_for_location(kurt_files,data_files,o_time,snr_limit=10.0,snr_tr_limit=10.0,sn_time=10.0):
+def number_good_kurtosis_for_location(kurt_files,data_files,loc,time_dict,snr_limit=10.0,snr_tr_limit=10.0,sn_time=10.0):
+
+  o_time=loc['o_time']
+  stack_x=loc['x_mean']
+  stack_y=loc['y_mean']
+  stack_z=loc['z_mean']
   # TODO - Fix this to estimate K-time from o_time and propagation time to station
   n_good_kurt=0
   wf=Waveform()
-  start_time=o_time-sn_time
-  end_time=o_time+sn_time 
+
   for ifile in xrange(len(kurt_files)):
     kfilename=kurt_files[ifile]
     dfilename=data_files[ifile]
+
+    st=read(kfilename,headonly=True)
+    staname=st.traces[0].stats.station
+
+    traveltime=time_dict[staname].value_at_point(stack_x,stack_y,stack_z)
+    start_time=o_time+traveltime-sn_time
+    end_time=o_time+traveltime+sn_time
     try:
       wf.read_from_file(kfilename,starttime=start_time,endtime=end_time)
-      snr=wf.get_snr(o_time,start_time,end_time)
+      snr=wf.get_snr(o_time+traveltime,start_time,end_time)
 
       wf.read_from_file(dfilename,starttime=start_time,endtime=end_time)
-      snr_tr=wf.get_snr(o_time,start_time,end_time)
+      snr_tr=wf.get_snr(o_time+traveltime,start_time,end_time)
 
       if snr > snr_limit and snr_tr > snr_tr_limit:
         n_good_kurt = n_good_kurt + 1
     except UserWarning:
       logging.info('No data around %s for file %s.'%(o_time.isoformat(),filename))
   return n_good_kurt
-    
+
 def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,start_time,delta):    
 
     locs=[]
@@ -112,7 +125,7 @@ def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,start
           locs.append(loc_dict)
 
     return locs
- 
+
 
 def trigger_locations(st_max_filt,st_x,st_y,st_z,left_trig,right_trig):
 
@@ -146,6 +159,8 @@ def do_locations_trigger_setup_and_run(opdict):
   data_files.sort()
 
   dataglob=opdict['dataglob']
+
+  time_grids=get_interpolated_time_grids(opdict)
 
   logging.info("Starting log for combine_stacks.")
 
@@ -190,10 +205,10 @@ def do_locations_trigger_setup_and_run(opdict):
     start_times.append(utcdatetime.UTCDateTime(max_val.attrs['start_time']))
     end_times.append(  utcdatetime.UTCDateTime(max_val.attrs['start_time'])+dt*len(max_val))
     f_stack.close()
-  
+
   first_start_time = min(start_times)
   last_end_time = max(end_times)
-    
+
   nt_full=int((last_end_time-first_start_time)/dt)+1
 
 
@@ -260,10 +275,16 @@ def do_locations_trigger_setup_and_run(opdict):
   sn_time=opdict['sn_time']
   n_kurt_min=opdict['n_kurt_min']
 
+  # Header of locations.dat
+  loc_file.write('FILTER : %.d - %.d Hz\n'%(opdict['c1'],opdict['c2']))
+  loc_file.write('KURTOSIS = window: %.2f s, recurs: %s, grad: %s, gauss: %s\n'%(opdict['kwin'],opdict['krec'],opdict['kderiv'],opdict['gauss']))
+  loc_file.write('OPTIONS = reloc: %s\n'%reloc)
+  loc_file.write('LOCATION = level: %d, window of analysis: %.2f s, kurtosis snr: %.2f, waveform snr: %.2f, number of stations: %d\n\n'%(loclevel,sn_time,snr_limit,snr_tr_limit,n_kurt_min))
+
   n_ok=0
   locs=[]
   for loc in loc_list:
-    if number_good_kurtosis_for_location(kurt_files,data_files,loc['o_time'],snr_limit,snr_tr_limit,sn_time) > n_kurt_min:
+    if number_good_kurtosis_for_location(kurt_files,data_files,loc,time_grids,snr_limit,snr_tr_limit,sn_time) > n_kurt_min:
       logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km, y=%.4f pm %.4f km, z=%.4f pm %.4f km"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       n_ok=n_ok+1
@@ -285,23 +306,49 @@ def read_locs_from_file(filename):
   lines=f.readlines()
   f.close()
 
+  nb_line=0
+
   for line in lines:
-    loc={}
 
-    loc['max_trig']=np.float(line.split()[2].split(',')[0])
-    loc['o_time']=utcdatetime.UTCDateTime(line.split()[3])
-    loc['o_err_left']=np.float(line.split()[5])
-    loc['o_err_right']=np.float(line.split()[8])
-    loc['x_mean']=np.float(line.split()[11])
-    loc['x_sigma']=np.float(line.split()[13])
-    loc['y_mean']=np.float(line.split()[16])
-    loc['y_sigma']=np.float(line.split()[18])
-    loc['z_mean']=np.float(line.split()[21])
-    loc['z_sigma']=np.float(line.split()[23])
+    if nb_line >= 5:
+      loc={}
 
-    locs.append(loc)
+      loc['max_trig']=np.float(line.split()[2].split(',')[0])
+      loc['o_time']=utcdatetime.UTCDateTime(line.split()[3])
+      loc['o_err_left']=np.float(line.split()[5])
+      loc['o_err_right']=np.float(line.split()[8])
+      loc['x_mean']=np.float(line.split()[11])
+      loc['x_sigma']=np.float(line.split()[13])
+      loc['y_mean']=np.float(line.split()[16])
+      loc['y_sigma']=np.float(line.split()[18])
+      loc['z_mean']=np.float(line.split()[21])
+      loc['z_sigma']=np.float(line.split()[23])
+
+      locs.append(loc)
+
+    nb_line=nb_line+1
 
   return locs
+
+
+def read_header_from_file(filename):
+
+  f=open(filename,'r')
+  lines=f.readlines()
+  f.close()
+
+  head={}
+
+  head['filt']='%s-%s'%(lines[0].split()[2],lines[0].split()[4])
+  head['rec']=lines[1].split()[6][:-1]
+  head['grad']=lines[1].split()[8][:-1]
+  head['gauss']=lines[1].split()[10]
+  head['reloc']=lines[2].split()[3]
+  head['detect']=lines[3].split()[3][:-1]
+
+  return head
+
+
  
 if __name__=='__main__':
 
@@ -315,5 +362,3 @@ if __name__=='__main__':
   wo.verify_location_options()
 
   do_locations_trigger_setup_and_run(wo.opdict)
-
- 

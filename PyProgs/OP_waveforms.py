@@ -793,7 +793,7 @@ class Waveform(object):
       trig_prec=[0,0]
 
       for trig in trigs:
-        if trig[-1]-trig_prec[0] < 20:
+        if trig[-1]-trig_prec[0] < 50:
           trig=[trig_prec[0],trig[-1]]
 
         istart=trig[0] 
