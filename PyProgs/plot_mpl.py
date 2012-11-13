@@ -110,9 +110,16 @@ def plotLocationGrid(loc,grid_info,fig_dir,otime_window):
 
   #get indexes correponding to location
   it_true=np.int(np.round((o_time-stack_starttime)/dt))
-  ix_true=np.int(np.round((x_mean-x_orig)/dx))
-  iy_true=np.int(np.round((y_mean-y_orig)/dy))
-  iz_true=np.int(np.round((z_mean-z_orig)/dz))
+  # zero indexes are default for 2D grids
+  ix_true=0
+  iy_true=0
+  iz_true=0
+  if dx > 0:
+    ix_true=np.int(np.round((x_mean-x_orig)/dx))
+  if dy > 0:
+    iy_true=np.int(np.round((y_mean-y_orig)/dy))
+  if dz > 0:
+    iz_true=np.int(np.round((z_mean-z_orig)/dz))
   plot_info['true_indexes'] = (ix_true, iy_true, iz_true, it_true)
   plot_info['true_values'] = (x_mean, y_mean, z_mean, o_time-stack_starttime)
 
@@ -200,42 +207,45 @@ def plotDiracTest(test_info,fig_dir,otime_window):
     fig.suptitle('%s   x = %.2fkm  y = %.2fkm  z = %.2fkm'%(test_info['o_time'].isoformat(), x_true, y_true, z_true))
 
   # plot xy plane
-  p=plt.subplot(2,2,1)
-  pos=list(p.get_position().bounds)
-  fig.text(pos[0]-0.08,pos[1]+pos[3], '(a)', fontsize=12)
-  plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
- # if test_info.has_key('x_err'):
- #     x_low,x_high=test_info['x_err']
- #     plt.vlines(x_low,np.min(y),np.max(y),'w',linewidth=1)
- #     plt.vlines(x_high,np.min(y),np.max(y),'w',linewidth=1)
-  p.tick_params(labelsize=10)
-  p.xaxis.set_ticks_position('top')
-  plt.xlabel('x (km wrt ref)',size=10)
-  plt.ylabel('y (km wrt ref)',size=10)
-  #plt.title('XY plane')
+  if dx > 0 and dy > 0 :
+    p=plt.subplot(2,2,1)
+    pos=list(p.get_position().bounds)
+    fig.text(pos[0]-0.08,pos[1]+pos[3], '(a)', fontsize=12)
+    plt.imshow(xy_cut.T,origin='lower',interpolation='none',extent=[np.min(x),np.max(x),np.min(y),np.max(y)])
+   # if test_info.has_key('x_err'):
+   #     x_low,x_high=test_info['x_err']
+   #     plt.vlines(x_low,np.min(y),np.max(y),'w',linewidth=1)
+   #     plt.vlines(x_high,np.min(y),np.max(y),'w',linewidth=1)
+    p.tick_params(labelsize=10)
+    p.xaxis.set_ticks_position('top')
+    plt.xlabel('x (km wrt ref)',size=10)
+    plt.ylabel('y (km wrt ref)',size=10)
+    #plt.title('XY plane')
 
   #plot xz plane
-  p=plt.subplot(4,2,5)
-  pos=list(p.get_position().bounds)
-  fig.text(pos[0]-0.08,pos[1]+pos[3], '(b)', fontsize=12)
-  plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
-  p.tick_params(labelsize=10)
-  p.xaxis.set_ticks_position('top')
-  p.xaxis.set_ticks(())
-  #plt.xlabel('x (km wrt ref)')
-  plt.ylabel('z (km up)',size=10)
-  #plt.title('XZ plane')
+  if dx > 0 and dz > 0 :
+    p=plt.subplot(4,2,5)
+    pos=list(p.get_position().bounds)
+    fig.text(pos[0]-0.08,pos[1]+pos[3], '(b)', fontsize=12)
+    plt.imshow(xz_cut.T,origin='upper',interpolation='none',extent=[np.min(x),np.max(x),np.min(z),np.max(z)])
+    p.tick_params(labelsize=10)
+    p.xaxis.set_ticks_position('top')
+    p.xaxis.set_ticks(())
+    #plt.xlabel('x (km wrt ref)')
+    plt.ylabel('z (km up)',size=10)
+    #plt.title('XZ plane')
 
   # plot yz plane
-  p=plt.subplot(4,2,7)
-  pos=list(p.get_position().bounds)
-  fig.text(pos[0]-0.08,pos[1]+pos[3], '(c)', fontsize=12)
-  plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
-  p.xaxis.set_ticks_position('bottom')
-  p.tick_params(labelsize=10)
-  plt.xlabel('y (km wrt ref)',size=10)
-  plt.ylabel('z (km up)',size=10)
-  #plt.title('YZ plane')
+  if dy > 0 and dz > 0 :
+    p=plt.subplot(4,2,7)
+    pos=list(p.get_position().bounds)
+    fig.text(pos[0]-0.08,pos[1]+pos[3], '(c)', fontsize=12)
+    plt.imshow(yz_cut.T,origin='upper',interpolation='none',extent=[np.min(y),np.max(y),np.min(z),np.max(z)])
+    p.xaxis.set_ticks_position('bottom')
+    p.tick_params(labelsize=10)
+    plt.xlabel('y (km wrt ref)',size=10)
+    plt.ylabel('z (km up)',size=10)
+    #plt.title('YZ plane')
 
   # choose portion of time series to plot
   if test_info.has_key('true_values'):
@@ -275,90 +285,93 @@ def plotDiracTest(test_info,fig_dir,otime_window):
   z=np.arange(nz)*dz+z_orig
 
   # plot max x
-  p=plt.subplot(4,2,4, frameon=False)
-  pos=list(p.get_position().bounds)
-  fig.text(pos[0],pos[1]+pos[3], '(e)', fontsize=12)
-  p.tick_params(labelsize=10)
-  #plt.plot(t,max_x,'b.',clip_on=False)
-  plt.scatter(t[illim:irlim],max_x[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
-  #plt.xticks([llim,t[it_true],rlim])
-  #plt.xlabel('t (s)')
-  p.xaxis.set_ticks_position('none')
-  p.xaxis.set_ticks(())
-  plt.ylabel('x (km)',size=10)
-  p.yaxis.set_ticks_position('right')
-  #plt.title('x at maximum')
-  p.set_xlim(llim,rlim)
-  if test_info.has_key('true_values'):
-    if not test_info.has_key('t_err'):
-      plt.hlines(x_true,llim,rlim,'r',linewidth=2)
-      plt.vlines(t_true,min(max_x),max(max_x),'r',linewidth=2)
-  else:
-    plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
-    plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
-  if test_info.has_key('x_err'):
-      x_low,x_high=test_info['x_err']
-      plt.axhspan(x_low,x_high,facecolor='r', alpha=0.2)
-  if test_info.has_key('t_err'):
-      t_left,t_right=test_info['t_err']
-      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
+  if dx > 0 :
+    p=plt.subplot(4,2,4, frameon=False)
+    pos=list(p.get_position().bounds)
+    fig.text(pos[0],pos[1]+pos[3], '(e)', fontsize=12)
+    p.tick_params(labelsize=10)
+    #plt.plot(t,max_x,'b.',clip_on=False)
+    plt.scatter(t[illim:irlim],max_x[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
+    #plt.xticks([llim,t[it_true],rlim])
+    #plt.xlabel('t (s)')
+    p.xaxis.set_ticks_position('none')
+    p.xaxis.set_ticks(())
+    plt.ylabel('x (km)',size=10)
+    p.yaxis.set_ticks_position('right')
+    #plt.title('x at maximum')
+    p.set_xlim(llim,rlim)
+    if test_info.has_key('true_values'):
+      if not test_info.has_key('t_err'):
+        plt.hlines(x_true,llim,rlim,'r',linewidth=2)
+        plt.vlines(t_true,min(max_x),max(max_x),'r',linewidth=2)
+    else:
+      plt.hlines(x[ix_true],llim,rlim,'r',linewidth=2)
+      plt.vlines(t[it_true],min(max_x),max(max_x),'r',linewidth=2)
+    if test_info.has_key('x_err'):
+        x_low,x_high=test_info['x_err']
+        plt.axhspan(x_low,x_high,facecolor='r', alpha=0.2)
+    if test_info.has_key('t_err'):
+        t_left,t_right=test_info['t_err']
+        plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   # plot max y
-  p=plt.subplot(4,2,6, frameon=False)
-  pos=list(p.get_position().bounds)
-  fig.text(pos[0],pos[1]+pos[3], '(f)', fontsize=12)
-  p.tick_params(labelsize=10)
-  #plt.plot(t,max_y,'b.')
-  plt.scatter(t[illim:irlim],max_y[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
-  #plt.xticks([llim,t[it_true],rlim])
-  #plt.xlabel('t (s)')
-  p.xaxis.set_ticks_position('none')
-  p.xaxis.set_ticks(())
-  plt.ylabel('y (km)',size=10)
-  p.yaxis.set_ticks_position('right')
-  #plt.title('y at maximum')
-  p.set_xlim(llim,rlim)
-  if test_info.has_key('true_values'):
-    if not test_info.has_key('t_err'):
-      plt.hlines(y_true,llim,rlim,'r',linewidth=2)
-      plt.vlines(t_true,min(max_y),max(max_y),'r',linewidth=2)
-  else:
-    plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
-    plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
-  if test_info.has_key('y_err'):
-      y_low,y_high=test_info['y_err']
-      plt.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
-  if test_info.has_key('t_err'):
-      t_left,t_right=test_info['t_err']
-      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
+  if dy > 0 :
+    p=plt.subplot(4,2,6, frameon=False)
+    pos=list(p.get_position().bounds)
+    fig.text(pos[0],pos[1]+pos[3], '(f)', fontsize=12)
+    p.tick_params(labelsize=10)
+    #plt.plot(t,max_y,'b.')
+    plt.scatter(t[illim:irlim],max_y[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
+    #plt.xticks([llim,t[it_true],rlim])
+    #plt.xlabel('t (s)')
+    p.xaxis.set_ticks_position('none')
+    p.xaxis.set_ticks(())
+    plt.ylabel('y (km)',size=10)
+    p.yaxis.set_ticks_position('right')
+    #plt.title('y at maximum')
+    p.set_xlim(llim,rlim)
+    if test_info.has_key('true_values'):
+      if not test_info.has_key('t_err'):
+        plt.hlines(y_true,llim,rlim,'r',linewidth=2)
+        plt.vlines(t_true,min(max_y),max(max_y),'r',linewidth=2)
+    else:
+      plt.hlines(y[iy_true],llim,rlim,'r',linewidth=2)
+      plt.vlines(t[it_true],min(max_y),max(max_y),'r',linewidth=2)
+    if test_info.has_key('y_err'):
+        y_low,y_high=test_info['y_err']
+        plt.axhspan(y_low,y_high,facecolor='r', alpha=0.2)
+    if test_info.has_key('t_err'):
+        t_left,t_right=test_info['t_err']
+        plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   # plot max z
-  p=plt.subplot(4,2,8, frameon=False)
-  pos=list(p.get_position().bounds)
-  fig.text(pos[0],pos[1]+pos[3], '(g)', fontsize=12)
-  p.tick_params(labelsize=10)
-  #plt.plot(t,max_z,'b.')
-  plt.scatter(t[illim:irlim],max_z[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
-  #plt.xticks([llim,t[it_true],rlim])
-  plt.xlabel('Time (s)',size=10)
-  p.xaxis.set_ticks_position('bottom')
-  plt.ylabel('z (km down)',size=10)
-  p.yaxis.set_ticks_position('right')
-  #plt.title('z at maximum')
-  p.set_xlim(llim,rlim)
-  if test_info.has_key('true_values'):
-    if not test_info.has_key('t_err'):
-      plt.hlines(z_true,llim,rlim,'r',linewidth=2)
-      plt.vlines(t_true,min(max_z),max(max_z),'r',linewidth=2)
-  else:
-    plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
-    plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
-  if test_info.has_key('z_err'):
-      z_low,z_high=test_info['z_err']
-      plt.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
-  if test_info.has_key('t_err'):
-      t_left,t_right=test_info['t_err']
-      plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
+  if dz > 0 :
+    p=plt.subplot(4,2,8, frameon=False)
+    pos=list(p.get_position().bounds)
+    fig.text(pos[0],pos[1]+pos[3], '(g)', fontsize=12)
+    p.tick_params(labelsize=10)
+    #plt.plot(t,max_z,'b.')
+    plt.scatter(t[illim:irlim],max_z[illim:irlim],s=40, c=max_val[illim:irlim],marker='.',linewidths=(0,),clip_on=False)
+    #plt.xticks([llim,t[it_true],rlim])
+    plt.xlabel('Time (s)',size=10)
+    p.xaxis.set_ticks_position('bottom')
+    plt.ylabel('z (km down)',size=10)
+    p.yaxis.set_ticks_position('right')
+    #plt.title('z at maximum')
+    p.set_xlim(llim,rlim)
+    if test_info.has_key('true_values'):
+      if not test_info.has_key('t_err'):
+        plt.hlines(z_true,llim,rlim,'r',linewidth=2)
+        plt.vlines(t_true,min(max_z),max(max_z),'r',linewidth=2)
+    else:
+      plt.hlines(z[iz_true],llim,rlim,'r',linewidth=2)
+      plt.vlines(t[it_true],min(max_z),max(max_z),'r',linewidth=2)
+    if test_info.has_key('z_err'):
+        z_low,z_high=test_info['z_err']
+        plt.axhspan(z_low,z_high,facecolor='r', alpha=0.2)
+    if test_info.has_key('t_err'):
+        t_left,t_right=test_info['t_err']
+        plt.axvspan(t_left,t_right,facecolor='r', alpha=0.2)
 
   # add independent colorbar
   ax1 = fig.add_axes([0.40, 0.03, 0.2, 0.015])

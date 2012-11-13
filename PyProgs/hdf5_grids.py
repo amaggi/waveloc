@@ -16,7 +16,8 @@ class H5SingleGrid(object):
       self._f=h5py.File(filename,'w')
 
       if not grid_data==None:
-        self.grid_data=self._f.create_dataset('grid_data',data=grid_data,compression='lzf')
+        self.grid_data=self._f.create_dataset('grid_data',data=grid_data,\
+		compression='lzf')
       else : self.grid_data=None
 
       if not grid_info==None:
@@ -78,7 +79,7 @@ class H5SingleGrid(object):
     iz=Z.searchsorted(z)
 
     # set the interpolation "box" for extreme cases
-    if nx==1 : # special case of 2D grid
+    if nx==1 : # special case of 2D grid in x
       ix1=0
       ix2=0
     elif ix==0: # lower bound
@@ -91,7 +92,10 @@ class H5SingleGrid(object):
       ix1=ix-1
       ix2=ix
 
-    if iy==0:	# lower bound
+    if ny==1 : # special case of 2D grid in y
+      iy1=0
+      iy2=0
+    elif iy==0:	# lower bound
       iy1=0
       iy2=1
     elif iy==ny: # upper bound
@@ -101,7 +105,10 @@ class H5SingleGrid(object):
       iy1=iy-1
       iy2=iy
 
-    if iz==0:	# lower bound
+    if nz==1 : # special case of 2D grid in y
+      iz1=0
+      iz2=0
+    elif iz==0:	# lower bound
       iz1=0
       iz2=1
     elif iz==nz: # upper bound
@@ -124,13 +131,19 @@ class H5SingleGrid(object):
     v_x1y2z2=self.grid_data[np.ravel_multi_index((ix1,iy2,iz2),(nx,ny,nz))]
 
     # set up interpolators
-    # take extra care over the X interpolator in case of 2D grid
+    # take extra care over the interpolators in case of 2D grids
     if ix2==ix1:
       tx=0
     else:
       tx=(x-X[ix1])/(X[ix2]-X[ix1])
-    ty=(y-Y[iy1])/(Y[iy2]-Y[iy1])
-    tz=(z-Z[iz1])/(Z[iz2]-Z[iz1])
+    if iy2==iy1:
+      ty=0
+    else:
+      ty=(y-Y[iy1])/(Y[iy2]-Y[iy1])
+    if iz2==iz1:
+      tz=0
+    else:
+      tz=(z-Z[iz1])/(Z[iz2]-Z[iz1])
 
     # do bilinear interpolation
     result = (1-tx) * (1-ty) * (1-tz) * v_x1y1z1 + \
