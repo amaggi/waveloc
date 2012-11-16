@@ -38,24 +38,24 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
     self.sta[16]={'x':20,'y':100,'depth':0,'elev':0,'station':16}
     self.sta[17]={'x':60,'y':100,'depth':0,'elev':0,'station':17}
     self.sta[18]={'x':100,'y':100,'depth':0,'elev':0,'station':18}
-    self.sta[19]={'x':0,'y':0,'depth':0,'elev':-5,'station':19}
-    self.sta[20]={'x':40,'y':0,'depth':0,'elev':-5,'station':20}
-    self.sta[21]={'x':80,'y':0,'depth':0,'elev':-5,'station':21}
-    self.sta[22]={'x':20,'y':20,'depth':0,'elev':-5,'station':22}
-    self.sta[23]={'x':60,'y':20,'depth':0,'elev':-5,'station':23}
-    self.sta[24]={'x':100,'y':20,'depth':0,'elev':-5,'station':24}
-    self.sta[25]={'x':0,'y':40,'depth':0,'elev':-5,'station':25}
-    self.sta[26]={'x':40,'y':40,'depth':0,'elev':-5,'station':26}
-    self.sta[27]={'x':80,'y':40,'depth':0,'elev':-5,'station':27}
-    self.sta[28]={'x':20,'y':60,'depth':0,'elev':-10,'station':28}
-    self.sta[29]={'x':60,'y':60,'depth':0,'elev':-10,'station':29}
-    self.sta[30]={'x':100,'y':60,'depth':0,'elev':-10,'station':30}
-    self.sta[31]={'x':0,'y':80,'depth':0,'elev':-10,'station':31}
-    self.sta[32]={'x':40,'y':80,'depth':0,'elev':-10,'station':32}
-    self.sta[33]={'x':80,'y':80,'depth':0,'elev':-10,'station':33}
-    self.sta[34]={'x':20,'y':100,'depth':0,'elev':-10,'station':34}
-    self.sta[35]={'x':60,'y':100,'depth':0,'elev':-10,'station':35}
-    self.sta[36]={'x':100,'y':100,'depth':0,'elev':-10,'station':36}
+#    self.sta[19]={'x':0,'y':0,'depth':0,'elev':-5,'station':19}
+#    self.sta[20]={'x':40,'y':0,'depth':0,'elev':-5,'station':20}
+#    self.sta[21]={'x':80,'y':0,'depth':0,'elev':-5,'station':21}
+#    self.sta[22]={'x':20,'y':20,'depth':0,'elev':-5,'station':22}
+#    self.sta[23]={'x':60,'y':20,'depth':0,'elev':-5,'station':23}
+#    self.sta[24]={'x':100,'y':20,'depth':0,'elev':-5,'station':24}
+#    self.sta[25]={'x':0,'y':40,'depth':0,'elev':-5,'station':25}
+#    self.sta[26]={'x':40,'y':40,'depth':0,'elev':-5,'station':26}
+#    self.sta[27]={'x':80,'y':40,'depth':0,'elev':-5,'station':27}
+#    self.sta[28]={'x':20,'y':60,'depth':0,'elev':-10,'station':28}
+#    self.sta[29]={'x':60,'y':60,'depth':0,'elev':-10,'station':29}
+#    self.sta[30]={'x':100,'y':60,'depth':0,'elev':-10,'station':30}
+#    self.sta[31]={'x':0,'y':80,'depth':0,'elev':-10,'station':31}
+#    self.sta[32]={'x':40,'y':80,'depth':0,'elev':-10,'station':32}
+#    self.sta[33]={'x':80,'y':80,'depth':0,'elev':-10,'station':33}
+#    self.sta[34]={'x':20,'y':100,'depth':0,'elev':-10,'station':34}
+#    self.sta[35]={'x':60,'y':100,'depth':0,'elev':-10,'station':35}
+#    self.sta[36]={'x':100,'y':100,'depth':0,'elev':-10,'station':36}
 
     self.area=[0,100,0,100,-10,0]
 
@@ -66,11 +66,15 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
     # Define true hypocentral parameters
     # positive z axis downwards
     self.locs_true=[]
-    self.locs_true.append({'x_mean':50,'y_mean':50,'z_mean':5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:00:00.0000Z')})
-    self.locs_true.append({'x_mean':50,'y_mean':50,'z_mean':5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:00:00.0000Z')})
-    self.locs_true.append({'x_mean':50,'y_mean':50,'z_mean':5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:00:00.0000Z')})
-    self.locs_true.append({'x_mean':50,'y_mean':50,'z_mean':5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:00:00.0000Z')})
-    self.locs_true.append({'x_mean':50,'y_mean':50,'z_mean':5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:00:00.0000Z')})
+    self.locs_true.append({'x_mean':50.2,'y_mean':49.7,'z_mean':4.5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:00:00.0000Z')})
+    self.locs_true.append({'x_mean':50.3,'y_mean':49.9,'z_mean':4.75,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:01:00.0000Z')})
+    self.locs_true.append({'x_mean':49.8,'y_mean':50.1,'z_mean':5.25,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:02:00.0000Z')})
+    self.locs_true.append({'x_mean':49.7,'y_mean':50.4,'z_mean':5.5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:03:00.0000Z')})
+    self.locs_true.append({'x_mean':50.0,'y_mean':49.9,'z_mean':5,'o_time':utcdatetime.UTCDateTime('2010-01-01T12:04:00.0000Z')})
+
+    centroid_x_true=np.mean([loc['x_mean'] for loc in self.locs_true])
+    centroid_y_true=np.mean([loc['y_mean'] for loc in self.locs_true])
+    centroid_z_true=np.mean([loc['z_mean'] for loc in self.locs_true])
 
     # Measured hypocentral parameters
     # positive z-axis downwards
@@ -87,6 +91,10 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
     self.locs_mes=[]
     for i in range(len(self.locs_true)):
       self.locs_mes.append({'x_mean':self.locs_true[i]['x_mean']+err_x[i],'y_mean':self.locs_true[i]['y_mean']+err_y[i],'z_mean':self.locs_true[i]['z_mean']+err_z[i],'o_time':self.locs_true[i]['o_time']+err_to[i]})
+
+    centroid_x_mes=np.mean([loc['x_mean'] for loc in self.locs_mes])
+    centroid_y_mes=np.mean([loc['y_mean'] for loc in self.locs_mes])
+    centroid_z_mes=np.mean([loc['z_mean'] for loc in self.locs_mes])
 
     # Input parameters
     self.threshold=0.8
@@ -126,7 +134,11 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
 
     self.locs_expected=[]
     for i in range(len(self.locs_true)):
-      self.locs_expected.append({'x_mean':self.locs_true[i]['x_mean']+np.mean(err_x),'y_mean':self.locs_true[i]['y_mean']+np.mean(err_y),'z_mean':self.locs_true[i]['z_mean']+np.mean(err_z),'o_time':self.locs_true[i]['o_time']+np.mean(err_to)})
+      #self.locs_expected.append({'x_mean':self.locs_true[i]['x_mean']+np.mean(err_x),'y_mean':self.locs_true[i]['y_mean']+np.mean(err_y),'z_mean':self.locs_true[i]['z_mean']+np.mean(err_z),'o_time':self.locs_true[i]['o_time']+np.mean(err_to)})
+      self.locs_expected.append({'x_mean':self.locs_true[i]['x_mean']+(centroid_x_mes - centroid_x_true),\
+        'y_mean':self.locs_true[i]['y_mean']+(centroid_y_mes - centroid_y_true),\
+        'z_mean':self.locs_true[i]['z_mean']+(centroid_z_mes - centroid_z_true),\
+        'o_time':self.locs_true[i]['o_time']+np.mean(err_to)})
 
 
   def test_DD(self):
@@ -139,7 +151,7 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
     for i in range(len(xcal)):
       self.assertAlmostEqual(xcal[i],self.locs_expected[i]['x_mean'],2)
       self.assertAlmostEqual(ycal[i],self.locs_expected[i]['y_mean'],2)
-      self.assertAlmostEqual(zcal[i],self.locs_expected[i]['z_mean'],2)
+      self.assertAlmostEqual(zcal[i],self.locs_expected[i]['z_mean'],1)
       self.assertAlmostEqual(tocal[i],self.locs_expected[i]['o_time'],2)
       locs_cal.append({'x_mean':xcal[i],'y_mean':ycal[i],'z_mean':zcal[i],'o_time':tocal[i]})
 
