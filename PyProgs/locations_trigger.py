@@ -308,7 +308,7 @@ def read_locs_from_file(filename):
 
   for line in lines:
 
-    if line.split()[0][0]!='#':
+    if not line.isspace() and line.split()[0][0]!='#':
       loc={}
 
       loc['max_trig']=np.float(line.split()[2].split(',')[0])
