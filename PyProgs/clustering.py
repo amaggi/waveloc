@@ -66,8 +66,7 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
     dt=wf.delta
     tdeb=wf.starttime
 
-  list_name=tr.keys()
-  list_name.sort()
+  list_name=sorted(tr)
 
   for i in range(1,len(CLUSTER)+1): # cluster index
     for j in range(len(CLUSTER[i])): # first event index
@@ -97,7 +96,9 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
               c='r'
             ax.text(0.5,0.5,"%s, %s, %s"%(name,str(coeff[name][e1-1][e2-1]),str(delay[name][e1-1][e2-1])),color=c)
         fig.suptitle("Cluster : %s ; Event pair : (%s,%s) ; %d"%(str(i),str(e1),str(e2),co))
-        #plt.savefig('/home/nadege/Desktop/correlation.png')
+        plt.clf()
+        plt.close()
+        plt.show()
 
         # Plot location
         fig = plt.figure()
@@ -149,7 +150,7 @@ def compute_nbsta(event,coeff,threshold):
     for j in xrange(i,event):
       c=0
       if i!=j:
-        for name in coeff.keys():
+        for name in sorted(coeff):
           if coeff[name] and coeff[name][i][j] >= threshold:
             c=c+1
         liste.append(c)
@@ -221,7 +222,7 @@ def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
 
   # Extract coordinates
   xsta,ysta,zsta=[],[],[]
-  for sta in stations.keys():
+  for sta in sorted(stations):
     xsta.append(stations[sta]['x'])
     ysta.append(stations[sta]['y'])
     zsta.append(stations[sta]['elev'])

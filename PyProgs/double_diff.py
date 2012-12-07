@@ -3,6 +3,7 @@
 
 import os, h5py
 import numpy as np
+import logging
 
 from obspy.core import utcdatetime
 import time
@@ -17,7 +18,10 @@ from hdf5_grids import *
 def traveltimes(x,y,z,t_orig,stations,time_grids):
   t_th={}
   arr_times={}
-  for staname in stations.keys():
+  for staname in sorted(stations):
+    if not staname in time_grids.keys():
+      logging.info("%s station not in time_grids"%staname)
+      continue
     t_th[staname]=[]
     arr_times[staname]=[]
     for i in range(len(x)):
@@ -38,7 +42,15 @@ def fill_matrix(cluster,x,y,z,t_orig,stations,t_th,t_arr,coeff,delay,threshold):
   G,W,d=[],[],[]
   N=len(cluster)
   nline,num=0,0
-  for staname in stations.keys():
+
+  from clustering import compute_nbsta
+  nbsta=compute_nbsta(len(coeff[coeff.keys()[0]]),coeff,threshold)
+
+  for staname in sorted(stations):
+    if not staname in delay.keys():
+      continue
+    if not staname in t_th.keys():
+      continue
     grid_id="%s.HHZ"%staname
     coord=[stations[staname]['x'],stations[staname]['y'],-stations[staname]['elev']]
     for n in range(N):
@@ -48,7 +60,7 @@ def fill_matrix(cluster,x,y,z,t_orig,stations,t_th,t_arr,coeff,delay,threshold):
 
       for nn in range(n+1,N):
         e2=cluster[nn]
-        if delay[staname][e1-1][e2-1]!='NaN' and coeff[staname][e1-1][e2-1] >= threshold:
+        if delay[staname][e1-1][e2-1]!='NaN' and coeff[staname][e1-1][e2-1] >= threshold: 
           # fill G
           G.append(np.zeros(4*N))
           ev2=[x[nn],y[nn],z[nn]]
@@ -66,6 +78,7 @@ def fill_matrix(cluster,x,y,z,t_orig,stations,t_th,t_arr,coeff,delay,threshold):
 
           # fill W
           W.append(coeff[staname][e1-1][e2-1])
+
     num+=1
   return G, d, W
 # ----------------------------------------------------------------------------------------
@@ -103,12 +116,12 @@ def coord_cluster(cluster,locs):
   return xini, yini, zini, zini_ph, to_ini
 # ----------------------------------------------------------------------------------------
 # Plot old and new locations
-def plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area):
+def plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area,nbsta):
   from mayavi import mlab
 
   # Stations coordinates
   xsta,ysta,zsta=[],[],[]
-  for sta in stations.keys():
+  for sta in sorted(stations):
     xsta.append(stations[sta]['x'])
     ysta.append(stations[sta]['y'])
     zsta.append(stations[sta]['elev'])
@@ -126,6 +139,22 @@ def plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area):
   s=mlab.axes(extent=area,color=(0,0,0)) # axe des z positif vers le haut
   s=mlab.outline(extent=area,color=(0,0,0))
   s=mlab.title("cluster=%s, threshold=%s, nbmin=%s"%(i,threshold,nbmin),height=0.1,size=0.35,color=(0,0,0))
+
+
+  if len(cluster[i]) < 20:
+    from CZ_W_2_color import *
+    for ind_I in range(len(cluster[i])):
+      for ind_J in range(ind_I+1,len(cluster[i])):
+        ev_I=cluster[i][ind_I]-1
+        ev_J=cluster[i][ind_J]-1
+        W_IJ=nbsta[ev_I,ev_J]
+        if W_IJ >= nbmin:
+          mlab.points3d(xini[ind_J],yini[ind_J],zini_ph[ind_J],scale_factor=0.1,color=(0,0,0))
+          mlab.points3d(xini[ind_I],yini[ind_I],zini_ph[ind_I],scale_factor=0.1,color=(0,0,0))
+          d=(xini[ind_J]-xini[ind_I],yini[ind_J]-yini[ind_I],zini_ph[ind_J]-zini_ph[ind_I])
+          norm=np.sqrt(d[0]**2+d[1]**2+d[2]**2)
+          s2=mlab.quiver3d(xini[ind_I],yini[ind_I],zini_ph[ind_I],d[0],d[1],d[2],color=tuple(CZ_W_2_color(W_IJ)),mode='2ddash',scale_factor=norm,scale_mode='scalar')
+
   mlab.show()
 
 ####################################################################################
@@ -200,10 +229,15 @@ def do_double_diff_setup_and_run(opdict):
   cluster_file=os.path.join(locdir,'cluster-%s-%s'%(str(threshold),str(nbmin)))
   clfile=BinaryFile(cluster_file)
   cluster=clfile.read_binary_file()
+
   # ----------------------------------------------------------------------------------------
   # Input parameters
   nb_iter=2
   len_cluster_min=2
+
+  if dd_loc:
+    new_loc_filename=os.path.join(locdir,'relocations.dat')
+    new_loc_file=open(new_loc_filename,'w')
 
   # ----------------------------------------------------------------------------------------
   for i in cluster.keys():
@@ -214,6 +248,16 @@ def do_double_diff_setup_and_run(opdict):
     # Hypocentral parameters to be changed
     x,y,z,z_ph,to = coord_cluster(cluster[i],locs)
 
+    # Replace bad locations by the centroid coordinates
+    centroid_x,centroid_y,centroid_z = np.mean(x), np.mean(y), np.mean(z)
+    for ii in range(len(cluster[i])):
+      if np.abs(x[ii]-centroid_x) > .75:
+        x[ii]=centroid_x
+      if np.abs(y[ii]-centroid_y) > .75:
+        y[ii]=centroid_y
+      if np.abs(z[ii]-centroid_z) > .75:
+        z[ii]=centroid_z
+
     if N > len_cluster_min:
 
       # Theroretical traveltimes and arrival times
@@ -222,7 +266,9 @@ def do_double_diff_setup_and_run(opdict):
       x,y,z,to = do_double_diff(x,y,z,to,stations,coeff,delay,cluster[i],threshold,t_th, arr_times)
 
       if verbose:
-        plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area)
+        from clustering import compute_nbsta
+        nbsta=compute_nbsta(len(locs),coeff,threshold)
+        plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area,nbsta)
 
     if dd_loc:
       ind=0
@@ -237,13 +283,10 @@ def do_double_diff_setup_and_run(opdict):
           locs[j-1]['o_err_right']=0
           locs[j-1]['o_err_left']=0
           ind+=1
+          new_loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(locs[j-1]['max_trig'],locs[j-1]['o_time'].isoformat(),locs[j-1]['o_err_left'], locs[j-1]['o_err_right'],locs[j-1]['x_mean'],locs[j-1]['x_sigma'],locs[j-1]['y_mean'],locs[j-1]['y_sigma'],locs[j-1]['z_mean'],locs[j-1]['z_sigma']))
 
   if dd_loc:
-    new_loc_filename=os.path.join(locdir,'relocations.dat')
-    new_loc_file=open(new_loc_filename,'w')
-    for loc in locs:
-      new_loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
-    new_loc_file.close()
+     new_loc_file.close()
 
 
 ###############################################################################################
@@ -255,8 +298,7 @@ if __name__ == '__main__':
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  #wo.set_all_arguments(args)
-  wo.set_options()
+  wo.set_all_arguments(args)
   wo.verify_doublediff_options()
 
   do_double_diff_setup_and_run(wo.opdict)

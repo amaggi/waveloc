@@ -641,7 +641,7 @@ class WavelocOptions(object):
   
   def _verify_dd_loc(self):
     if not self.opdict.has_key('dd_loc'):
-        raise UserWarning('dd_loc option not set') 
+        raise UserWarning('dd_loc option not set')
 
   def _verify_syn_addnoise(self):
     if not self.opdict.has_key('syn_addnoise'):
