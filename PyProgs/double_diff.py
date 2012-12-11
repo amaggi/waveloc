@@ -43,9 +43,6 @@ def fill_matrix(cluster,x,y,z,t_orig,stations,t_th,t_arr,coeff,delay,threshold):
   N=len(cluster)
   nline,num=0,0
 
-  from clustering import compute_nbsta
-  nbsta=compute_nbsta(len(coeff[coeff.keys()[0]]),coeff,threshold)
-
   for staname in sorted(stations):
     if not staname in delay.keys():
       continue

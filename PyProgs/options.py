@@ -332,9 +332,9 @@ class WavelocOptions(object):
     self.opdict['data_overlap']=20
 
     self.opdict['dataglob']='*filt.mseed'
-    self.opdict['kurtglob']='*kurt.mseed'
-    self.opdict['gradglob']='*grad.mseed'
-    self.opdict['gaussglob']='*gauss.mseed'
+    self.opdict['kurtglob']='*filt_kurt.mseed'
+    self.opdict['gradglob']='*filt_kurt_grad.mseed'
+    self.opdict['gaussglob']='*filt_kurt_grad_gauss.mseed'
 
     self.opdict['load_ttimes_buf']=True
 

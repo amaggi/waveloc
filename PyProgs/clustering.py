@@ -8,7 +8,6 @@ import cProfile
 from CZ_Clust_2_color import *
 from CZ_W_2_color import *
 import cPickle
-from mayavi import mlab
 from OP_waveforms import *
 import logging
 from correlation import BinaryFile
@@ -208,6 +207,8 @@ def do_clustering(event,nbsta,nbmin):
 
 # -----------------------------------------------------------------------------------------
 def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
+  from mayavi import mlab
+
   # Event coordinates
   stack_x,stack_y,stack_z=[],[],[]
   for loc in locs:
