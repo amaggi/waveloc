@@ -70,20 +70,22 @@ def number_good_kurtosis_for_location(kurt_files,data_files,loc,time_dict,snr_li
     st=read(kfilename,headonly=True)
     staname=st.traces[0].stats.station
 
-    traveltime=time_dict[staname].value_at_point(stack_x,stack_y,stack_z)
-    start_time=o_time+traveltime-sn_time
-    end_time=o_time+traveltime+sn_time
-    try:
-      wf.read_from_file(kfilename,starttime=start_time,endtime=end_time)
-      snr=wf.get_snr(o_time+traveltime,start_time,end_time)
+    if staname in time_dict.keys():
+      traveltime=time_dict[staname].value_at_point(stack_x,stack_y,stack_z)
+      start_time=o_time+traveltime-sn_time
+      end_time=o_time+traveltime+sn_time
+      try:
+        wf.read_from_file(kfilename,starttime=start_time,endtime=end_time)
+        snr=wf.get_snr(o_time+traveltime,start_time,end_time)
 
-      wf.read_from_file(dfilename,starttime=start_time,endtime=end_time)
-      snr_tr=wf.get_snr(o_time+traveltime,start_time,end_time)
+        wf.read_from_file(dfilename,starttime=start_time,endtime=end_time)
+        snr_tr=wf.get_snr(o_time+traveltime,start_time,end_time)
 
-      if snr > snr_limit and snr_tr > snr_tr_limit:
-        n_good_kurt = n_good_kurt + 1
-    except UserWarning:
-      logging.info('No data around %s for file %s.'%(o_time.isoformat(),filename))
+        if snr > snr_limit and snr_tr > snr_tr_limit:
+          n_good_kurt = n_good_kurt + 1
+      except UserWarning:
+        logging.info('No data around %s for file %s.'%(o_time.isoformat(),kfilename))
+
   return n_good_kurt
 
 def trigger_locations_inner(max_val,max_x,max_y,max_z,left_trig,right_trig,start_time,delta):    

@@ -8,7 +8,6 @@ import cProfile
 from CZ_Clust_2_color import *
 from CZ_W_2_color import *
 import cPickle
-from mayavi import mlab
 from OP_waveforms import *
 import logging
 from correlation import BinaryFile
@@ -66,8 +65,7 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
     dt=wf.delta
     tdeb=wf.starttime
 
-  list_name=tr.keys()
-  list_name.sort()
+  list_name=sorted(tr)
 
   for i in range(1,len(CLUSTER)+1): # cluster index
     for j in range(len(CLUSTER[i])): # first event index
@@ -97,7 +95,7 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
               c='r'
             ax.text(0.5,0.5,"%s, %s, %s"%(name,str(coeff[name][e1-1][e2-1]),str(delay[name][e1-1][e2-1])),color=c)
         fig.suptitle("Cluster : %s ; Event pair : (%s,%s) ; %d"%(str(i),str(e1),str(e2),co))
-        #plt.savefig('/home/nadege/Desktop/correlation.png')
+        plt.show()
 
         # Plot location
         fig = plt.figure()
@@ -149,8 +147,8 @@ def compute_nbsta(event,coeff,threshold):
     for j in xrange(i,event):
       c=0
       if i!=j:
-        for name in coeff.keys():
-          if coeff[name] and coeff[name][i][j] >= threshold:
+        for name in sorted(coeff):
+          if coeff[name] and coeff[name][i][j] >= threshold and coeff[name][i][j] != 'NaN':
             c=c+1
         liste.append(c)
       else:
@@ -170,9 +168,6 @@ def do_clustering(event,nbsta,nbmin):
   for I in range(event):
     voisins_du_sommet_I__verti=(np.where(nbsta[:,I]>=nbmin)[0]).tolist()[0]
     voisins_du_sommet_I__horiz=(np.where(nbsta[I,:]>=nbmin)[1]).tolist()[0]
-    #GRAPH.voisins.append(voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz)
-    #GRAPH.flag.append(0)
-    #GRAPH.cluster_index.append(0)
     GRAPH.set_voisins(voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz)
     GRAPH.set_flag(0)
     GRAPH.set_cluster_index(0)
@@ -212,6 +207,8 @@ def do_clustering(event,nbsta,nbmin):
 
 # -----------------------------------------------------------------------------------------
 def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
+  from mayavi import mlab
+
   # Event coordinates
   stack_x,stack_y,stack_z=[],[],[]
   for loc in locs:
@@ -221,7 +218,7 @@ def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
 
   # Extract coordinates
   xsta,ysta,zsta=[],[],[]
-  for sta in stations.keys():
+  for sta in sorted(stations):
     xsta.append(stations[sta]['x'])
     ysta.append(stations[sta]['y'])
     zsta.append(stations[sta]['elev'])

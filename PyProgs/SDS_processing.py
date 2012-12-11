@@ -28,6 +28,11 @@ def do_SDS_processing_setup_and_run(opdict):
   filter_c2=opdict['c2']
   kurt_window=opdict['kwin']
 
+  dataglob=opdict['dataglob']
+  kurtglob=opdict['kurtglob']
+  gradglob=opdict['gradglob']
+  gaussglob=opdict['gaussglob']
+
   # start and end time to process
   start_time=utcdatetime.UTCDateTime(opdict['starttime'])
   end_time=utcdatetime.UTCDateTime(opdict['endtime'])
@@ -53,7 +58,7 @@ def do_SDS_processing_setup_and_run(opdict):
         logging.debug("Full path : %s"%full_path)
         if os.path.exists(full_path):
 
-          filt_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt.mseed"%(start_time.isoformat(),net,sta,comp))
+          filt_filename=os.path.join(data_dir,"%s.%s.%s.%s.%s"%(start_time.isoformat(),net,sta,comp,dataglob[1:]))
           logging.debug("Processing to create %s" % (filt_filename))
           wf=Waveform()
           try:
@@ -63,13 +68,13 @@ def do_SDS_processing_setup_and_run(opdict):
               wf.resample(opdict['fs'])
             wf.write_to_file_filled(filt_filename,format='MSEED',fill_value=0)
 
-            kurt_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt.mseed"%(start_time.isoformat(),net,sta,comp))
+            kurt_filename=os.path.join(data_dir,"%s.%s.%s.%s.%s"%(start_time.isoformat(),net,sta,comp,kurtglob[1:]))
             logging.debug("Processing to create %s" % (kurt_filename))
             wf.process_kurtosis(kurt_window,recursive=opdict['krec'],pre_taper=True, post_taper=True)
             wf.write_to_file_filled(kurt_filename,format='MSEED',fill_value=0)
 
             if opdict['kderiv']:
-              kurt_grad_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt_grad.mseed"%(start_time.isoformat(),net,sta,comp))
+              kurt_grad_filename=os.path.join(data_dir,"%s.%s.%s.%s.%s"%(start_time.isoformat(),net,sta,comp,gradglob[1:]))
               logging.debug("Processing to create %s" % (kurt_grad_filename))
               wf.take_positive_derivative(pre_taper=True,post_taper=True)
               wf.write_to_file_filled(kurt_grad_filename,format='MSEED',fill_value=0)
@@ -78,7 +83,7 @@ def do_SDS_processing_setup_and_run(opdict):
               thres=opdict['gthreshold']
               mu=opdict['mu']
               sigma=opdict['sigma']
-              gauss_filename=os.path.join(data_dir,"%s.%s.%s.%s.filt_kurt_grad_gauss.mseed"%(start_time.isoformat(),net,sta,comp))
+              gauss_filename=os.path.join(data_dir,"%s.%s.%s.%s.%s"%(start_time.isoformat(),net,sta,comp,gaussglob[1:]))
               logging.debug("Processing to create %s" % (gauss_filename))
               wf.process_gaussian(thres,mu,sigma)
               wf.write_to_file_filled(gauss_filename,format='MSEED',fill_value=0)

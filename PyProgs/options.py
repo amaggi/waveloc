@@ -332,9 +332,9 @@ class WavelocOptions(object):
     self.opdict['data_overlap']=20
 
     self.opdict['dataglob']='*filt.mseed'
-    self.opdict['kurtglob']='*kurt.mseed'
-    self.opdict['gradglob']='*grad.mseed'
-    self.opdict['gaussglob']='*gauss.mseed'
+    self.opdict['kurtglob']='*filt_kurt.mseed'
+    self.opdict['gradglob']='*filt_kurt_grad.mseed'
+    self.opdict['gaussglob']='*filt_kurt_grad_gauss.mseed'
 
     self.opdict['load_ttimes_buf']=True
 
@@ -641,7 +641,7 @@ class WavelocOptions(object):
   
   def _verify_dd_loc(self):
     if not self.opdict.has_key('dd_loc'):
-        raise UserWarning('dd_loc option not set') 
+        raise UserWarning('dd_loc option not set')
 
   def _verify_syn_addnoise(self):
     if not self.opdict.has_key('syn_addnoise'):

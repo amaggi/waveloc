@@ -253,6 +253,7 @@ def do_correlation_setup_and_run(opdict):
   print "Elapsed time: ",time.time()-tref
 
   # Save the results in 2 binary files
+  logging.info("Saving coeff and delay files")
   a=BinaryFile(coeff_file)
   a.write_binary_file(coeff)
 
