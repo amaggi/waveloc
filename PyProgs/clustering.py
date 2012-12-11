@@ -96,8 +96,6 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
               c='r'
             ax.text(0.5,0.5,"%s, %s, %s"%(name,str(coeff[name][e1-1][e2-1]),str(delay[name][e1-1][e2-1])),color=c)
         fig.suptitle("Cluster : %s ; Event pair : (%s,%s) ; %d"%(str(i),str(e1),str(e2),co))
-        plt.clf()
-        plt.close()
         plt.show()
 
         # Plot location
@@ -151,7 +149,7 @@ def compute_nbsta(event,coeff,threshold):
       c=0
       if i!=j:
         for name in sorted(coeff):
-          if coeff[name] and coeff[name][i][j] >= threshold:
+          if coeff[name] and coeff[name][i][j] >= threshold and coeff[name][i][j] != 'NaN':
             c=c+1
         liste.append(c)
       else:
@@ -171,9 +169,6 @@ def do_clustering(event,nbsta,nbmin):
   for I in range(event):
     voisins_du_sommet_I__verti=(np.where(nbsta[:,I]>=nbmin)[0]).tolist()[0]
     voisins_du_sommet_I__horiz=(np.where(nbsta[I,:]>=nbmin)[1]).tolist()[0]
-    #GRAPH.voisins.append(voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz)
-    #GRAPH.flag.append(0)
-    #GRAPH.cluster_index.append(0)
     GRAPH.set_voisins(voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz)
     GRAPH.set_flag(0)
     GRAPH.set_cluster_index(0)
