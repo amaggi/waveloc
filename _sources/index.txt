@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Waveloc documentation
+WaveLoc documentation
 =====================
 
-Thank you for trying out waveloc, the migration-based event detector and
-locator.  Development of waveloc is being carried out as part of the European
-Union funded NERA project.
+Thank you for trying out WaveLoc, the kurtosis and migration-based event
+detector and locator.  Development of waveloc is being carried out as part of
+the European Union funded NERA project.
 
 This documentation is for the offline version of waveloc.  Development of a
 real-time version is planned to start soon.

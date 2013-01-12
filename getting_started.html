@@ -59,34 +59,39 @@
 <p>This is a quick guide for getting started with WaveLoc.</p>
 <div class="section" id="download-and-installation">
 <h2>Download and installation<a class="headerlink" href="#download-and-installation" title="Permalink to this headline">¶</a></h2>
-<p>You can download the latest distribution on the <a class="reference external" href="http://github.com/amaggi/waveloc/downloads">waveloc downloads page</a>, or if you&#8217;re feeling
-courageous you can download the development version from github:
-<a class="reference external" href="http://github.com/amaggi/waveloc">http://github.com/amaggi/waveloc</a>.</p>
+<p>The latest stable source distributions are downloadable from <a class="reference external" href="http://aws.amazon.com">AmazonAWS</a>:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://s3.amazonaws.com/waveloc/waveloc-0.1.1.tar.gz">waveloc-0.1.1.tar.gz</a></li>
+<li><a class="reference external" href="https://s3.amazonaws.com/waveloc/waveloc-0.1.0.tar.gz">waveloc-0.1.0.tar.gz</a></li>
+</ul>
+<p>The <a class="reference external" href="https://github.com/amaggi/waveloc/archive/master.zip">latest development source archive</a> is available from the
+<a class="reference external" href="http://github.com/amaggi/waveloc">WaveLoc Github pages</a>, which is also the
+place you should go if you would like to contribute to the project using the
+Github <a class="reference external" href="https://help.github.com/articles/fork-a-repo">fork</a> and
+<a class="reference external" href="https://help.github.com/articles/using-pull-requests">pull-request</a>
+procedures.</p>
 <p><strong>System requirements</strong> :</p>
 <ul class="simple">
 <li>python 2.7, numpy &gt;= 1.6.1</li>
-<li>HDF5 (available here : <a class="reference external" href="http://www.hdfgroup.org/ftp/HDF5/current/src/">http://www.hdfgroup.org/ftp/HDF5/current/src/</a>)</li>
-<li>h5py &gt;= 2.0.0 (available here : <a class="reference external" href="http://code.google.com/p/h5py/">http://code.google.com/p/h5py/</a>)</li>
-<li>obspy &gt; 0.7.1 (available here : <a class="reference external" href="http://obspy.org">http://obspy.org</a>)</li>
-<li>NonLinLoc for time grid calculation (not strictly required)</li>
+<li>HDF5 (available here: <a class="reference external" href="http://www.hdfgroup.org/ftp/HDF5/current/src/">http://www.hdfgroup.org/ftp/HDF5/current/src/</a>)</li>
+<li>h5py &gt;= 2.0.0 (available here: <a class="reference external" href="http://code.google.com/p/h5py/">http://code.google.com/p/h5py/</a>)</li>
+<li>obspy &gt; 0.7.1 (available here: <a class="reference external" href="http://obspy.org">http://obspy.org</a>)</li>
+<li>NonLinLoc for time grid calculation (not strictly required, available here: <a class="reference external" href="http://alomax.free.fr/nlloc/">http://alomax.free.fr/nlloc/</a>)</li>
 <li>other stuff I&#8217;ve surelly fogotten about...</li>
 </ul>
 <p>The easiest way to get all the required python modules (except
-for obspy) is to install a recent version of the full Enthought Python Distribution.
-Enthought deliver free licenses for academic use (it is temporarily unavailable
-due to modification of their academic license, but should be back soon).
-Enthought also bundle a completely free version, but it does not have all the necessary
-modules (notably h5py).</p>
+for obspy) is to install a recent version of the full <a class="reference external" href="http://enthought.com/products/epd.php">Enthought Python
+Distribution</a>.  Enthought deliver
+<a class="reference external" href="http://enthought.com/products/edudownload.php">free licenses for academic use</a>.
+Enthought also bundle a completely free version, but it does not have all the
+necessary modules (notably h5py).</p>
 <p>If your python distribution does not include h5py and you
 need to compile HDF5 under macosx, make sure that it is configured 32-bit when
 using a 32-bit python distribution. (e.g., CC=&#8217;cc -m32&#8217; ./configure
 &#8211;prefix=/usr/local/hdf5).</p>
 <p>You should then be able to install the obspy modules by running</p>
-<div class="highlight-python"><pre>easy_install -U obspy.core
-easy_install -U obspy.signal
-easy_install -U obspy.mseed</pre>
+<div class="highlight-python"><pre>easy_install -U obspy</pre>
 </div>
-<p>and so on for all the other obspy modules you may be interested in.</p>
 <div class="section" id="installation">
 <h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
 <p>Untar the distribution, then install in the usual Python manner :</p>
@@ -112,8 +117,8 @@ waveloc distribution.</p>
 <li><p class="first">For the tests, temporarily set the environment variable <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> to
 the directory you would like the tests to run in.</p>
 </li>
-<li><p class="first">Download the test data here : <a class="reference external" href="https://github.com/downloads/amaggi/waveloc/test_data.tgz">test_data.tgz</a> (beware : it is a
-large file !), and unpack the archive in the  <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> directory.</p>
+<li><p class="first">Download the test data here : <a class="reference external" href="https://s3.amazonaws.com/waveloc/test_data.tar.gz">test_data.tar.gz</a> (beware : it is a
+230 Mb file), and unpack the archive in the  <tt class="docutils literal"><span class="pre">$WAVELOC_PATH</span></tt> directory.</p>
 </li>
 <li><p class="first">Run the <tt class="docutils literal"><span class="pre">setup_examples.py</span></tt> script to set up the required directory structure
 for the examples:</p>
@@ -226,7 +231,7 @@ like:</p>
     </div>
     <div class="footer">
         &copy; Copyright 2012, Alessia Maggi.
-      Last updated on Oct 13, 2012.
+      Last updated on Jan 12, 2013.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

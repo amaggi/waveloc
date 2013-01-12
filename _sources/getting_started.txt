@@ -9,26 +9,34 @@ This is a quick guide for getting started with WaveLoc.
 Download and installation
 =========================
 
-You can download the latest distribution on the `waveloc downloads page  
-<http://github.com/amaggi/waveloc/downloads>`_, or if you're feeling
-courageous you can download the development version from github:
-http://github.com/amaggi/waveloc.  
+The latest stable source distributions are downloadable from `AmazonAWS <http://aws.amazon.com>`_:
+
+* `waveloc-0.1.1.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.1.1.tar.gz>`_
+* `waveloc-0.1.0.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.1.0.tar.gz>`_
+
+The `latest development source archive
+<https://github.com/amaggi/waveloc/archive/master.zip>`_ is available from the
+`WaveLoc Github pages <http://github.com/amaggi/waveloc>`_, which is also the
+place you should go if you would like to contribute to the project using the
+Github `fork <https://help.github.com/articles/fork-a-repo>`_ and
+`pull-request <https://help.github.com/articles/using-pull-requests>`_
+procedures.
 
 **System requirements** : 
 
 * python 2.7, numpy >= 1.6.1
-* HDF5 (available here : http://www.hdfgroup.org/ftp/HDF5/current/src/) 
-* h5py >= 2.0.0 (available here : http://code.google.com/p/h5py/) 
-* obspy > 0.7.1 (available here : http://obspy.org)
-* NonLinLoc for time grid calculation (not strictly required)
+* HDF5 (available here: http://www.hdfgroup.org/ftp/HDF5/current/src/) 
+* h5py >= 2.0.0 (available here: http://code.google.com/p/h5py/) 
+* obspy > 0.7.1 (available here: http://obspy.org)
+* NonLinLoc for time grid calculation (not strictly required, available here: http://alomax.free.fr/nlloc/)
 * other stuff I've surelly fogotten about...
 
 The easiest way to get all the required python modules (except
-for obspy) is to install a recent version of the full Enthought Python Distribution.
-Enthought deliver free licenses for academic use (it is temporarily unavailable
-due to modification of their academic license, but should be back soon).  
-Enthought also bundle a completely free version, but it does not have all the necessary
-modules (notably h5py). 
+for obspy) is to install a recent version of the full `Enthought Python
+Distribution <http://enthought.com/products/epd.php>`_.  Enthought deliver
+`free licenses for academic use <http://enthought.com/products/edudownload.php>`_.
+Enthought also bundle a completely free version, but it does not have all the
+necessary modules (notably h5py). 
 
 If your python distribution does not include h5py and you
 need to compile HDF5 under macosx, make sure that it is configured 32-bit when
@@ -37,11 +45,8 @@ using a 32-bit python distribution. (e.g., CC='cc -m32' ./configure
 
 You should then be able to install the obspy modules by running ::
 
-  easy_install -U obspy.core
-  easy_install -U obspy.signal
-  easy_install -U obspy.mseed
+  easy_install -U obspy
 
-and so on for all the other obspy modules you may be interested in.
 
 Installation
 ------------
@@ -72,9 +77,9 @@ waveloc distribution.
 * For the tests, temporarily set the environment variable ``$WAVELOC_PATH`` to
   the directory you would like the tests to run in. 
 
-* Download the test data here : `test_data.tgz
-  <https://github.com/downloads/amaggi/waveloc/test_data.tgz>`_ (beware : it is a
-  large file !), and unpack the archive in the  ``$WAVELOC_PATH`` directory.
+* Download the test data here : `test_data.tar.gz
+  <https://s3.amazonaws.com/waveloc/test_data.tar.gz>`_ (beware : it is a
+  230 Mb file), and unpack the archive in the  ``$WAVELOC_PATH`` directory.
 
 * Run the ``setup_examples.py`` script to set up the required directory structure
   for the examples: ::
