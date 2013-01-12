@@ -4,8 +4,36 @@ from time import time
 from NllGridLib import read_hdr_file
 
 class H5SingleGrid(object):
+    """
+    Class that wraps several methods for regular grids in HDF5 format.
+
+    **Attributes**
+
+    .. attribute:: grid_data
+
+        An HDF5 dataset.
+
+    .. attribute:: grid_info
+
+        Attributes of an HDF5 dataset.
+
+    **Methods**
+    """
 
   def __init__(self, filename=None, grid_data=None, grid_info=None):
+      """
+      Initialises an instance of HDF5SingleGrid.
+      
+      :param filename: If a file of this name exists, it is opened for
+      reading.  Attributes grid_data and grid_info will then refer  to the HDF5
+      dataset named 'grid_data' and to its HDF5  attributes.  If the file does
+      not already exist, then a new  HDF5 file is opened for writing, the
+      grid_data paramter is  used to initialise the 'grid_data' HDF5 dataset,
+      and the  grid_info parameter is used to initialise its attributes.
+      :param grid_data: An array containing the grid data to be written to the
+      file.
+      :param grid_info: Attributes to be used for the 'grid_data' dataset.
+      """
 
     if os.path.isfile(filename):
       self._f=h5py.File(filename,'r')
@@ -31,7 +59,7 @@ class H5SingleGrid(object):
 
   def value_at_point(self,x,y,z,epsilon=0.001):
     """
-    Performs n-linear interpolation on the regular grid
+    Performs n-linear interpolation on the regular grid.
     """
     nx=self.grid_info['nx']
     ny=self.grid_info['ny']
