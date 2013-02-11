@@ -48,5 +48,5 @@ test_info = generateSyntheticDirac(wo.opdict)
 # Plot the synthetic migration
 base_path = wo.opdict['base_path']
 figdir    = os.path.join(base_path,'out',wo.opdict['outdir'],'fig')
-plotDiracTest(test_info,figdir)
+plotDiracTest(test_info,figdir,5.0)
 
