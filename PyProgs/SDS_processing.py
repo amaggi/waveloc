@@ -31,7 +31,8 @@ def do_SDS_processing_setup_and_run(opdict):
   dataglob=opdict['dataglob']
   kurtglob=opdict['kurtglob']
   gradglob=opdict['gradglob']
-  gaussglob=opdict['gaussglob']
+  if opdict['gauss']:
+    gaussglob=opdict['gaussglob']
 
   # start and end time to process
   start_time=utcdatetime.UTCDateTime(opdict['starttime'])
