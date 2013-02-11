@@ -39,6 +39,8 @@ wo.opdict['syn_iy']         = 8
 wo.opdict['syn_iz']         = 6
 wo.opdict['syn_filename']   = 'test_grid4D_hires.hdf5'
 
+wo.opdict['plot_otime_window']=5.0
+
 # sanity check on synthetic options
 wo.verify_synthetic_options()
 
@@ -48,5 +50,5 @@ test_info = generateSyntheticDirac(wo.opdict)
 # Plot the synthetic migration
 base_path = wo.opdict['base_path']
 figdir    = os.path.join(base_path,'out',wo.opdict['outdir'],'fig')
-plotDiracTest(test_info,figdir,5.0)
+plotDiracTest(test_info,figdir,wo.opdict['plot_otime_window'])
 
