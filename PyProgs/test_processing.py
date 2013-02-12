@@ -8,6 +8,7 @@ from options import WavelocOptions
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(KurtosisTests('test_ss_kurtosis'))
+  suite.addTest(KurtosisTests('test_rec_kurtosis'))
   suite.addTest(ProcessingTests('test_positive_gradient'))
   suite.addTest(ProcessingTests('test_processing'))
   suite.addTest(ProcessingTests('test_channel_read'))
@@ -46,9 +47,30 @@ class KurtosisTests(unittest.TestCase):
     self.assertAlmostEquals(np.max(k1), np.max(k2))
     self.assertEquals(np.argmax(k1), np.argmax(k2))
    
+
+  def test_rec_kurtosis(self):
+    import numpy as np
+    from filters import rec_kurtosis 
+
+    npts=100000
+    w=3.0
+    dt=0.01
+
+    sigma=4.0
+    mu = 7.0
+    x=np.random.randn(npts)*sigma + mu
+
+    C=dt/w
+    a1 = 1-C
+
+    k=rec_kurtosis(x,C)
+    self.assertAlmostEquals(np.mean(k), 0.0, 1)
+
+
+
     
    
-
+@unittest.skip('Skip processing')
 class ProcessingTests(unittest.TestCase):
 
   def setUp(self):
