@@ -61,7 +61,7 @@ def sw_kurtosis2(x,n):
     xs=ss.kurtosis(k_array,axis=1)
     return xs
 
-def rec_kurtosis(x,C):
+def rec_kurtosis_old(x,C):
     npts=len(x)
     varx=np.std(x)
     mean_value=0
@@ -79,7 +79,35 @@ def rec_kurtosis(x,C):
 
     return xs
 
-   
+def rec_kurtosis(x,C1):
+    """
+    Recursive Kurtosis calculated using Chassande-Mottin (2002)
+    """
+    npts = len(x)
+    kappa4 = np.empty(npts,dtype=float)
+
+    a1 = 1-C1
+    C2 = (1-a1*a1)/2.0
+    bias = -3*C1 - 3.0
+
+    mu1_last=0
+    mu2_last=1
+    k4_bar_last=0
+    
+
+    for i in xrange(npts):
+        mu1 = a1*mu1_last + C1*x[i]
+        dx2 = (x[i]-mu1_last)*(x[i]-mu1_last)
+        mu2 = a1*mu2_last + C2*dx2
+        dx2 = dx2 / mu2_last
+        k4_bar = (1+C1 - 2*C1*dx2)*k4_bar_last + C1 * dx2 * dx2
+        kappa4[i] = k4_bar + bias
+        mu1_last=mu1
+        mu2_last=mu2
+        k4_bar_last=k4_bar
+
+    return kappa4
+
 def lfilter_zi(b,a):
     """
     Computes the zi state from the filter parameters. See [Gust96].
