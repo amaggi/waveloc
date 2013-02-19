@@ -249,11 +249,11 @@ def plotDiracTest(test_info,fig_dir,otime_window):
 
   # choose portion of time series to plot
   if test_info.has_key('true_values'):
-    llim = t_true-otime_window
-    rlim = t_true+otime_window
+    llim = max(t_true-otime_window,t[0])
+    rlim = min(t_true+otime_window,t[-1])
   else:
-    llim = t[it_true]-otime_window
-    rlim = t[it_true]+otime_window
+    llim = max(t[it_true]-otime_window,t[0])
+    rlim = min(t[it_true]+otime_window,t[-1])
 
   illim = int((llim-t[0])/dt)
   irlim = int((rlim-t[0])/dt)

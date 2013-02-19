@@ -729,8 +729,7 @@ class Waveform(object):
       xs=np.zeros(npts)    
 
       if recursive:
-        C=1-dt/win
-        xs=rec_kurtosis(x,C)
+        xs=rec_kurtosis(x,win)
         # smooth xs
         try:
           xs_filt=smooth(xs)

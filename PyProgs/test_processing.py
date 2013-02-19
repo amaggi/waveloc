@@ -53,24 +53,21 @@ class KurtosisTests(unittest.TestCase):
     from filters import rec_kurtosis 
 
     npts=100000
-    w=3.0
+    w=30.0
     dt=0.01
 
     sigma=4.0
     mu = 7.0
     x=np.random.randn(npts)*sigma + mu
 
-    C=dt/w
-    a1 = 1-C
-
-    k=rec_kurtosis(x,C)
+    k=rec_kurtosis(x,w)
     self.assertAlmostEquals(np.mean(k), 0.0, 1)
 
 
 
     
    
-@unittest.skip('Skip processing')
+#@unittest.skip('Skip processing')
 class ProcessingTests(unittest.TestCase):
 
   def setUp(self):

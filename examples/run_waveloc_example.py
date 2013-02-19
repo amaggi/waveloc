@@ -67,7 +67,7 @@ wo.opdict['n_kurt_min']=4
 
 wo.opdict['plot_tbefore']=4
 wo.opdict['plot_tafter']=6
-wo.opdict['plot_otime_window']=5
+wo.opdict['plot_otime_window']=2
 
 ##########################################
 # end of option setting - start processing
