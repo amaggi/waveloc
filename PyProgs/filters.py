@@ -108,6 +108,32 @@ def rec_kurtosis(x,C1):
 
     return kappa4
 
+def rec_dx2(x,C1):
+    """
+    Recursive dx2
+    """
+    npts = len(x)
+    dx2_out = np.empty(npts,dtype=float)
+
+    a1 = 1-C1
+    C2 = (1-a1*a1)/2.0
+
+    mu1_last=0
+    mu2_last=1
+    
+
+    for i in xrange(npts):
+        mu1 = a1*mu1_last + C1*x[i]
+        dx2 = (x[i]-mu1_last)*(x[i]-mu1_last)
+        mu2 = a1*mu2_last + C2*dx2
+        dx2 = dx2 / mu2_last
+        dx2_out[i] = dx2
+        mu1_last=mu1
+        mu2_last=mu2
+
+    return dx2_out
+
+
 def lfilter_zi(b,a):
     """
     Computes the zi state from the filter parameters. See [Gust96].
