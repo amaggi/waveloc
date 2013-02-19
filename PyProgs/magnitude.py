@@ -149,33 +149,36 @@ def do_comp_mag(opdict):
 
         if paz_list:
           mag=estimateMagnitude(paz_list,p2p_amp,tspan,h_dist)
-          ml.append(mag)
+          if sta in ['SNE','UV05','UV11','UV15']:
+            ml.append(mag)
 
     new_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km, ml= %.2f pm %.2f\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma'],np.mean(ml),np.std(ml)))
 
-    mags.append(np.mean(ml))
+    if ml:
+      mags.append(np.mean(ml))
 
   new_file.close()
   print np.max(mags),locs[np.argmax(mags)]['o_time']
+  print len(mags)
 
   fig=plt.figure()
   fig.set_facecolor('white')
   plt.hist(mags,25)
   plt.xlabel('Magnitude')
 
-  r=np.arange(-1.2,1.8,0.1)
+  r=np.arange(-3,3,0.1)
   N=[]
   for i in r:
     N.append(len(np.where(mags >= i)[0]))
 
-  i1=np.max(np.where(np.log(N) == np.max(np.log(N))))
-  i2=np.argmin(np.log(N))
-  p=np.polyfit(r[i1:i2],np.log(N)[i1:i2],deg=1)
+  i1=np.max(np.where(np.log10(N) == np.max(np.log10(N))))
+  i2=np.argmin(np.log10(N))
+  p=np.polyfit(r[i1:i2],np.log10(N)[i1:i2],deg=1)
   print "b-value:",-p[0] 
 
   fig=plt.figure()
   fig.set_facecolor('white')
-  plt.plot(r,np.log(N))
+  plt.plot(r,np.log10(N))
   plt.plot(r[i1:i2],np.polyval(p,r[i1:i2]),'r')
   #plt.yscale('log')
   plt.xlabel('Magnitude')
@@ -191,6 +194,7 @@ if __name__ == '__main__' :
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  wo.set_all_arguments(args)
+  #wo.set_all_arguments(args)
+  wo.set_options()
 
   do_comp_mag(wo.opdict)
