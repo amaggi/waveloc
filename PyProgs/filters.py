@@ -79,20 +79,21 @@ def rec_kurtosis_old(x,C):
 
     return xs
 
-def rec_kurtosis(x,C1):
+def rec_kurtosis(x,win):
     """
     Recursive Kurtosis calculated using Chassande-Mottin (2002)
     """
     npts = len(x)
     kappa4 = np.empty(npts,dtype=float)
 
-    a1 = 1-C1
+    a1 = np.exp(-1/float(win))
+    C1 = 1-a1
     C2 = (1-a1*a1)/2.0
     bias = -3*C1 - 3.0
 
-    mu1_last=0
-    mu2_last=1
-    k4_bar_last=0
+    mu1_last=0.0
+    mu2_last=x[0]
+    k4_bar_last=0.0
     
 
     for i in xrange(npts):
