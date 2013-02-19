@@ -344,6 +344,7 @@ def read_header_from_file(filename):
   head['gauss']=lines[1].split()[10]
   head['reloc']=lines[2].split()[3]
   head['detect']=lines[3].split()[3][:-1]
+  head['wf snr']=lines[3].split()[14][:-1]
 
   return head
 
