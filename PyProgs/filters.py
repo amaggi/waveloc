@@ -92,7 +92,7 @@ def rec_kurtosis(x,win):
     bias = -3.0*C1 - 3.0
 
     mu1_last=0.0
-    mu2_last=1.0
+    mu2_last=x[0]
     k4_bar_last=0.0
     
 
