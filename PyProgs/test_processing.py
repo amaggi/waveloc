@@ -67,7 +67,7 @@ class KurtosisTests(unittest.TestCase):
 
     
    
-@unittest.skip('Skip processing')
+#@unittest.skip('Skip processing')
 class ProcessingTests(unittest.TestCase):
 
   def setUp(self):
