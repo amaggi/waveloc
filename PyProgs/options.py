@@ -783,6 +783,16 @@ class WavelocOptions(object):
 
     self._verify_reloc()
 
+  def verify_magnitude_options(self):
+
+    self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
+
+    self._verify_channel_net_sta_comp()
+
+
   def verify_correlation_options(self):
     
     self.verify_base_path()
