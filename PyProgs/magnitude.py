@@ -7,11 +7,14 @@ from obspy.xseed import Parser
 from obspy.signal import pazToFreqResp,estimateMagnitude
 import matplotlib.pyplot as plt
 from OP_waveforms import *
-from locations_trigger import read_locs_from_file,read_header_from_file
+from locations_trigger import read_locs_from_file,read_header_from_file, write_header_options
 from NllGridLib import read_stations_file
 
 # =======================================================
 def read_paz(verbose=False):
+  """
+  Read dataless and extract poles and zeros
+  """
   files=glob.glob('/home/nadege/Desktop/Dataless/*.dataless')
   files.sort()
   paz={}
@@ -54,6 +57,9 @@ def read_paz(verbose=False):
   return paz
 # =======================================================
 def fill_values(vals,tdeb,data_glob,data_dir,comp):
+  """
+  Create a dictionnary with all values for each channel of each station
+  """
   if comp == 'HHE' or comp == 'HHN':
     data_dir=os.path.join(data_dir,comp)
   data_files=glob.glob(os.path.join(data_dir,data_glob))
@@ -67,6 +73,20 @@ def fill_values(vals,tdeb,data_glob,data_dir,comp):
     dt=wf.delta
 
   return vals,tdeb,dt
+# =======================================================
+def bvalue(mag,r):
+  """
+  Compute the b-value by a simple linear fitting
+  """
+  N=[]
+  for i in r:
+    N.append(len(np.where(mag >= i)[0]))
+
+  i1=np.min(np.where(np.log10(N) <= np.max(np.log10(N))-0.01)[0])
+  i2=np.argmin(np.log10(N))
+  p=np.polyfit(r[i1:i2],np.log10(N)[i1:i2],deg=1)
+
+  return p,np.log10(N),i1,i2
 # =======================================================
 def do_comp_mag(opdict):
 
@@ -87,8 +107,8 @@ def do_comp_mag(opdict):
   locdir=os.path.join(base_path,'out',opdict['outdir'],'loc')
   locfile=os.path.join(locdir,'locations.dat')
   locs=read_locs_from_file(locfile)
-  header=read_header_from_file(os.path.join(locdir,'locations.dat'))
-  snr_wf=np.float(header['wf snr'])
+  opdict=read_header_from_file(locfile,opdict)
+  snr_wf=np.float(opdict['snr_tr_limit'])
 
   # Stations
   stations_filename=os.path.join(base_path,'lib',opdict['stations'])
@@ -108,7 +128,8 @@ def do_comp_mag(opdict):
     vals,tdeb,dt=fill_values(vals,tdeb,data_glob,data_dir,'HHN')
     cha_list.append('HHN')
 
-  new_file=open(os.path.join(locdir,'locations_mag.dat'),'w')
+  new_file=open(locfile,'w')
+  write_header_options(new_file,opdict)
 
   mags=[]
   for loc in locs:
@@ -158,32 +179,26 @@ def do_comp_mag(opdict):
       mags.append(np.mean(ml))
 
   new_file.close()
+
   print np.max(mags),locs[np.argmax(mags)]['o_time']
   print len(mags)
 
-  fig=plt.figure()
-  fig.set_facecolor('white')
-  plt.hist(mags,25)
-  plt.xlabel('Magnitude')
-
   r=np.arange(-3,3,0.1)
-  N=[]
-  for i in r:
-    N.append(len(np.where(mags >= i)[0]))
-
-  i1=np.max(np.where(np.log10(N) == np.max(np.log10(N))))
-  i2=np.argmin(np.log10(N))
-  p=np.polyfit(r[i1:i2],np.log10(N)[i1:i2],deg=1)
+  p,logN,i1,i2 = bvalue(mags,r)
   print "b-value:",-p[0] 
 
-  fig=plt.figure()
+
+  fig=plt.figure(figsize=(10,5))
   fig.set_facecolor('white')
-  plt.plot(r,np.log10(N))
-  plt.plot(r[i1:i2],np.polyval(p,r[i1:i2]),'r')
-  #plt.yscale('log')
-  plt.xlabel('Magnitude')
-  plt.ylabel('log N')
-  plt.title('Gutenberg Richter law')
+  ax1 = fig.add_subplot(121)
+  ax1.hist(mags,25)
+  ax1.set_xlabel('Magnitude')
+
+  ax2 = fig.add_subplot(122,title='Gutenberg Richter law')
+  ax2.plot(r,logN)
+  ax2.plot(r[i1:i2],np.polyval(p,r[i1:i2]),'r')
+  ax2.set_xlabel('Magnitude')
+  ax2.set_ylabel('log N')
   plt.show()
 # =======================================================
 if __name__ == '__main__' :
@@ -194,7 +209,7 @@ if __name__ == '__main__' :
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  #wo.set_all_arguments(args)
-  wo.set_options()
+  wo.set_all_arguments(args)
+  wo.verify_magnitude_options()
 
   do_comp_mag(wo.opdict)
