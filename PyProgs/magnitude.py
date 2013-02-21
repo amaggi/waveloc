@@ -74,7 +74,6 @@ def bvalue(mag,r):
 def do_comp_mag(opdict):
 
   base_path=opdict['base_path']
-  verbose=opdict['verbose']
 
   # dataless
   dataless_glob=glob.glob(os.path.join(base_path,'lib',opdict['dataless']))
@@ -140,7 +139,7 @@ def do_comp_mag(opdict):
             tspan.append(np.abs(i_max_amp-i_min_amp)*dt)
             p2p_amp.append(max_amp+min_amp)
 
-            if verbose:
+            if opdict['verbose']:
               fig=plt.figure()
               fig.set_facecolor('white')
               plt.plot(x)
@@ -164,19 +163,19 @@ def do_comp_mag(opdict):
   p,logN,i1,i2 = bvalue(mags,r)
   print "b-value:",-p[0] 
 
+  if opdict['verbose']:
+    fig=plt.figure(figsize=(10,5))
+    fig.set_facecolor('white')
+    ax1 = fig.add_subplot(121)
+    ax1.hist(mags,25)
+    ax1.set_xlabel('Magnitude')
 
-  fig=plt.figure(figsize=(10,5))
-  fig.set_facecolor('white')
-  ax1 = fig.add_subplot(121)
-  ax1.hist(mags,25)
-  ax1.set_xlabel('Magnitude')
-
-  ax2 = fig.add_subplot(122,title='Gutenberg Richter law')
-  ax2.plot(r,logN)
-  ax2.plot(r[i1:i2],np.polyval(p,r[i1:i2]),'r')
-  ax2.set_xlabel('Magnitude')
-  ax2.set_ylabel('log N')
-  plt.show()
+    ax2 = fig.add_subplot(122,title='Gutenberg Richter law')
+    ax2.plot(r,logN)
+    ax2.plot(r[i1:i2],np.polyval(p,r[i1:i2]),'r')
+    ax2.set_xlabel('Magnitude')
+    ax2.set_ylabel('log N')
+    plt.show()
 # =======================================================
 if __name__ == '__main__' :
 
