@@ -729,7 +729,6 @@ class Waveform(object):
       xs=np.zeros(npts)    
 
       if recursive:
-         old style kurtosis
         C=1-dt/float(win)
         xs=rec_kurtosis_old(x,C)
         # Chassande-Mottin style kurtosis
