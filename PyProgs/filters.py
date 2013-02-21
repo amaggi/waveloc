@@ -90,9 +90,9 @@ def rec_kurtosis(x,C1):
     C2 = (1-a1*a1)/2.0
     bias = -3*C1 - 3.0
 
-    mu1_last=0
-    mu2_last=1
-    k4_bar_last=0
+    mu1_last=0.0
+    mu2_last=1.0
+    k4_bar_last=0.0
     
 
     for i in xrange(npts):
