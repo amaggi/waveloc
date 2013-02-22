@@ -8,7 +8,7 @@ import logging
 from obspy.core import utcdatetime
 import time
 
-from locations_trigger import read_locs_from_file
+from locations_trigger import read_locs_from_file, read_header_from_file, write_header_options
 from correlation import BinaryFile
 from NllGridLib import read_stations_file
 from hdf5_grids import *
@@ -192,6 +192,7 @@ def do_double_diff_setup_and_run(opdict):
   locdir=os.path.join(base_path,'out',opdict['outdir'],'loc')
   loc_filename=os.path.join(locdir,'locations.dat')
   locs=read_locs_from_file(loc_filename)
+  opdict=read_header_from_file(loc_filename,opdict)
 
 
   # ----------------------------------------------------------------------------------------
@@ -235,6 +236,7 @@ def do_double_diff_setup_and_run(opdict):
   if dd_loc:
     new_loc_filename=os.path.join(locdir,'relocations.dat')
     new_loc_file=open(new_loc_filename,'w')
+    write_header_options(new_loc_file,opdict)
 
   # ----------------------------------------------------------------------------------------
   for i in cluster.keys():

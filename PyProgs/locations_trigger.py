@@ -271,17 +271,12 @@ def do_locations_trigger_setup_and_run(opdict):
   f.close()
 
   loc_file=open(loc_filename,'w')
+  write_header_options(loc_file,opdict)
 
   snr_limit=opdict['snr_limit']
   snr_tr_limit=opdict['snr_tr_limit']
   sn_time=opdict['sn_time']
   n_kurt_min=opdict['n_kurt_min']
-
-  # Header of locations.dat
-  loc_file.write('#FILTER : %.d - %.d Hz\n'%(opdict['c1'],opdict['c2']))
-  loc_file.write('#KURTOSIS = window: %.2f s, recurs: %s, grad: %s, gauss: %s\n'%(opdict['kwin'],opdict['krec'],opdict['kderiv'],opdict['gauss']))
-  loc_file.write('#OPTIONS = reloc: %s\n'%reloc)
-  loc_file.write('#LOCATION = level: %d, window of analysis: %.2f s, kurtosis snr: %.2f, waveform snr: %.2f, number of stations: %d\n\n'%(loclevel,sn_time,snr_limit,snr_tr_limit,n_kurt_min))
 
   n_ok=0
   locs=[]
@@ -311,6 +306,7 @@ def read_locs_from_file(filename):
   for line in lines:
 
     if not line.isspace() and line.split()[0][0]!='#':
+
       loc={}
 
       loc['max_trig']=np.float(line.split()[2].split(',')[0])
@@ -324,28 +320,40 @@ def read_locs_from_file(filename):
       loc['z_mean']=np.float(line.split()[21])
       loc['z_sigma']=np.float(line.split()[23])
 
+      if len(line.split()) > 25:
+        loc['ml']=np.float(line.split()[26])
+
       locs.append(loc)
 
   return locs
 
 
-def read_header_from_file(filename):
+def write_header_options(loc_file,opdict):
+
+  # Header of locations.dat
+  loc_file.write('#FILTER : %.d - %.d Hz\n'%(opdict['c1'],opdict['c2']))
+  loc_file.write('#KURTOSIS = window: %.2f s, recurs: %s, grad: %s, gauss: %s\n'%(opdict['kwin'],opdict['krec'],opdict['kderiv'],opdict['gauss']))
+  loc_file.write('#OPTIONS = reloc: %s\n'%opdict['reloc'])
+  loc_file.write('#LOCATION = level: %d, window of analysis: %.2f s, kurtosis snr: %.2f, waveform snr: %.2f, number of stations: %d\n\n'%(opdict['loclevel'],opdict['sn_time'],opdict['snr_limit'],opdict['snr_tr_limit'],opdict['n_kurt_min']))
+
+
+def read_header_from_file(filename,opdict):
 
   f=open(filename,'r')
   lines=f.readlines()
   f.close()
 
-  head={}
+  opdict['c1']=np.float(lines[0].split()[2])
+  opdict['c2']=np.float(lines[0].split()[4])
+  opdict['kwin']=np.float(lines[1].split()[3])
+  opdict['krec']=lines[1].split()[6][:-1]
+  opdict['kderiv']=lines[1].split()[8][:-1]
+  opdict['gauss']=lines[1].split()[10]
+  opdict['reloc']=lines[2].split()[3]
+  opdict['loclevel']=np.int(lines[3].split()[3][:-1])
+  opdict['snr_tr_limit']=np.float(lines[3].split()[14][:-1])
 
-  head['filt']='%s-%s'%(lines[0].split()[2],lines[0].split()[4])
-  head['window']=lines[1].split()[3]
-  head['rec']=lines[1].split()[6][:-1]
-  head['grad']=lines[1].split()[8][:-1]
-  head['gauss']=lines[1].split()[10]
-  head['reloc']=lines[2].split()[3]
-  head['detect']=lines[3].split()[3][:-1]
-
-  return head
+  return opdict
 
 
  

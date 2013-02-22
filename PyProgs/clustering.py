@@ -68,6 +68,7 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
   list_name=sorted(tr)
 
   for i in range(1,len(CLUSTER)+1): # cluster index
+    i=51
     for j in range(len(CLUSTER[i])): # first event index
       e1=CLUSTER[i][j]
       for k in range(j+1,len(CLUSTER[i])): # second event index
@@ -97,113 +98,44 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
         fig.suptitle("Cluster : %s ; Event pair : (%s,%s) ; %d"%(str(i),str(e1),str(e2),co))
         plt.show()
 
-        # Plot location
-        fig = plt.figure()
-        x1=locs[e1-1]['x_mean']
-        y1=locs[e1-1]['y_mean']
-        z1=-locs[e1-1]['z_mean']
-        x2=locs[e2-1]['x_mean']
-        y2=locs[e2-1]['y_mean']
-        z2=-locs[e2-1]['z_mean']
-        ax1=fig.add_subplot(221,xlabel='x',ylabel='y')
-        ax1.plot(x1,y1,'bo',x2,y2,'ro')
-        ax1.axis(rg_x+rg_y)
-        ax1.text(367.5,7652.5,"dx=%.03f"%np.abs(x1-x2))
-        ax2=fig.add_subplot(222,xlabel='x',ylabel='z')
-        ax2.plot(x1,z1,'bo',x2,z2,'ro')
-        ax2.axis(rg_x+rg_z)
-        ax2.text(367.5,2,"dz=%.03f"%np.abs(z1-z2))
-        ax3=fig.add_subplot(223,xlabel='y',ylabel='z')
-        ax3.plot(y1,z1,'bo',y2,z2,'ro')
-        ax3.axis(rg_y+rg_z)
-        ax3.text(7651,2,"dy=%.03f"%np.abs(y1-y2))
-        plt.show()
-
-        fig = plt.figure()
-        fig.set_facecolor('white')
-        for l in range(len(list_name)):
-          name=list_name[l]
-          if delay[name][e1-1][e2-1]!='NaN' and coeff[name][e1-1][e2-1]>0.8:
-            stack_time_1=locs[e1-1]['o_time']
-            i_start_1, i_end_1=waveval(stack_time_1,t_before,t_after,dt,tdeb)
-            val1=tr[name][i_start_1-1:i_end_1]
-            stack_time_2=locs[e2-1]['o_time']
-            i_start_2, i_end_2=waveval(stack_time_2-delay[name][e1-1][e2-1],t_before,t_after,dt,tdeb)
-            val2=tr[name][i_start_2-1:i_end_2]
-            t=np.linspace(0,t_after+t_before,(t_after+t_before)/dt+1)
-            plt.plot(t,val1/max(val1))
-            plt.plot(t,val2/max(val2),'r')
-            plt.title("%s - coeff: %s"%(name,coeff[name][e1-1][e2-1]))
-            plt.show()
-
-# -----------------------------------------------------------------------------------------
-def compute_nbsta(event,coeff,threshold):
-  # Compute the number of stations where the correlation value is >= threshold for every event pair
-  nbsta=[]
-  for i in xrange(event):
-    liste=[]
-    for k in xrange(i):
-      liste.append(0)
-    for j in xrange(i,event):
-      c=0
-      if i!=j:
-        for name in sorted(coeff):
-          if coeff[name] and coeff[name][i][j] >= threshold and coeff[name][i][j] != 'NaN':
-            c=c+1
-        liste.append(c)
-      else:
-        liste.append(0)
-    nbsta.append(liste)
-
-  nbsta=np.matrix(nbsta)
-  return nbsta
-
-# -----------------------------------------------------------------------------------------
-def do_clustering(event,nbsta,nbmin):
-  # CODE CHRISTOPHE - CLUSTERING : DEPTH FIRST SEARCH
-  voisins_du_sommet_I__horiz, voisins_du_sommet_I__verti, voisins_du_sommet_I=[],[],[]
-  GRAPH=Graph()
-  sommets=[]
- 
-  for I in range(event):
-    voisins_du_sommet_I__verti=(np.where(nbsta[:,I]>=nbmin)[0]).tolist()[0]
-    voisins_du_sommet_I__horiz=(np.where(nbsta[I,:]>=nbmin)[1]).tolist()[0]
-    GRAPH.set_voisins(voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz)
-    GRAPH.set_flag(0)
-    GRAPH.set_cluster_index(0)
-    if voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz:
-      sommets.append(I)
- 
-  NB_MAX_VOISINS=0
-  for ind_sommet in range(len(sommets)):
-    l=len(GRAPH.voisins[sommets[ind_sommet]])
-    if l > NB_MAX_VOISINS:
-      sommet_first=sommets[ind_sommet]
-      NB_MAX_VOISINS=l
-
-  ind_sommet_first=0
-  cluster_ind=0
-  CLUSTER={}
-  while 1:
-    event_index_flagged=[]
-    event_index_non_flagged_with_neighbours=[]
-    ind_sommet_first=ind_sommet_first+1
-    cluster_ind=cluster_ind+1
-    GRAPH,cluster_ind=CZ_DFS(GRAPH,sommet_first,cluster_ind)
-    for k in range(len(GRAPH.voisins)):
-      if GRAPH.flag[k] == 1 and GRAPH.cluster_index[k] == ind_sommet_first:
-        event_index_flagged.append(k)
-      elif GRAPH.flag[k] == 0 and len(GRAPH.voisins[k]) != 0:
-        event_index_non_flagged_with_neighbours.append(k)
-
-    # add 1 to each event number as the first one is number one (and not zero)
-    CLUSTER[cluster_ind]=list(event_index_flagged+np.ones(len(event_index_flagged),dtype=np.int))
-    if len(event_index_non_flagged_with_neighbours) > 1:
-      sommet_first=event_index_non_flagged_with_neighbours[0]
-    else:
-      break
-
-  return CLUSTER
+#        # Plot location
+#        fig = plt.figure()
+#        x1=locs[e1-1]['x_mean']
+#        y1=locs[e1-1]['y_mean']
+#        z1=-locs[e1-1]['z_mean']
+#        x2=locs[e2-1]['x_mean']
+#        y2=locs[e2-1]['y_mean']
+#        z2=-locs[e2-1]['z_mean']
+#        ax1=fig.add_subplot(221,xlabel='x',ylabel='y')
+#        ax1.plot(x1,y1,'bo',x2,y2,'ro')
+#        ax1.axis(rg_x+rg_y)
+#        ax1.text(367.5,7652.5,"dx=%.03f"%np.abs(x1-x2))
+#        ax2=fig.add_subplot(222,xlabel='x',ylabel='z')
+#        ax2.plot(x1,z1,'bo',x2,z2,'ro')
+#        ax2.axis(rg_x+rg_z)
+#        ax2.text(367.5,2,"dz=%.03f"%np.abs(z1-z2))
+#        ax3=fig.add_subplot(223,xlabel='y',ylabel='z')
+#        ax3.plot(y1,z1,'bo',y2,z2,'ro')
+#        ax3.axis(rg_y+rg_z)
+#        ax3.text(7651,2,"dy=%.03f"%np.abs(y1-y2))
+#        #plt.show()
+#
+#        fig = plt.figure()
+#        fig.set_facecolor('white')
+#        for l in range(len(list_name)):
+#          name=list_name[l]
+#          if delay[name][e1-1][e2-1]!='NaN' and coeff[name][e1-1][e2-1]>0.8:
+#            stack_time_1=locs[e1-1]['o_time']
+#            i_start_1, i_end_1=waveval(stack_time_1,t_before,t_after,dt,tdeb)
+#            val1=tr[name][i_start_1-1:i_end_1]
+#            stack_time_2=locs[e2-1]['o_time']
+#            i_start_2, i_end_2=waveval(stack_time_2-delay[name][e1-1][e2-1],t_before,t_after,dt,tdeb)
+#            val2=tr[name][i_start_2-1:i_end_2]
+#            t=np.linspace(0,t_after+t_before,(t_after+t_before)/dt+1)
+#            plt.plot(t,val1/max(val1))
+#            plt.plot(t,val2/max(val2),'r')
+#            plt.title("%s - coeff: %s"%(name,coeff[name][e1-1][e2-1]))
+#            #plt.show()
 
 # -----------------------------------------------------------------------------------------
 def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
@@ -257,6 +189,79 @@ def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
   #mlab.colorbar(s2)
   logging.info("Done!")
   mlab.show()
+# -----------------------------------------------------------------------------------------
+def compute_nbsta(event,coeff,threshold):
+  # Compute the number of stations where the correlation value is >= threshold for every event pair
+  nbsta=[]
+  for i in xrange(event):
+    liste=[]
+    for k in xrange(i):
+      liste.append(0)
+    for j in xrange(i,event):
+      c=0
+      if i!=j:
+        for name in sorted(coeff):
+          if coeff[name] and coeff[name][i][j] >= threshold and coeff[name][i][j] != 'NaN':
+            c=c+1
+        liste.append(c)
+      else:
+        liste.append(0)
+    nbsta.append(liste)
+
+  nbsta=np.matrix(nbsta)
+  return nbsta
+
+# -----------------------------------------------------------------------------------------
+def do_clustering(event,nbsta,nbmin):
+  # CODE CHRISTOPHE - CLUSTERING : DEPTH FIRST SEARCH
+  voisins_du_sommet_I__horiz, voisins_du_sommet_I__verti, voisins_du_sommet_I=[],[],[]
+  GRAPH=Graph()
+  sommets=[]
+ 
+  for I in range(event):
+    voisins_du_sommet_I__verti=(np.where(nbsta[:,I]>=nbmin)[0]).tolist()[0]
+    voisins_du_sommet_I__horiz=(np.where(nbsta[I,:]>=nbmin)[1]).tolist()[0]
+    GRAPH.set_voisins(voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz)
+    GRAPH.set_flag(0)
+    GRAPH.set_cluster_index(0)
+    if voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz:
+      sommets.append(I)
+
+  if sommets:
+    NB_MAX_VOISINS=0
+    for ind_sommet in range(len(sommets)):
+      l=len(GRAPH.voisins[sommets[ind_sommet]])
+      if l > NB_MAX_VOISINS:
+        sommet_first=sommets[ind_sommet]
+        NB_MAX_VOISINS=l
+
+    ind_sommet_first=0
+    cluster_ind=0
+    CLUSTER={}
+    while 1:
+      event_index_flagged=[]
+      event_index_non_flagged_with_neighbours=[]
+      ind_sommet_first=ind_sommet_first+1
+      cluster_ind=cluster_ind+1
+      GRAPH,cluster_ind=CZ_DFS(GRAPH,sommet_first,cluster_ind)
+      for k in range(len(GRAPH.voisins)):
+        if GRAPH.flag[k] == 1 and GRAPH.cluster_index[k] == ind_sommet_first:
+          event_index_flagged.append(k)
+        elif GRAPH.flag[k] == 0 and len(GRAPH.voisins[k]) != 0:
+          event_index_non_flagged_with_neighbours.append(k)
+
+      # add 1 to each event number as the first one is number one (and not zero)
+      CLUSTER[cluster_ind]=list(event_index_flagged+np.ones(len(event_index_flagged),dtype=np.int))
+      if len(event_index_non_flagged_with_neighbours) > 1:
+        sommet_first=event_index_non_flagged_with_neighbours[0]
+      else:
+        break
+
+    return CLUSTER
+
+  else:
+    return {}
+
 
 def do_clustering_setup_and_run(opdict):
 
@@ -297,18 +302,19 @@ def do_clustering_setup_and_run(opdict):
   cluster_file="%s/cluster-%s-%s"%(locdir,str(tplot),str(nbmin))
 
   corr=[opdict['clus']]
+  #corr=np.arange(0,1.1,0.1)
   for threshold in corr:
     threshold=float(threshold)
     nbsta=compute_nbsta(event,coeff,threshold)
 
     CLUSTER = do_clustering(event,nbsta,nbmin)
 
-    print "----------------------------------------------"
-    print "THRESHOLD : ",threshold," # STATIONS : ",nbmin
-    print "# CLUSTERS : ",len(CLUSTER)
-    print CLUSTER
-
     if threshold == tplot:
+
+      print "----------------------------------------------"
+      print "THRESHOLD : ",threshold," # STATIONS : ",nbmin
+      print "# CLUSTERS : ",len(CLUSTER)
+      print CLUSTER
 
       c=BinaryFile(cluster_file)
       c.write_binary_file(CLUSTER)

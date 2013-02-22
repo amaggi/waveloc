@@ -83,6 +83,8 @@ class WavelocOptions(object):
     self.p.add_argument('--channel_file',action='store',
             help="file containing ordered list of NET STA COMP values (e.g. \"YA FLR HHZ\") ")
 
+    self.p.add_argument('--dataless',action='store',help="dataless glob")
+
     self.p.add_argument('--resample',action='store_true',
             default=self.opdict['resample'], help="resample data")
     self.p.add_argument('--fs',      action='store', type=float,
@@ -217,6 +219,7 @@ class WavelocOptions(object):
 
     self.p.add_argument('--dd_loc',action='store_true',help="create a new location file with double difference locations")
 
+
   def set_all_arguments(self,args):
     self.opdict['time']=args.time
     self.opdict['verbose']=args.verbose
@@ -228,6 +231,8 @@ class WavelocOptions(object):
     self.opdict['sta_list']=args.sta_list
     self.opdict['comp_list']=args.comp_list
     self.opdict['channel_file']=args.channel_file
+
+    self.opdict['dataless']=args.dataless
 
     self.opdict['resample']=args.resample
     self.opdict['fs']=args.fs
@@ -486,6 +491,16 @@ class WavelocOptions(object):
   def _verify_sigma(self):
     if not self.opdict.has_key('sigma'):
         raise UserWarning('sigma option not set')
+
+  def _verify_dataless(self):
+    if not self.opdict.has_key('dataless'):
+      raise UserWarning('dataless option not set')
+    self._verify_lib_path()
+    base_path=self.opdict['base_path']
+    lib_path=os.path.join(base_path,'lib')
+    dataless_names=glob.glob(os.path.join(lib_path,self.opdict['dataless']))
+    if len(dataless_names) == 0:
+      raise UsrWarning('No dataless files found: %s'%dataless_names)
 
   def _verify_dataglob(self):
     if not self.opdict.has_key('dataglob'):
@@ -782,6 +797,17 @@ class WavelocOptions(object):
     self._verify_time_grid()
 
     self._verify_reloc()
+
+  def verify_magnitude_options(self):
+
+    self.verify_base_path()
+    self._verify_lib_path()
+    self._verify_datadir()
+    self._verify_outdir()
+
+    self._verify_channel_net_sta_comp()
+    self._verify_dataless()
+
 
   def verify_correlation_options(self):
     
