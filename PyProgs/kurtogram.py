@@ -637,7 +637,7 @@ def kurto(origin_time, info, opdict):
   
   # Trace
   x=waveval(info['data_ini'],start_time,end_time,dt,info['tdeb_data'])
-  if not x.any():
+  if not x.any() and x.all():
     return info
  
   # Initial kurtosis (trace filtered between 4-10Hz)
@@ -670,7 +670,7 @@ def kurto(origin_time, info, opdict):
   # 3. Compute the kurtosis
   wf.process_kurtosis(kwin,recursive=opdict['krec'])
   new_kurtx=wf.values
-  new_kurtx=new_kurtx[:-nbpts-1]
+  new_kurtx=new_kurtx[nbpts+1:-nbpts-1]
 
   snr=np.max(np.abs(x_filt))/np.mean(np.abs(x_filt))
   snr_kurt=np.max(np.abs(new_kurtx))/np.mean(np.abs(new_kurtx))
@@ -691,7 +691,21 @@ def kurto(origin_time, info, opdict):
     plt.show()
 
   return info
+# *************************************************************************
+def read_kurtogram_frequencies(filename):
+  a=BinaryFile(filename)
+  freqs=a.read_binary_file()
 
+  for staname in sorted(freqs):
+    print "%s %.1f %.1f"%(staname,np.mean(freqs[staname][:,0]),np.mean(freqs[staname][:,1]))
+    fig=plt.figure()
+    fig.set_facecolor('white')
+    plt.hist([freqs[staname][:,0],freqs[staname][:,1]],35,histtype='stepfilled',alpha=.2,color=('b','g'),label=['f_low','f_up'])
+    plt.title(staname)
+    plt.xlabel('Frequency (Hz)')
+    plt.figtext(0.15,0.85,"Lower f = %.1f Hz"%np.mean(freqs[staname][:,0]))
+    plt.figtext(0.15,0.8,"Upper f = %.1f Hz"%np.mean(freqs[staname][:,1]))
+    plt.show()
 # *************************************************************************
 def do_kurtogram_setup_and_run(opdict):
 
@@ -724,8 +738,6 @@ def do_kurtogram_setup_and_run(opdict):
   tfin=utcdatetime.UTCDateTime(opdict['endtime'])
 
   # write filenames in a dictionary
-  from hdf5_grids import get_interpolated_time_grids
-  time_grids=get_interpolated_time_grids(opdict)
   kurtdata={}
   for filename in kurt_files:
     try:
@@ -767,8 +779,8 @@ def do_kurtogram_setup_and_run(opdict):
     info['kurt_ini']=wf2.values
     info['dt']=wf1.dt
     info['filter']=[]
-   
-    print "##############", info['station'], "##############"
+ 
+    logging.info('Processing station %s'%info['station']) 
     
     if opdict['new_kurtfile']:
       new_filename='filt_kurtogram.sac'
@@ -779,11 +791,14 @@ def do_kurtogram_setup_and_run(opdict):
 
     for loc in locs:
       origin_time=loc['o_time']
-      print "***************************************************************"
-      print logging.info(origin_time)
+      if opdict['verbose']:
+        print "***************************************************************"
+        print logging.info(origin_time)
 
-      if origin_time > tdeb:
+      if origin_time > tdeb and origin_time < tfin:
         info=kurto(origin_time, info, opdict)
+      else:
+        break
 
     info['filter']=np.matrix(info['filter'])
     sta=info['station']
@@ -796,9 +811,7 @@ def do_kurtogram_setup_and_run(opdict):
   # Write the dictionnary 'param' in a binary file
   a=BinaryFile(kurto_file)
   a.write_binary_file(param)
-
-  for staname in sorted(param):
-    print staname, np.mean(param[staname][:,0]),np.mean(param[staname][:,1])
+  read_kurtogram_frequencies(kurto_file)
 
 if __name__ == '__main__':
   from options import WavelocOptions
@@ -808,8 +821,7 @@ if __name__ == '__main__':
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  #wo.set_all_arguments(args)
-  wo.set_options()
+  wo.set_all_arguments(args)
   wo.verify_kurtogram_options()
 
   do_kurtogram_setup_and_run(wo.opdict)

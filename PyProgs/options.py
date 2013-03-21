@@ -56,7 +56,10 @@ class WavelocOptions(object):
     # double-difference
     self.opdict['dd_loc']=False
 
-  
+    # kurtogram
+    self.opdict['new_kurtfile']=False 
+
+ 
     # For now, continue to support command-line arguments
     # TODO : get rid of these evenutally for ease of maintenance
     self.p = argparse.ArgumentParser()
@@ -186,6 +189,10 @@ class WavelocOptions(object):
             help="z grid index for syntetic hypocenter")
     self.p.add_argument('--syn_filename',action='store', 
             help="filename for synthetic grid")
+
+    self.p.add_argument('--new_kurtfile',action='store_true',
+            default=self.opdict['new_kurtfile'], 
+            help='write a new kurtosis trace with best frequency parameters')
 
     self.p.add_argument('--plot_tbefore',action='store',type=float, 
             help="time before origin time for waveform plots")
@@ -354,6 +361,8 @@ class WavelocOptions(object):
     self.opdict['n_kurt_min']=4
 
     self.opdict['syn_addnoise']=False
+
+    self.opdict['new_kurtfile']=False
 
     self.opdict['xcorr_threshold']=0.7
     self.opdict['xcorr_before']=0.5
@@ -630,6 +639,10 @@ class WavelocOptions(object):
     if not self.opdict.has_key('xcorr_threshold'):
         raise UserWarning('xcorr_threshold option not set')
 
+  def _verify_newkurtfile(self):
+    if not self.opdict.has_key('new_kurtfile'):
+      raise UserWarning('new_kurtfile option not set')
+
   def _verify_xcorr_before(self):
     if not self.opdict.has_key('xcorr_before'):
         raise UserWarning('xcorr_before option not set')
@@ -798,6 +811,23 @@ class WavelocOptions(object):
 
     self._verify_reloc()
 
+  def verify_kurtogram_options(self):
+
+    self.verify_base_path()
+    self._verify_datadir()
+    self._verify_outdir()
+
+    self._verify_dataglob()
+    self._verify_kurtglob()
+
+    base_path=self.opdict['base_path']
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+    locfile=os.path.join(locdir,'locations.dat')
+    if not os.path.isfile(locfile):
+        raise UserWarning('Cannot find %s'%locfile)
+
+    self._verify_newkurtfile()
+
   def verify_magnitude_options(self):
 
     self.verify_base_path()
@@ -807,6 +837,12 @@ class WavelocOptions(object):
 
     self._verify_channel_net_sta_comp()
     self._verify_dataless()
+
+    base_path=self.opdict['base_path']
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+    locfile=os.path.join(locdir,'locations.dat')
+    if not os.path.isfile(locfile):
+        raise UserWarning('Cannot find %s'%locfile)
 
 
   def verify_correlation_options(self):
@@ -822,7 +858,12 @@ class WavelocOptions(object):
     self._verify_xcorr_after()
     self._verify_xcorr_corr()
     self._verify_xcorr_delay()
-
+ 
+    base_path=self.opdict['base_path']
+    locdir=os.path.join(base_path,'out',self.opdict['outdir'],'loc')
+    locfile=os.path.join(locdir,'locations.dat')
+    if not os.path.isfile(locfile):
+        raise UserWarning('Cannot find %s'%locfile)
 
   def verify_cluster_options(self):
     
