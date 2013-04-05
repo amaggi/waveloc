@@ -96,7 +96,8 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
 
     if plot_grid:
       logging.info('Plotting grid for location %s'%o_time.isoformat())
-      # TODO implement a rough estimation of the stack shift based on propagation time across the whole network
+      # TODO implement a rough estimation of the stack shift based on
+      # propagation time across the whole network
 
       # read data
       mig_dict,delta = read_data_compatible_with_time_dict(mig_files,
