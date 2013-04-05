@@ -110,6 +110,15 @@ def plotLocationGrid(loc,grid_info,fig_dir,otime_window):
 
   #get indexes correponding to location
   it_true=np.int(np.round((o_time-stack_starttime)/dt))
+  nt=plot_info['grid_shape'][3]
+  if it_true > nt-1 : 
+    msg='Origin time after last time for plot by %3f seconds. \n\
+    Increase plot_tafter.'%(( it_true - nt + 1 )*dt )
+    raise UserWarning(msg)
+  if it_true < 0 : 
+    msg='Origin time before first time for plot by %3f seconds. \n\
+    Increase plot_tbefore.'%( -1*it_true*dt )
+    raise UserWarning(msg)
   # zero indexes are default for 2D grids
   ix_true=0
   iy_true=0
