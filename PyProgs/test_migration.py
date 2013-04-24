@@ -150,14 +150,16 @@ class MigrationTests(unittest.TestCase):
 
     self.assertSequenceEqual(lines,expected_lines)
 
-  @unittest.skip('Not running full resolution test')
+  #@unittest.skip('Not running full resolution test')
   #@profile
+  #@unittest.expectedFailure
   def test_migration_fullRes(self):
 
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
     self.wo.opdict['outdir'] = 'TEST_fullRes'
     self.wo.opdict['load_ttimes_buf'] = True
     self.wo.opdict['data_length'] = 300
+    self.wo.opdict['use_ram'] = True
     self.wo.verify_migration_options()
 
     base_path=self.wo.opdict['base_path']

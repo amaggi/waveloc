@@ -15,6 +15,7 @@ class WavelocOptions(object):
     # general profiling / debugging behaviour
     self.opdict['time']=False
     self.opdict['verbose']=False
+    self.opdict['use_ram']=False
 
     # data processing
     self.opdict['resample']=False
