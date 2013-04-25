@@ -41,15 +41,15 @@ def get_h_parameters(NFIR, fcut):
 def plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index, opt1=None, opt2=None):
   I=index[0]
 
-  fig = plt.figure()
-  fig.set_facecolor('white')
-  plt.imshow(Kwav,aspect='auto',extent=(0,freq_w[-1],range(2*nlevel)[-1],range(2*nlevel)[0]),interpolation='none')
+  imgplot = plt.imshow(Kwav,aspect='auto',extent=(0,freq_w[-1],range(2*nlevel)[-1],range(2*nlevel)[0]),interpolation='none',cmap=plt.cm.hot_r)
+  #imgplot.set_cmap('gray')
   xx=np.arange(0,int(freq_w[len(freq_w)-1]),step=5)
   plt.xticks(xx)
   plt.yticks(range(2*nlevel),np.round(Level_w*10)/10)
   #plt.plot(Fs*fi,I,'yo')
   plt.xlabel("Frequency (Hz)")
   plt.ylabel("Level k")
+  plt.figtext(0.075,0.90,"(a)",fontsize=15)
   if opt2==1:
     plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz"%(np.round(10*Level_w[I])/10,Fs*2**(-(Level_w[I]+1)),Fs*fi))
   else:
@@ -87,7 +87,7 @@ def Fast_Kurtogram(x, nlevel,verbose=False, Fs=1, NFIR=16, fcut=0.4, opt1=None, 
     # opt1 = 2: robust kurtosis based on 2nd order statistics of the envelope
     # (if there is any difference in the kurtogram between the two measures, this is
     # due to the presence of impulsive additive noise)
-    # opt2 = 1: the kurtogram is computed via a fast decimated filterbank tree
+    # opt2 = 1: the kurtogram is computed via a fast decimated filterbank treecmap=plt.cm.hot_r
     # opt2 = 2: the kurtogram is computed via the short-time Fourier transform
     # (option 1 is faster and has more flexibility than option 2 in the design of the
     # analysis filter: a short filter in option 1 gives virtually the same results as option 2)
@@ -415,8 +415,8 @@ def Find_wav_kurt(x,h,g,h1,h2,h3,nlevel,Sc,Fr,Fs=1,verbose=False):
     sig = np.median(np.abs(c))/np.sqrt(np.pi/2.)
     threshold = sig*raylinv(np.array([.999,]),np.array([1,]))
 
-    if verbose:
-      plot_envelope(x, Fs, c, fc, level)
+    #if verbose:
+      #plot_envelope(x, Fs, c, fc, level)
 
     return c,s,threshold,Bw,fc 
 
@@ -575,28 +575,29 @@ def raylinv(p,b):
         x[k] = np.sqrt((-2*bk ** 2) * np.log(1 - pk))
     return x
 # --------------------------------------------------------------------------
-def plot_trace(x,xfilt,kurtx,tr,c,info,f_lower,f_upper,snr,snr_ref,snr_kurt,kmax,kmax_ref,tstack):
+def plot_trace(G,fig,x,xfilt,kurtx,tr,c,info,f_lower,f_upper,snr,snr_ref,snr_kurt,kmax,kmax_ref,tstack):
   dt=info['dt']
   sta=info['station']  
 
-  fig=plt.figure()
-  fig.set_facecolor('white')
-
-  ax1=fig.add_subplot(311, title="Signal filtered between 4 - 10 Hz")
+  ax1=fig.add_subplot(G[0,1], title="Signal filtered between 4 - 10 Hz")
   ax1.plot(x/np.max(np.abs(x)),'k')
-  ax1.plot(kurtx/np.max(np.abs(kurtx)),'y')
-  ax1.text(10*dt,-0.8,"SNR: %.1f \nKmax: %.2f"%(snr_ref,kmax_ref))
+  ax1.plot(kurtx/np.max(np.abs(kurtx)),'y--',lw=2)
+  ax1.text(0.02,0.1,"SNR: %.1f \nKmax: %.2f"%(snr_ref,kmax_ref),transform=ax1.transAxes)
+  ax1.text(-0.15,1.02,"(b)",transform=ax1.transAxes,fontsize=15)
 
-  ax2=fig.add_subplot(312, title="Signal filtered between %.1f - %.1f Hz"%(f_lower, f_upper))
+  ax2=fig.add_subplot(G[1,1], title="Signal filtered between %.1f - %.1f Hz"%(f_lower, f_upper))
   ax2.plot(xfilt/np.max(np.abs(xfilt)),'k')
-  ax2.plot(tr/np.max(np.abs(tr)),'r')
-  ax2.text(10*dt,-0.8,"SNR: %.1f \nKmax: %.2f"%(snr,kmax))
+  ax2.plot(tr/np.max(np.abs(tr)),'r--',lw=2)
+  ax2.text(0.02,0.1,"SNR: %.1f \nKmax: %.2f"%(snr,kmax),transform=ax2.transAxes)
+  ax2.text(-0.15,1.02,"(c)",transform=ax2.transAxes,fontsize=15)
 
-  ax3=fig.add_subplot(313, title="Kurtosis comparison")
-  ax3.plot(tr,'r',label="new")
-  ax3.plot(kurtx,'y',label="initial")
+  ax3=fig.add_subplot(G[2,1], title="Kurtosis comparison")
+  ax3.plot(tr,'r--',label="new")
+  ax3.plot(kurtx,'y',label="initial",lw=2)
   handles, labels = ax3.get_legend_handles_labels()
   ax3.legend(handles, labels)
+  ax3.text(-0.15,1.02,"(d)",transform=ax3.transAxes,fontsize=15)
+  ax3.set_xlabel("Time sample")
 
   plt.setp(ax1.get_xticklabels(), visible=False)
   plt.setp(ax2.get_xticklabels(), visible=False)
@@ -653,7 +654,13 @@ def kurto(origin_time, info, opdict):
   kmax_ref=np.max(kurtx) # maximum of the kurtosis
 
   # Compute the kurtogram and keep best frequencies
-  Kwav, Level_w, freq_w, c, f_lower, f_upper = Fast_Kurtogram(x, nlevel,verbose,Fs=1/dt,opt2=1)
+  if verbose:
+    import matplotlib.gridspec as gridspec
+    G = gridspec.GridSpec(3,2)
+    fig = plt.figure(figsize=(15,6))
+    fig.set_facecolor('white')
+    ax = fig.add_subplot(G[:,0])
+  Kwav, Level_w, freq_w, c, f_lower, f_upper = Fast_Kurtogram(np.array(x,dtype=float), nlevel,verbose,Fs=1/dt,opt2=1)
 
   # Comparison of the kurtosis computed in the new frequency band and the old one (criterion : snr, kmax)
   # 1. Read the initial data
@@ -670,7 +677,10 @@ def kurto(origin_time, info, opdict):
   # 3. Compute the kurtosis
   wf.process_kurtosis(kwin,recursive=opdict['krec'])
   new_kurtx=wf.values
-  new_kurtx=new_kurtx[nbpts+1:-nbpts-1]
+  if opdict['krec']:
+    new_kurtx=new_kurtx[nbpts+1:-nbpts-1]
+  else:
+    new_kurtx=new_kurtx[:-nbpts-1]
 
   snr=np.max(np.abs(x_filt))/np.mean(np.abs(x_filt))
   snr_kurt=np.max(np.abs(new_kurtx))/np.mean(np.abs(new_kurtx))
@@ -687,7 +697,7 @@ def kurto(origin_time, info, opdict):
     print "snr:", snr, " ; snr_ref:", snr_ref
     print "snr new kurtosis:", snr_kurt, " ; snr kurtosis reference:", snr_kurt_ref
     print "kurtosis max, kurt_ref :", kmax, kmax_ref
-    plot_trace(x,x_filt,kurtx,new_kurtx,c,info,f_lower,f_upper,snr, snr_ref, snr_kurt, kmax, kmax_ref,origin_time)
+    plot_trace(G,fig,x,x_filt,kurtx,new_kurtx,c,info,f_lower,f_upper,snr, snr_ref, snr_kurt, kmax, kmax_ref,origin_time)
     plt.show()
 
   return info
@@ -763,55 +773,62 @@ def do_kurtogram_setup_and_run(opdict):
   param={}
 
   for station in sorted(data):
-    wf1=Waveform()
-    wf1.read_from_file(data[station],starttime=tdeb,endtime=tfin)
 
-    wf2=Waveform()
-    wf2.read_from_file(kurtdata[station],starttime=tdeb,endtime=tfin)
+      wf1=Waveform()
+      wf1.read_from_file(data[station],starttime=tdeb,endtime=tfin)
+
+      wf2=Waveform()
+      wf2.read_from_file(kurtdata[station],starttime=tdeb,endtime=tfin)
   
-    info={}
-    info['data_file']=data[station]
-    info['station']=station
-    info['tdeb_data']=wf1.starttime
-    info['tdeb_kurt']=wf2.starttime
-    info['kurt_file']=kurtdata[station]
-    info['data_ini']=wf1.values
-    info['kurt_ini']=wf2.values
-    info['dt']=wf1.dt
-    info['filter']=[]
+      info={}
+      info['data_file']=data[station]
+      info['station']=station
+      info['tdeb_data']=wf1.starttime
+      info['tdeb_kurt']=wf2.starttime
+      info['kurt_file']=kurtdata[station]
+      info['data_ini']=wf1.values
+      info['kurt_ini']=wf2.values
+      info['dt']=wf1.dt
+      info['filter']=[]
  
-    logging.info('Processing station %s'%info['station']) 
-    
-    if opdict['new_kurtfile']:
-      new_filename='filt_kurtogram.sac'
-      info['new_kurt_file']=os.path.join("%s%s"%(data[station].split(data_glob[1:])[0],new_filename))
-      trace_kurt_fin=Waveform()
-      trace_kurt_fin.read_from_file(kurt_file)
-      info['new_kurt']=trace_kurt_fin.values
+      logging.info('Processing station %s'%info['station']) 
+  
+      if opdict['new_kurtfile']:
+        new_filename='filt_kurtogram.sac'
+        info['new_kurt_file']=os.path.join("%s%s"%(data[station].split(data_glob[1:])[0],new_filename))
+        trace_kurt_fin=Waveform()
+        trace_kurt_fin.read_from_file(kurt_file)
+        info['new_kurt']=trace_kurt_fin.values
 
-    for loc in locs:
-      origin_time=loc['o_time']
-      if opdict['verbose']:
-        print "***************************************************************"
-        print logging.info(origin_time)
+      for loc in locs:
+        origin_time=loc['o_time']
+        if opdict['verbose']:
+          print "***************************************************************"
+          print logging.info(origin_time)
 
-      if origin_time > tdeb and origin_time < tfin:
-        info=kurto(origin_time, info, opdict)
-      else:
-        break
+        if origin_time > tdeb and origin_time < tfin:
+          info=kurto(origin_time, info, opdict)
+        else:
+          continue
 
-    info['filter']=np.matrix(info['filter'])
-    sta=info['station']
-    param[sta]=info['filter']
+      info['filter']=np.matrix(info['filter'])
+      sta=info['station']
+      param[sta]=info['filter']
 
-    if info.has_key('new_kurt_file'):
-      trace_kurt_fin.values[:]=info['new_kurt']
-      trace_kurt_fin.write_to_file_filled(info['new_kurt_file'],format='MSEED',fill_value=0)
+      if info.has_key('new_kurt_file'):
+        trace_kurt_fin.values[:]=info['new_kurt']
+        trace_kurt_fin.write_to_file_filled(info['new_kurt_file'],format='MSEED',fill_value=0)
 
   # Write the dictionnary 'param' in a binary file
+  if os.path.isfile(kurto_file):
+    ans=raw_input('%s file already exists. Do you really want to replace it ? (y or n):\n')
+    if ans != 'y':
+      kurto_file="%s_1"%kurto_file
+
   a=BinaryFile(kurto_file)
   a.write_binary_file(param)
   read_kurtogram_frequencies(kurto_file)
+    
 
 if __name__ == '__main__':
   from options import WavelocOptions
@@ -821,7 +838,8 @@ if __name__ == '__main__':
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  wo.set_all_arguments(args)
+  wo.set_options()
+  #wo.set_all_arguments(args)
   wo.verify_kurtogram_options()
 
   do_kurtogram_setup_and_run(wo.opdict)
