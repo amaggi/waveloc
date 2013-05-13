@@ -228,8 +228,6 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
 def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
   from NllGridLib import read_hdr_file
 
-  logging.debug("Data sum = %.6f"%np.sum(data.values()))
-
   # save the list of data keys
   # note : keys of data are all included in keys of time_grid, but there may be more times than data
   wf_ids=data.keys()
@@ -288,13 +286,11 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
   del i_times, i_min_times, i_max_times, start_indexes, end_indexes, n_lens, start_index
 
   # resize stack_grid
-  logging.debug("Stack_sum = %.6f"%np.sum(stack_grid))
   if use_ram:
     stack_grid.resize((n_buf,norm_stack_len), refcheck=False)
   else:
     stack_grid.resize(norm_stack_len,axis=1)
 
-  logging.debug("Stack_sum = %.6f"%np.sum(stack_grid))
   # end
   return stack_shift_time
 
