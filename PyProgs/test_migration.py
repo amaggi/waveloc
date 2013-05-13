@@ -12,8 +12,10 @@ from test_processing import waveforms_to_signature
 def suite():
   suite = unittest.TestSuite()
   suite.addTest(SyntheticMigrationTests('test_dirac_migration'))
+  suite.addTest(MigrationTests('test_take'))
   suite.addTest(MigrationTests('test_migration'))
   suite.addTest(MigrationTests('test_migration_fullRes'))
+  suite.addTest(MigrationTests('test_migration_use_ram'))
   return suite
 
 def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
@@ -28,8 +30,36 @@ def hdf5_to_signature(base_path,datadir,dataglob,output_filename):
       dset=f[name]
       maximum=np.max(dset)
       datasum=np.sum(dset)
-      sig_file.write("%s \t %s \t %.6f \t %.6f\n"%(basename,name,maximum,datasum))
+      datalen=len(dset)
+      #sig_file.write("%s \t %s \t %.6f \t %.6f\n"%(basename,name,maximum,datasum))
+      sig_file.write("%s \t %s \t %.6f \t %.6f \t %d\n"%(basename,name,maximum,datasum,datalen))
     f.close()
+
+def hdf5_to_sig_values(filename):
+
+  f=h5py.File(filename,'r')
+  sig_values=[]
+  for name in f:
+    logging.debug('Signature for %s : '%filename)
+    dset=f[name]
+    maximum=np.max(dset)
+    datasum=np.sum(dset)
+    datalen=len(dset)
+    sig_values.append([maximum,datasum,datalen])
+  f.close()
+
+  return sig_values
+
+def hdf5_max_values(filename):
+
+  f=h5py.File(filename,'r')
+  dset=f['max_val']
+  np_dset=np.empty(len(dset),dtype='float32')
+  np_dset[:]=dset
+  f.close()
+
+  return np_dset
+
 
 
 class SyntheticMigrationTests(unittest.TestCase):
@@ -150,7 +180,47 @@ class MigrationTests(unittest.TestCase):
 
     self.assertSequenceEqual(lines,expected_lines)
 
-  #@unittest.skip('Not running full resolution test')
+  def test_take(self):
+
+    nbuf=9000
+    nt=3600
+
+    matrix = np.random.randn(nbuf,nt)
+
+    max_ib=np.argmax(matrix,0)
+    max_val=np.max(matrix,0)
+    max_val_take=np.diag(matrix.take(max_ib,0))
+
+    self.assertEqual(len(max_ib),nt)
+    self.assertEqual(len(max_val),nt)
+    self.assertEqual(len(max_val_take),nt)
+    self.assertEqual(max_val.shape, max_val_take.shape)
+    np.testing.assert_allclose(max_val_take, max_val)
+
+  def test_migration_use_ram(self):
+
+    self.wo.opdict['load_ttimes_buf'] = True
+    self.wo.opdict['data_length'] = 300
+
+    base_path=self.wo.opdict['base_path']
+    test_datadir=self.wo.opdict['test_datadir']
+    outdir=self.wo.opdict['outdir']
+
+    # do migration without use_ram
+    self.wo.opdict['use_ram'] = False
+    do_migration_setup_and_run(self.wo.opdict)
+    lines_no_ram=hdf5_max_values(os.path.join(base_path,'out',outdir,'stack','stack_all_2010-10-14T00:14:00.000000Z.hdf5'))
+
+    # do migration with use_ram
+    self.wo.opdict['use_ram'] = True
+    do_migration_setup_and_run(self.wo.opdict)
+    lines_use_ram=hdf5_max_values(os.path.join(base_path,'out',outdir,'stack','stack_all_2010-10-14T00:14:00.000000Z.hdf5'))
+
+    # verify that the two give the same result
+    np.testing.assert_allclose(lines_use_ram, lines_no_ram)
+
+
+  @unittest.skip('Not running full resolution test')
   #@profile
   #@unittest.expectedFailure
   def test_migration_fullRes(self):

@@ -151,10 +151,11 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
     stack_grid[...]=0.
   else:
     # if running on big memory machine work in ram
-    stack_grid=np.empty((n_buf,min_npts),dtype=float)
+    stack_grid=np.empty((n_buf,min_npts),dtype='float32',order='F')
     stack_grid[...]=0.
 
   # DO MIGRATION
+  #logging.debug("Data sum = %.6f"%np.sum(data.values()))
   stack_shift_time = migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram)
   stack_start_time = start_time-stack_shift_time
   n_buf,nt = stack_grid.shape
@@ -227,6 +228,8 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info, tim
 def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
   from NllGridLib import read_hdr_file
 
+  logging.debug("Data sum = %.6f"%np.sum(data.values()))
+
   # save the list of data keys
   # note : keys of data are all included in keys of time_grid, but there may be more times than data
   wf_ids=data.keys()
@@ -236,7 +239,8 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
   logging.debug("Stack max dimension = %d x %d"%(n_buf,min_npts))
 
   # initialize the arrays we will need
-  tmp_stack=np.zeros(min_npts)
+  tmp_stack=np.empty(min_npts,dtype='float32')
+  tmp_stack[:] = 0.
   i_times=np.zeros((n_wf_ids,n_buf),dtype='int')
   i_max_times=np.zeros(n_buf,dtype='int')
   i_min_times=np.zeros(n_buf,dtype='int')
@@ -284,17 +288,20 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
   del i_times, i_min_times, i_max_times, start_indexes, end_indexes, n_lens, start_index
 
   # resize stack_grid
+  logging.debug("Stack_sum = %.6f"%np.sum(stack_grid))
   if use_ram:
-    stack_grid.resize((n_buf,norm_stack_len),refcheck=False)
+    stack_grid.resize((n_buf,norm_stack_len), refcheck=False)
   else:
     stack_grid.resize(norm_stack_len,axis=1)
 
+  logging.debug("Stack_sum = %.6f"%np.sum(stack_grid))
   # end
   return stack_shift_time
 
 def _do_stack(ib,n_wf_ids,wf_ids,stack_grid,data,min_npts,n_lens,start_indexes,end_indexes,start_index,norm_stack_len):
 
-    tmp_stack=np.zeros(min_npts)
+    tmp_stack=np.empty(min_npts,dtype='float32')
+    tmp_stack[:]=0.
     # stack shifted data from each station
     for i in islice(count(0),n_wf_ids):
       tmp_stack[0:n_lens[i,ib]] += data[wf_ids[i]][start_indexes[i,ib]:end_indexes[i,ib]]
@@ -322,11 +329,11 @@ def extract_max_values(stack_grid,search_info,f_stack,use_ram=False,n_max=5e8):
   nb,nt=stack_grid.shape
 
   if use_ram:
-    max_val=np.empty(nt,dtype=float)
-    max_val_smooth=np.empty(nt,dtype=float)
-    max_x=np.empty(nt,dtype=float)
-    max_y=np.empty(nt,dtype=float)
-    max_z=np.empty(nt,dtype=float)
+    max_val=np.empty(nt,dtype='float32')
+    max_val_smooth=np.empty(nt,dtype='float32')
+    max_x=np.empty(nt,dtype='float32')
+    max_y=np.empty(nt,dtype='float32')
+    max_z=np.empty(nt,dtype='float32')
     # create temporary datasets
     max_ib=np.empty(nt,dtype=int)
     max_ix=np.empty(nt,dtype=int)
@@ -344,15 +351,18 @@ def extract_max_values(stack_grid,search_info,f_stack,use_ram=False,n_max=5e8):
     max_iy=f_stack.create_dataset('max_iy',(nt,),'i')
     max_iz=f_stack.create_dataset('max_iz',(nt,),'i')
 
+  #max_val[:]=0.
+  #max_val_smooth[:]=0.
+  #max_x[:]=0.
+  #max_y[:]=0.
+  #max_z[:]=0.
+
   # extract values
   dt=int(n_max/nb)
   if nt <= dt :
     # do the extraction in one step
     max_ib[:]=np.argmax(stack_grid,0)
-    if use_ram:
-      max_val=stack_grid.take(max_ib)
-    else:
-      max_val[:]=np.max(stack_grid,0)
+    max_val[:]=np.max(stack_grid,0)
 
   else:
     # do the extraction in steps
@@ -360,15 +370,9 @@ def extract_max_values(stack_grid,search_info,f_stack,use_ram=False,n_max=5e8):
     logging.info('Number of values exceeds %d. Doing extraction in %d steps'%(n_max,n))
     for i in islice(count(0),n):
       max_ib[i*dt:(i+1)*dt]=np.argmax(stack_grid[:,i*dt:(i+1)*dt],0)
-      if use_ram:
-        max_val[i*dt:(i+1)*dt]=stack_grid[:,i*dt:(i+1)*dt].take(max_ib[i*dt:(i+1)*dt])
-      else:
-        max_val[i*dt:(i+1)*dt]=np.max(stack_grid[:,i*dt:(i+1)*dt],0)
+      max_val[i*dt:(i+1)*dt]=  np.max(stack_grid[:,i*dt:(i+1)*dt],0)
     max_ib[n*dt:nt]=np.argmax(stack_grid[:,n*dt:nt],0)
-    if use_ram:
-      max_val[n*dt:nt]=stack_grid[:,n*dt:nt].take(max_ib[n*dt:nt])
-    else:
-      max_val[n*dt:nt]=np.max(stack_grid[:,n*dt:nt],0)
+    max_val[n*dt:nt]=  np.max(stack_grid[:,n*dt:nt],0)
 
   # find the corresponding x,y,z values
   max_ix,max_iy,max_iz=np.unravel_index(max_ib,(nx,ny,nz))
