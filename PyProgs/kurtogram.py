@@ -838,8 +838,7 @@ if __name__ == '__main__':
   wo = WavelocOptions()
   args=wo.p.parse_args()
 
-  wo.set_options()
-  #wo.set_all_arguments(args)
+  wo.set_all_arguments(args)
   wo.verify_kurtogram_options()
 
   do_kurtogram_setup_and_run(wo.opdict)
