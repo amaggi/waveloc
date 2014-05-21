@@ -726,7 +726,7 @@ class Waveform(object):
 
       npts=len(tr.data)
 
-      xs=np.zeros(npts)    
+      xs=np.zeros(npts)
 
       if recursive:
         C=1-dt/float(win)
