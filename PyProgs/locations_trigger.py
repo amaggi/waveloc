@@ -293,6 +293,7 @@ def do_locations_trigger_setup_and_run(opdict):
 
   return locs
 
+
 def read_locs_from_file(filename):
 
   from obspy.core import utcdatetime
@@ -322,6 +323,7 @@ def read_locs_from_file(filename):
 
       if len(line.split()) > 25:
         loc['ml']=np.float(line.split()[26])
+        loc['ml_sigma']=np.float(line.split()[28])
 
       locs.append(loc)
 
@@ -331,7 +333,7 @@ def read_locs_from_file(filename):
 def write_header_options(loc_file,opdict):
 
   # Header of locations.dat
-  loc_file.write('#FILTER : %.d - %.d Hz\n'%(opdict['c1'],opdict['c2']))
+  loc_file.write('#FILTER : %.1f - %.1f Hz\n'%(opdict['c1'],opdict['c2']))
   loc_file.write('#KURTOSIS = window: %.2f s, recurs: %s, grad: %s, gauss: %s\n'%(opdict['kwin'],opdict['krec'],opdict['kderiv'],opdict['gauss']))
   loc_file.write('#OPTIONS = reloc: %s\n'%opdict['reloc'])
   loc_file.write('#LOCATION = level: %d, window of analysis: %.2f s, kurtosis snr: %.2f, waveform snr: %.2f, number of stations: %d\n\n'%(opdict['loclevel'],opdict['sn_time'],opdict['snr_limit'],opdict['snr_tr_limit'],opdict['n_kurt_min']))
