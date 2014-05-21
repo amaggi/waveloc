@@ -9,7 +9,6 @@ class WavelocOptions(object):
 
     self.opdict={}
 
-
     # set some default values
 
     # general profiling / debugging behaviour
@@ -90,7 +89,7 @@ class WavelocOptions(object):
 
     self.p.add_argument('--resample',action='store_true',
             default=self.opdict['resample'], help="resample data")
-    self.p.add_argument('--fs',      action='store', type=float,
+    self.p.add_argument('--fs',action='store', type=float,
             help="resample frequency")
 
     self.p.add_argument('--c1',action='store',type=float,  
@@ -211,7 +210,7 @@ class WavelocOptions(object):
     self.p.add_argument('--xcorr_after',action='store', default=self.opdict['xcorr_after'],
             type=float, help="cross-correlation window: time interval after \
                     the origin time")
-    self.p.add_argument('-xcorr_-corr', action='store', 
+    self.p.add_argument('-xcorr_corr', action='store', 
             help="name of the file containing all correlation values")
     self.p.add_argument('--xcorr_delay', action='store', 
             help="name of the file containing all time delays")
@@ -303,13 +302,12 @@ class WavelocOptions(object):
 
     self.opdict['clus']=args.clus
     self.opdict['nbsta']=args.nbsta
-
     self.opdict['dd_loc']=args.dd_loc
 
 
   def set_test_options(self):
     self.opdict['time']=True
-    self.opdict['verbose']=False
+    self.opdict['verbose']=True
 
     self.opdict['test_datadir']='test_data'
     self.opdict['datadir']='TEST'
@@ -410,7 +408,7 @@ class WavelocOptions(object):
     if not self.opdict.has_key('datadir'):
         raise UserWarning('datadir option not set')
 
-    datadir=os.path.join(base_path,'data',self.opdict['datadir'])
+    datadir=os.path.join(base_path,'data/%s'%self.opdict['datadir'])
     if not os.path.isdir(datadir):  
         raise UserWarning('Directory %s does not exist.'%datadir)
 
@@ -420,7 +418,7 @@ class WavelocOptions(object):
     if not self.opdict.has_key('outdir'):
         raise UserWarning('outdir option not set')
 
-    outdir=os.path.join(base_path,'out',self.opdict['outdir'])
+    outdir=os.path.join(base_path,'out/%s'%self.opdict['outdir'])
     if not os.path.isdir(outdir):  
       os.makedirs(outdir)
     if not os.path.isdir(os.path.join(outdir,'fig')):  
@@ -556,7 +554,7 @@ class WavelocOptions(object):
         raise UserWarning('time_grid option not set')
     self._verify_lib_path()
     base_path=self.opdict['base_path']
-    time_grid=os.path.join(base_path,'lib',self.opdict['time_grid'])
+    time_grid=os.path.join(base_path,'lib/%s'%self.opdict['time_grid'])
     tg_glob=time_grid+'*'
     tg_files=glob.glob(tg_glob)
     if len(tg_files) == 0 : 
