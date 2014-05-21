@@ -87,7 +87,7 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
     # get the corresponding travel-times for time-shifting
     ttimes={}
     for sta in time_grids.keys():
-        ttimes[sta]=time_grids[sta].value_at_point(x,y,z)
+      ttimes[sta]=time_grids[sta].value_at_point(x,y,z)
 
     tshift_migration=max(ttimes.values())
 
@@ -128,10 +128,15 @@ def do_plotting_setup_and_run(opdict,plot_wfm=True,plot_grid=True):
       # cut desired portion out of data
       for sta in data_dict.keys():
           tmp=data_dict[sta]
-          istart=np.int(np.round(
-              (start_time + ttimes[sta] - start_time_migration) / delta))
-          iend=istart + np.int(np.round(
-              (opdict['plot_tbefore'] + opdict['plot_tafter'])  / delta))
+
+          # no alignment
+          #istart=np.int(np.round((start_time - start_time_migration) / delta))
+          #iend=istart + np.int(np.round((opdict['plot_tbefore'] + opdict['plot_tafter'])  / delta))
+
+          # alignment on origin time
+          istart=np.int(np.round((start_time + ttimes[sta] - start_time_migration) / delta))
+          iend=istart + np.int(np.round((opdict['plot_tbefore'] + opdict['plot_tafter'])  / delta))
+
           # sanity check in case event is close to start or end of data
           if istart < 0 : istart=0
           if iend   > len(tmp) : iend = len(tmp)
@@ -196,6 +201,7 @@ def do_probloc_plotting_setup_and_run(opdict):
   # close hdf5 file
   f.close()
 
+
 if __name__ == '__main__':
 
   from options import WavelocOptions
@@ -208,5 +214,4 @@ if __name__ == '__main__':
   wo.verify_plotting_options()
 
   do_plotting_setup_and_run(wo.opdict)
-
 
