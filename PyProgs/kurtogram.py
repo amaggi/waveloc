@@ -470,8 +470,8 @@ def binary(i,k):
     a = np.zeros(k)
     temp = i
     for l in np.arange(k-1,-1,-1):
-        a[k-l-1] = np.fix(temp/2**l)
-        temp = temp - a[k-l-1]*2**l
+        a[k-l-1] = int(np.fix(temp/2**l))
+        temp = temp - int(np.fix(a[k-l-1]*2**l))
     return a
 
 
