@@ -8,8 +8,6 @@
 /lib/*.hdr
 /sphinx/_*
 /PyProgs/*.dat
-*.mat
-*.MAT
 *.pyc
 *.swp
 *.swo
