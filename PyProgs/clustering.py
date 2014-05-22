@@ -44,8 +44,7 @@ def waveval(stack_time,t_before,t_after,dt,tdeb):
   i_start=int(round(tstart*1./dt))
   i_end=int(round(tend*1./dt))
   return i_start,i_end
-# -----------------------------------------------------------------------------------------
----------------------------
+# --------------------------------------------------------------------------------------------------------------------
 def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files, threshold):
   # Read the file containing the time delays
   a=BinaryFile(delay_file)
