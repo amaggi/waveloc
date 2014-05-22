@@ -17,7 +17,9 @@ class KurtogramTests(unittest.TestCase):
     # input data come in the form of a Matlab file
     from scipy.io.matlab import loadmat
 
-    v1 = loadmat("test_data/VOIE1.mat")
+    base_path=os.getenv('WAVELOC_PATH')
+    matlab_file = os.path.join(base_path,'test_data','VOIE1.mat')
+    v1 = loadmat(matlab_file)
     self.x = v1['v1']
     self.Fs = 100
     self.nlevel = 8
@@ -27,7 +29,9 @@ class KurtogramTests(unittest.TestCase):
   def test_MatlabGrid(self):
 
     # Test you get the same output for the kurtogram grid as the original Matlab code does
-    matlab_grid = np.fromfile('test_data/matlab_grid.np').reshape(16,768)
+    base_path=os.getenv('WAVELOC_PATH')
+    np_file = os.path.join(base_path,'test_data','matlab_grid.np')
+    matlab_grid = np.fromfile(np_file).reshape(16,768)
 
 
     # do test
@@ -59,10 +63,13 @@ class KurtogramTests(unittest.TestCase):
     lev=self.level_w[level_index]
 
     from scipy.io.matlab import loadmat
-    c_dict=loadmat("test_data/c.mat")
+    base_path=os.getenv('WAVELOC_PATH')
+    matlab_file = os.path.join(base_path,'test_data','c.mat')
+    c_dict=loadmat(matlab_file)
     c_exp = c_dict['c']
-
-    S_dict=loadmat("test_data/S.mat")
+    
+    matlab_file = os.path.join(base_path,'test_data','S.mat')
+    S_dict=loadmat(matlab_file)
     S_exp = S_dict['S']
    
     # get bw and frequency (Hz)
