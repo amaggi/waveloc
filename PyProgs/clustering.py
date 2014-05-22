@@ -45,6 +45,7 @@ def waveval(stack_time,t_before,t_after,dt,tdeb):
   i_end=int(round(tend*1./dt))
   return i_start,i_end
 # -----------------------------------------------------------------------------------------
+---------------------------
 def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files, threshold):
   # Read the file containing the time delays
   a=BinaryFile(delay_file)
@@ -68,7 +69,6 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
   list_name=sorted(tr)
 
   for i in range(1,len(CLUSTER)+1): # cluster index
-    i=51
     for j in range(len(CLUSTER[i])): # first event index
       e1=CLUSTER[i][j]
       for k in range(j+1,len(CLUSTER[i])): # second event index
@@ -88,13 +88,13 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
             t=np.linspace(0,t_after+t_before,(t_after+t_before)/dt+1)
             ax=fig.add_subplot(len(list_name),1,l+1)
             ax.set_axis_off()
-            ax.plot(t,val1/max(val1))
-            ax.plot(t,val2/max(val2),'r')
+            ax.plot(t,val1/max(val1),'k')
+            ax.plot(t,val2/max(val2),'y--')
             c='k'
             if coeff[name][e1-1][e2-1]>=threshold:
               co=co+1
               c='r'
-            ax.text(0.5,0.5,"%s, %s, %s"%(name,str(coeff[name][e1-1][e2-1]),str(delay[name][e1-1][e2-1])),color=c)
+            ax.text(0.2,0.5,"%s, %s, %s"%(name,str(coeff[name][e1-1][e2-1]),str(delay[name][e1-1][e2-1])),color=c)
         fig.suptitle("Cluster : %s ; Event pair : (%s,%s) ; %d"%(str(i),str(e1),str(e2),co))
         plt.show()
 
@@ -136,60 +136,7 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir, data_files,
 #            plt.plot(t,val2/max(val2),'r')
 #            plt.title("%s - coeff: %s"%(name,coeff[name][e1-1][e2-1]))
 #            #plt.show()
-
-# -----------------------------------------------------------------------------------------
-def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
-  from mayavi import mlab
-
-  # Event coordinates
-  stack_x,stack_y,stack_z=[],[],[]
-  for loc in locs:
-    stack_x.append(loc['x_mean'])
-    stack_y.append(loc['y_mean'])
-    stack_z.append(-loc['z_mean'])
-
-  # Extract coordinates
-  xsta,ysta,zsta=[],[],[]
-  for sta in sorted(stations):
-    xsta.append(stations[sta]['x'])
-    ysta.append(stations[sta]['y'])
-    zsta.append(stations[sta]['elev'])
-
-  # 3D PLOT USING MAYAVI
-  logging.info("Plotting...")
-  s1=mlab.figure(1,bgcolor=(1,1,1),fgcolor=(0,0,0),size=(1000,900))
-  s1=mlab.points3d(xsta,ysta,zsta,color=(1,0,0),scale_factor=0.05,mode='cube')
-  s1=mlab.axes(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
-  s1=mlab.outline(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
-  s1=mlab.points3d(stack_x,stack_y,stack_z,scale_factor=0.1,color=(0.8,0.8,0.8))
-  s1=mlab.title("threshold=%s, nbmin=%s"%(threshold,nbmin),height=0.1,size=0.35,color=(0,0,0))
-  for i_ev in range(len(nbsta)):
-    for i_c in range(1,len(CLUSTER)+1):
-      if i_ev+1 in CLUSTER[i_c]:
-        s1=mlab.points3d(stack_x[i_ev],stack_y[i_ev],stack_z[i_ev],scale_factor=0.1,color=tuple(CZ_Clust_2_color(100*(len(CLUSTER)-i_c)/len(CLUSTER))))
-        s1=mlab.text3d(stack_x[i_ev],stack_y[i_ev],stack_z[i_ev],str(i_c),color=(0,0,0),scale=0.1)
-  logging.info("Done!")
-   
-  logging.info("Plotting...")
-  s2=mlab.figure(2,bgcolor=(1,1,1),fgcolor=(0,0,0),size=(1000,900))
-  mlab.points3d(xsta,ysta,zsta,color=(1,0,0),scale_factor=0.05,mode='cube')
-  mlab.axes(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
-  mlab.outline(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
-  mlab.points3d(stack_x,stack_y,stack_z,scale_factor=0.1,color=(0.8,0.8,0.8))
-  mlab.title("threshold=%s, nbmin=%s"%(threshold,nbmin),height=0.1,size=0.35,color=(0,0,0))
-  for ind_I in range(len(nbsta)):
-    for ind_J in range(ind_I+1,len(nbsta)):
-      W_IJ=nbsta[ind_I,ind_J]
-      if W_IJ >= nbmin:
-        mlab.points3d(stack_x[ind_J],stack_y[ind_J],stack_z[ind_J],scale_factor=0.1,color=(0,0,0))
-        mlab.points3d(stack_x[ind_I],stack_y[ind_I],stack_z[ind_I],scale_factor=0.1,color=(0,0,0))
-        d=(stack_x[ind_J]-stack_x[ind_I],stack_y[ind_J]-stack_y[ind_I],stack_z[ind_J]-stack_z[ind_I])
-        norm=np.sqrt(d[0]**2+d[1]**2+d[2]**2)
-        s2=mlab.quiver3d(stack_x[ind_I],stack_y[ind_I],stack_z[ind_I],d[0],d[1],d[2],color=tuple(CZ_W_2_color(W_IJ)),mode='2ddash',scale_factor=norm,scale_mode='scalar')
-  #mlab.colorbar(s2)
-  logging.info("Done!")
-  mlab.show()
-# -----------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 def compute_nbsta(event,coeff,threshold):
   # Compute the number of stations where the correlation value is >= threshold for every event pair
   nbsta=[]
@@ -261,6 +208,59 @@ def do_clustering(event,nbsta,nbmin):
 
   else:
     return {}
+# -----------------------------------------------------------------------------------------
+def plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold):
+  from mayavi import mlab
+
+  # Event coordinates
+  stack_x,stack_y,stack_z=[],[],[]
+  for loc in locs:
+    stack_x.append(loc['x_mean'])
+    stack_y.append(loc['y_mean'])
+    stack_z.append(-loc['z_mean'])
+
+  # Extract coordinates
+  xsta,ysta,zsta=[],[],[]
+  for sta in sorted(stations):
+    xsta.append(stations[sta]['x'])
+    ysta.append(stations[sta]['y'])
+    zsta.append(stations[sta]['elev'])
+
+  # 3D PLOT USING MAYAVI
+  logging.info("Plotting...")
+  s1=mlab.figure(1,bgcolor=(1,1,1),fgcolor=(0,0,0),size=(1000,900))
+  s1=mlab.points3d(xsta,ysta,zsta,color=(1,0,0),scale_factor=0.05,mode='cube')
+  s1=mlab.axes(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
+  s1=mlab.outline(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
+  s1=mlab.points3d(stack_x,stack_y,stack_z,scale_factor=0.1,color=(0.8,0.8,0.8))
+  s1=mlab.title("threshold=%s, nbmin=%s"%(threshold,nbmin),height=0.1,size=0.35,color=(0,0,0))
+  for i_ev in range(len(nbsta)):
+    for i_c in range(1,len(CLUSTER)+1):
+      if i_ev+1 in CLUSTER[i_c]:
+        s1=mlab.points3d(stack_x[i_ev],stack_y[i_ev],stack_z[i_ev],scale_factor=0.1,color=tuple(CZ_Clust_2_color(100*(len(CLUSTER)-i_c)/len(CLUSTER))))
+        s1=mlab.text3d(stack_x[i_ev],stack_y[i_ev],stack_z[i_ev],str(i_c),color=(0,0,0),scale=0.1)
+  logging.info("Done!")
+   
+  logging.info("Plotting...")
+  s2=mlab.figure(2,bgcolor=(1,1,1),fgcolor=(0,0,0),size=(1000,900))
+  mlab.points3d(xsta,ysta,zsta,color=(1,0,0),scale_factor=0.05,mode='cube')
+  mlab.axes(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
+  mlab.outline(extent=[362,370,7647,7653,-0.5,2.5],color=(0,0,0))
+  mlab.points3d(stack_x,stack_y,stack_z,scale_factor=0.1,color=(0.8,0.8,0.8))
+  mlab.title("threshold=%s, nbmin=%s"%(threshold,nbmin),height=0.1,size=0.35,color=(0,0,0))
+  print nbsta
+  for ind_I in range(len(nbsta)):
+    for ind_J in range(ind_I+1,len(nbsta)):
+      W_IJ=nbsta[ind_I,ind_J]
+      if W_IJ >= nbmin:
+        mlab.points3d(stack_x[ind_J],stack_y[ind_J],stack_z[ind_J],scale_factor=0.1,color=(0,0,0))
+        mlab.points3d(stack_x[ind_I],stack_y[ind_I],stack_z[ind_I],scale_factor=0.1,color=(0,0,0))
+        d=(stack_x[ind_J]-stack_x[ind_I],stack_y[ind_J]-stack_y[ind_I],stack_z[ind_J]-stack_z[ind_I])
+        norm=np.sqrt(d[0]**2+d[1]**2+d[2]**2)
+        s2=mlab.quiver3d(stack_x[ind_I],stack_y[ind_I],stack_z[ind_I],d[0],d[1],d[2],color=tuple(CZ_W_2_color(W_IJ)),mode='2ddash',scale_factor=norm,scale_mode='scalar')
+  #mlab.colorbar(s2)
+  logging.info("Done!")
+  mlab.show()
 
 
 def do_clustering_setup_and_run(opdict):
@@ -327,10 +327,10 @@ def do_clustering_setup_and_run(opdict):
         stations=read_stations_file(stations_filename)
 
         # Look at the waveforms 
-        plot_traces(CLUSTER, delay_file, coeff, locs, stations, data_dir, data_files, threshold)
+        #plot_traces(CLUSTER, delay_file, coeff, locs, stations, data_dir, data_files, threshold)
 
         # Plot graphs
-        #plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold)
+        plot_graphs(locs,stations,nbsta,CLUSTER,nbmin,threshold)
 
 # -----------------------------------------------------------------------------------------
 if __name__ == '__main__':

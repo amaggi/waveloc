@@ -57,7 +57,7 @@ class SetupTests(unittest.TestCase):
 if __name__ == '__main__':
 
   import test_processing, test_migration, test_location, test_hdf5, test_nllstuff, test_correlation
-  import test_double_diff, test_clustering
+  import test_double_diff, test_clustering, test_kurtogram
   import logging
   logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
  
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     test_location.suite(),
     test_hdf5.suite(),
     test_nllstuff.suite(),
+    test_kurtogram.suite(),
     test_correlation.suite(),
     test_clustering.suite(),
     test_double_diff.suite(),
