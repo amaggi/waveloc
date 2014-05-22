@@ -76,8 +76,6 @@ def do_migration_setup_and_run(opdict):
     logging.info("Reading data  : %s - %s."%(start_time.isoformat(), end_time.isoformat()))
     data,delta=read_data_compatible_with_time_dict(data_files,time_grids,start_time,end_time)
 
-    print len(data_files)
-
     if reloc:
       tr_glob=opdict['kurtglob']
       files=glob.glob(os.path.join(data_dir,tr_glob))
