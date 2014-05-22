@@ -283,7 +283,7 @@ def do_locations_trigger_setup_and_run(opdict):
   for loc in loc_list:
     if number_good_kurtosis_for_location(kurt_files,data_files,loc,time_grids,snr_limit,snr_tr_limit,sn_time) > n_kurt_min:
       logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km, y=%.4f pm %.4f km, z=%.4f pm %.4f km"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
-      loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
+      loc_file.write(u"Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(loc['max_trig'],loc['o_time'].isoformat(),loc['o_err_left'], loc['o_err_right'],loc['x_mean'],loc['x_sigma'],loc['y_mean'],loc['y_sigma'],loc['z_mean'],loc['z_sigma']))
       n_ok=n_ok+1
       locs.append(loc)
     else:
@@ -331,12 +331,12 @@ def read_locs_from_file(filename):
 
 
 def write_header_options(loc_file,opdict):
-
+    
   # Header of locations.dat
-  loc_file.write('#FILTER : %.1f - %.1f Hz\n'%(opdict['c1'],opdict['c2']))
-  loc_file.write('#KURTOSIS = window: %.2f s, recurs: %s, grad: %s, gauss: %s\n'%(opdict['kwin'],opdict['krec'],opdict['kderiv'],opdict['gauss']))
-  loc_file.write('#OPTIONS = reloc: %s\n'%opdict['reloc'])
-  loc_file.write('#LOCATION = level: %d, window of analysis: %.2f s, kurtosis snr: %.2f, waveform snr: %.2f, number of stations: %d\n\n'%(opdict['loclevel'],opdict['sn_time'],opdict['snr_limit'],opdict['snr_tr_limit'],opdict['n_kurt_min']))
+  loc_file.write(u'#FILTER : %.1f - %.1f Hz\n'%(opdict['c1'],opdict['c2']))
+  loc_file.write(u'#KURTOSIS = window: %.2f s, recurs: %s, grad: %s, gauss: %s\n'%(opdict['kwin'],opdict['krec'],opdict['kderiv'],opdict['gauss']))
+  loc_file.write(u'#OPTIONS = reloc: %s\n'%opdict['reloc'])
+  loc_file.write(u'#LOCATION = level: %d, window of analysis: %.2f s, kurtosis snr: %.2f, waveform snr: %.2f, number of stations: %d\n\n'%(opdict['loclevel'],opdict['sn_time'],opdict['snr_limit'],opdict['snr_tr_limit'],opdict['n_kurt_min']))
 
 
 def read_header_from_file(filename,opdict):
