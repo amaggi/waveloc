@@ -2,7 +2,7 @@ import os, h5py, logging
 import numpy as np
 import scipy.integrate as si
 import matplotlib.pyplot as plt
-from matplotlib import mpl
+import matplotlib as mpl
 from integrate4D import *
 from filters import smooth
 from copy import deepcopy
