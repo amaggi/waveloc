@@ -120,30 +120,85 @@ def analyseLocs(locs,wo,test_info) :
 
     return n_locs,loc_dist,loc_dt,trig_loc
 
-
-if __name__ == '__main__' :
-
-
-    wo,grid_info = setUp()
+def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=1) :
 
     # get information from search grid
     nx = grid_info['nx']
     ny = grid_info['ny']
     nz = grid_info['nz']
 
-    # set up random test point
-    ix = randint(0,nx)
-    iy = randint(0,ny)
-    iz = randint(0,nz)
-    wo.opdict['syn_ix'] = ix
-    wo.opdict['syn_iy'] = iy
-    wo.opdict['syn_iz'] = iz
+    # get decimated grid
+    nx_dec = int(nx/decimation)
+    ny_dec = int(ny/decimation)
+    nz_dec = int(nz/decimation)
+    nb_dec = nx_dec*ny_dec*nz_dec
 
-    # do synthetic test for this point
-    test_info, locs = doPointTest(wo,loclevel=10.0)
+    # create info for decimated grid
+    dec_grid_info = {}
+    dec_grid_info['nx'] = nx_dec
+    dec_grid_info['ny'] = ny_dec
+    dec_grid_info['nz'] = nz_dec
+    dec_grid_info['dx'] = grid_info['dx']*decimation
+    dec_grid_info['dy'] = grid_info['dy']*decimation
+    dec_grid_info['dz'] = grid_info['dz']*decimation
+    dec_grid_info['x_orig'] = grid_info['x_orig']
+    dec_grid_info['y_orig'] = grid_info['y_orig']
+    dec_grid_info['z_orig'] = grid_info['z_orig']
 
-    # do analysis for this point
-    n_locs,best_dist,best_dt,trig_loc = analyseLocs(locs,wo,test_info)
+    # set up arrays to store values
+    dist_grid = np.empty(nb_dec,dtype='float32')
+    nloc_grid = np.empty(nb_dec,dtype='int16')
+    dt_grid = np.empty(nb_dec,dtype='float32')
+    dist_grid[...] = -999.0
+    nloc_grid[...] = -999
+    dt_grid[...] = -999.0
 
-    print ix,iy,iz,n_locs,best_dist,best_dt
+    # iterate over points
+    for ib_dec in xrange(nb_dec) :
+        ix_dec,iy_dec,iz_dec = np.unravel_index(ib_dec,(nx_dec,ny_dec,nz_dec))
+
+        # reconstruct the indexes in the original grid 
+	ix = ix_dec*decimation
+	iy = iy_dec*decimation
+	iz = iz_dec*decimation
+
+        wo.opdict['syn_ix'] = ix
+        wo.opdict['syn_iy'] = iy
+        wo.opdict['syn_iz'] = iz
+
+        # do synthetic test for this point
+        test_info,locs = doPointTest(wo,loclevel=10.0)
+
+        # do analysis for this point
+        n_locs,best_dist,best_dt,trig_loc = analyseLocs(locs,wo,test_info)
+        print ix,iy,iz,n_locs,best_dist,best_dt
+
+	# save into array
+	dist_grid[ib_dec] = best_dist
+	nloc_grid[ib_dec] = n_locs
+	dt_grid[ib_dec] = best_dt
+
+    # write HDF5 file
+    f = h5py.File(filename,'w')
+    f_dist = f.create_dataset('dist_grid',data=dist_grid)
+    f_nloc = f.create_dataset('nloc_grid',data=nloc_grid)
+    f_dt = f.create_dataset('dt_grid',data=dt_grid)
+    for key,value in dec_grid_info.iteritems() :
+	f_dist.attrs[key] = value
+	f_nloc.attrs[key] = value
+	f_dt.attrs[key] = value
+    f.close()
+    
+
+if __name__ == '__main__' :
+
+    filename = 'waveloc_resolution.hdf5'
+
+    wo,grid_info = setUp()
+    #doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=5)
+
+
+
+
+
 
