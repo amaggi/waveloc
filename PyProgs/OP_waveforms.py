@@ -404,8 +404,8 @@ class Waveform(object):
       st.taper()
     st.merge(method=1,fill_value=fill_value)
     for tr in st:
-#      tr.data=tr.data.astype("int32")
-      tr.data=tr.data.astype("float32")
+      tr.data=tr.data.astype('float32')
+      tr.stats.mseed.encoding=u'FLOAT32'
       
     st.write(filename,format)
 
@@ -419,7 +419,8 @@ class Waveform(object):
     """
  
     for tr in st:
-      tr.data=tr.data.astype("int32")
+      tr.data=tr.data.astype('int32')
+      tr.stats.mseed.encoding=u'INT32'
     self.stream.write(filename,format)
 
   def rmean(self):
