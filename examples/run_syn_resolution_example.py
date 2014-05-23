@@ -195,8 +195,6 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=(1,1,1)) :
     
 def plotResolutionTest(hdf_filename,plot_filename) :
 
-   
-
     # read HDF5 file
     f = h5py.File(hdf_filename,'r')
 
@@ -253,18 +251,28 @@ def plotResolutionTest(hdf_filename,plot_filename) :
     vmin_dt = np.min(dt_grid) 
     vmax_dt = np.max(dt_grid)
 
-    col=plt.cm.hot_r
-    plt.clf()
-    fig = plt.figure()
-    fig.suptitle('Resolution test depths %.2f to %.2f km'%(z_orig,(nz-1)*dz+z_orig))
-    # first z step
+
+    # filename
+    (root,ext) = os.path.splitext(plot_filename)
+
+    #col=plt.cm.hot_r
+    col=plt.cm.jet
+    # iterate over iz
     for iz in xrange(nz) : 
+        plt.clf()
+        fig = plt.figure(figsize=(10,4.5))
+   
+        # get depth
+        zvalue = iz*dz+z_orig
+        fname = root+'_%.2fkm'%zvalue+ext
+        #fig.suptitle('Resolution test depth %.2f km'%(zvalue))
+
         xy_cut_dist = dist_grid[:,:,iz]
         xy_cut_nloc = nloc_grid[:,:,iz]
         xy_cut_dt = dt_grid[:,:,iz]
         xy_extent = [np.min(x),np.max(x),np.min(y),np.max(y)]
 
-        p=plt.subplot(nz,3,iz*3+1)
+        p=plt.subplot(1,3,1)
         plt.imshow(xy_cut_dist.T,vmin=vmin_dist,vmax=vmax_dist,\
             origin='lower',interpolation='none',extent=xy_extent,cmap=col)
         p.tick_params(labelsize=10)
@@ -273,9 +281,9 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         plt.ylabel('y (km wrt ref)',size=10)
         plt.colorbar(orientation='horizontal',ticks=[0,0.1,0.2,0.3,0.4])
 	plt.scatter(sta_x,sta_y)
-        plt.title('Distance')
+        plt.title('Distance (km)')
 
-        p=plt.subplot(nz,3,iz*3+2)
+        p=plt.subplot(1,3,2)
         plt.imshow(xy_cut_nloc.T,vmin=vmin_nloc,vmax=vmax_nloc,\
 	    origin='lower',interpolation='none',extent=xy_extent,cmap=col)
         p.tick_params(labelsize=10)
@@ -283,9 +291,9 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         plt.xlabel('x (km wrt ref)',size=10)
         plt.colorbar(orientation='horizontal',ticks=[0,1,2,3])
 	plt.scatter(sta_x,sta_y)
-        plt.title('Nloc')
+        plt.title('No of locs')
 
-        p=plt.subplot(nz,3,iz*3+3)
+        p=plt.subplot(1,3,3)
         plt.imshow(xy_cut_dt.T,vmin=vmin_dt,vmax=vmax_dt,\
 	    origin='lower',interpolation='none',extent=xy_extent,cmap=col)
         p.tick_params(labelsize=10)
@@ -293,9 +301,9 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         plt.xlabel('x (km wrt ref)',size=10)
         plt.colorbar(orientation='horizontal',ticks=[0,0.01,0.02,0.03])
 	plt.scatter(sta_x,sta_y)
-        plt.title('Delta origin time')
+        plt.title('Dt origin time (s)')
 
-    plt.savefig(plot_filename)
+        plt.savefig(fname)
 
 if __name__ == '__main__' :
 
