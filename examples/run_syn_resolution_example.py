@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from random import randint
 from waveloc.filters import smooth
-from waveloc.NllGridLib import read_hdr_file
+from waveloc.NllGridLib import read_hdr_file, read_stations_file
 from waveloc.options import WavelocOptions
 from waveloc.synth_migration import generateSyntheticDirac
 from waveloc.locations_trigger import trigger_locations_inner
@@ -195,6 +195,8 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=(1,1,1)) :
     
 def plotResolutionTest(hdf_filename,plot_filename) :
 
+   
+
     # read HDF5 file
     f = h5py.File(hdf_filename,'r')
 
@@ -228,7 +230,21 @@ def plotResolutionTest(hdf_filename,plot_filename) :
     y = np.arange(ny)*dy
     z = np.arange(nz)*dz
 
-
+    # read station file
+    fname = os.path.join(wo.opdict['base_path'],'lib',wo.opdict['stations'])
+    stations = read_stations_file(fname)
+    sta_x = np.empty(len(stations),dtype='float32')
+    sta_y = np.empty(len(stations),dtype='float32')
+    i=0
+    for key,value in stations.iteritems() :
+	if value['loc_type'] == 'XYZ' :
+	    sta_x[i] = value['x'] - x_orig
+	    sta_y[i] = value['y'] - y_orig
+        else :
+	    sta_x[i] = value['lon'] - x_orig
+	    sta_y[i] = value['lat'] - y_orig
+        i = i+1
+ 
     # do plot
     vmin_dist = np.min(dist_grid)
     vmax_dist = np.max(dist_grid)
@@ -248,7 +264,6 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         xy_cut_dt = dt_grid[:,:,iz]
         xy_extent = [np.min(x),np.max(x),np.min(y),np.max(y)]
 
- 
         p=plt.subplot(nz,3,iz*3+1)
         plt.imshow(xy_cut_dist.T,vmin=vmin_dist,vmax=vmax_dist,\
             origin='lower',interpolation='none',extent=xy_extent,cmap=col)
@@ -257,6 +272,7 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         plt.xlabel('x (km wrt ref)',size=10)
         plt.ylabel('y (km wrt ref)',size=10)
         plt.colorbar(orientation='horizontal',ticks=[0,0.1,0.2,0.3,0.4])
+	plt.scatter(sta_x,sta_y)
         plt.title('Distance')
 
         p=plt.subplot(nz,3,iz*3+2)
@@ -266,6 +282,7 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         p.xaxis.set_ticks_position('bottom')
         plt.xlabel('x (km wrt ref)',size=10)
         plt.colorbar(orientation='horizontal',ticks=[0,1,2,3])
+	plt.scatter(sta_x,sta_y)
         plt.title('Nloc')
 
         p=plt.subplot(nz,3,iz*3+3)
@@ -275,6 +292,7 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         p.xaxis.set_ticks_position('bottom')
         plt.xlabel('x (km wrt ref)',size=10)
         plt.colorbar(orientation='horizontal',ticks=[0,0.01,0.02,0.03])
+	plt.scatter(sta_x,sta_y)
         plt.title('Delta origin time')
 
     plt.savefig(plot_filename)
@@ -285,7 +303,7 @@ if __name__ == '__main__' :
     plot_filename = 'waveloc_resolution.png'
 
     wo,grid_info = setUp()
-    doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
+    #doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
     plotResolutionTest(hdf_filename,plot_filename)
 
 
