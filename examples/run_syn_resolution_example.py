@@ -311,7 +311,7 @@ if __name__ == '__main__' :
     plot_filename = 'waveloc_resolution.png'
 
     wo,grid_info = setUp()
-    #doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
+    doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
     plotResolutionTest(hdf_filename,plot_filename)
 
 
