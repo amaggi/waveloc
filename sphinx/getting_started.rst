@@ -70,8 +70,8 @@ In order to get you started running waveloc, we have prepared the following
 example scripts : 
 
 #. a synthetic test example; 
-#. a synthetic network response test example;
-#. a real migration example.
+#. a real migration example;
+#. a synthetic network response test example.
 
 You should find the relevant scripts in the ``examples`` directory in the
 waveloc distribution.
@@ -130,3 +130,27 @@ and:
 .. image:: figures/loc_2010-10-14T00:17:13.890000.png
   :width: 800px
   :align: center
+
+Running the network response test
+---------------------------------
+Run the ``run_syn_resolution_example.py`` script to run the network response
+test. Each point in the search grid is tested using a synthetic test to
+determine the location error. Location error is measured using three metrics:
+the Euclidean distance between the true location and that found by waveloc; the
+number of locations found by waveloc (there should be only one, but when the
+point tested is outside of the network more than one location may be found);
+the origin time shift (waveloc origin time minus true origin time).
+
+In the ``examples`` directory you should find figures that look like:
+
+.. image:: figures/waveloc_resolution_-1.00km.png
+  :width: 800px
+  :align: center
+
+where the blue dots indicate the positions of the stations.  
+In order to reduce computation time, the example uses decimation of the full
+grid (and the full grid itself only contains part of the domain covered by the
+stations). Modify the following line to increase / decreasce the decimation: ::
+
+  doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
+
