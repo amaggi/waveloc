@@ -150,7 +150,7 @@ In the ``examples`` directory you should find figures that look like:
 where the blue dots indicate the positions of the stations.  
 In order to reduce computation time, the example uses decimation of the full
 grid (and the full grid itself only contains part of the domain covered by the
-stations). Modify the following line to increase / decreasce the decimation :
+stations). Modify the following line to increase / decreasce the decimation: ::
 
   doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
 
