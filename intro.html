@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; waveloc 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.0 documentation" href="index.html" />
+    <link rel="next" title="Getting Started" href="getting_started.html" />
+    <link rel="prev" title="WaveLoc documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="WaveLoc documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">waveloc 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>WaveLoc is a simple detector and preliminary locator for seismic phenomena.  It
+is based on the central principle that the coherence of arrivals across a network
+contains the necessary information for both detection and preliminary location.
+It&#8217;s main object is to provide an alternative to traditional detection /
+location by picking and associating discrete arrival times, a process that
+becomes complex during earthquake swarms or aftershock sequences.</p>
+<p>As the basic source of information for single-event location are the
+(physically coherent) arrival times at seismic stations, we enhance the first
+arrival information on the the recorded seismograms by applying a kurtosis
+filter.</p>
+<p>We then migrate the kurtosis waveforms back to a grid of possible event
+locations, and stack.  The maxima of the stack act as both detection and
+preliminary location of the events.</p>
+<p>Here is the result of an example run:</p>
+<a class="reference internal image-reference" href="_images/loc_example.png"><img alt="_images/loc_example.png" class="align-center" src="_images/loc_example.png" style="width: 800px;" /></a>
+<p>The method is explained in greater detail below, and in Langet et al. (2014)</p>
+<div class="section" id="the-kurtosis-filter">
+<h2>The kurtosis filter<a class="headerlink" href="#the-kurtosis-filter" title="Permalink to this headline">¶</a></h2>
+<p>The kurtosis is the fourth moment of the data, and indicates how non-gaussian a
+distribution is.</p>
+<div class="math">
+<p><img src="_images/math/c3c21a6dbefd7fe61753441eaad8a09a702b0cee.png" alt="{\rm Kurt}(x_1,\ldots,x_N) = \left\{ \frac{1}{N}\sum_{j=1}^N \left[ \frac{x_j - \bar{x}}{\sigma}\right]^4 \right\}-3, \label{eq:kurt}"/></p>
+</div><p>Distributions that are more peaked than gaussian
+distributions are will have a strong positive value of the kurtosis.
+Distributions that are flatter than gaussian distributions will have negative
+values.  The arrivals of seismic phases are strongly non-gaussian, and tend to
+produce strongly peaked amplitude distributions, and hence positive kurtosis
+values. The -3 in the formula above normalises the kurtosis to zero for a
+gaussian distribution.  See kurtosis column in the introductory figure for an
+example.</p>
+<p>As the kurtosis calculation in the above equation can be quite cumbersome to
+calculate on large volumes of data, we use instead the following formulation
+for a recursive kurtosis calculation:</p>
+<div class="math">
+<p><img src="_images/math/8b992d1dc3dc8a94a6a6cbde66d89c59b73dd7fe.png" alt="\bar{x}_i = C\ \bar{x}_{i-1} + (1-C)\ x_i, \\
+\sigma^2_i = C\ \sigma_{i-1} + (1-C)\ (x_i-\bar{x}_i)^2, \\
+{\rm Kurt}_i = C\ {\rm Kurt}_{i-1} + (1-C)\ \left[\frac{(x_i-\bar{x}_i)}{\sigma_i}\right]^4 ,"/></p>
+</div><p>where the constant C is the ratio of the time-step of the data and a chosen
+window length for the kurtosis calculation.
+The maximum of the kurtosis is sligtly delayed with respect to the true first arrival, and this delay would induce a significant bias in the migrated origin times if the kurtosis waveforms themselves were used for the migration.  In order to reduce this bias, we use the positive time-derivative of the kurtosis waveforms for migration.</p>
+</div>
+<div class="section" id="migration">
+<h2>Migration<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h2>
+<p>During the second step of the WaveLoc process, we migrate the waveforms obtained in the first step onto a target grid of potential hypocentral locations, using an a-priori P-wave velocity model for the region. &nbsp;We are exploiting here the coherence of first-arrival information across a network of stations, subject to sufficient knowledge of the regional velocity structure. We calculate travel-times from each point of the target grid to each station through a 1-D or 3-D P-wave velocity model, using the REF eikonal solver as implemented by REF in the NonLinLoc package. For each point of the target grid, we shift each waveform back by the corresponding travel-time, then stack the shifted waveforms to create a point-stack. The 3D grid of such point stacks defines a stack volume, at each point of which corresponds a time-series, so in the end we have a 4D volume in space and time. Local maxima of this 4D volume correspond to event detections.</p>
+<p>For a typical problem with 20 stations, a search grid of 30x30x10=9000 target points, and a sample-rate of 100Hz, the stack-volume will contain 3.24e9 data-points per hour of recorded data.  In order to simplify the task of sifting through such a large volume of data, and to reduce storage needs, we create and store a summary-stack containing for each time the maximum value of stack volume, and we also store the coordinates of the corresponding target points. Strong local maxima in the summary stack occur at the origin times of seismic events, and their corresponding locations can be read directly from the stored coordinates.</p>
+</div>
+<div class="section" id="detection-location">
+<h2>Detection / Location<a class="headerlink" href="#detection-location" title="Permalink to this headline">¶</a></h2>
+<p>We intend by <em>detection</em> the determination of the occurrence of a seismic event, and by <em>location</em> the determination of its origin time, its hypocentral coordinates and their corresponding uncertainties.  As described above, we detect events directly from the sumamry time-series, by applying a simple triggering algorithm with a given threshold.</p>
+<p>Once the triggering algorithm detects the occurrence of an event on, we assign the time at which the corresponding local maximum occurs as the origin time, and define the left and right uncertainty bounds around this origin time by taking the times at which the summary stack descends to 95% of its value at the local maximum. We take as hypocentral coordinates and their uncertainties respectively the mean and standard deviation of the coordinates corresponding to the maximum values, between the left and right times.</p>
+</div>
+<div class="section" id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
+<p>If you use WaveLoc, please cite the following paper :
+N. Langet, A. Maggi, A. Michelini, F. Brenguer, 2014. Continuous Kurtosis-Based Migration for Seismic Event Detection and Location, with Application to Piton de la Fournaise Volcano, La Réunion. Bul. Seis. Soc. Am., vol 104, no 1, pp 229-246, doi: 10.1785/0120130107</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#the-kurtosis-filter">The kurtosis filter</a></li>
+<li><a class="reference internal" href="#migration">Migration</a></li>
+<li><a class="reference internal" href="#detection-location">Detection / Location</a></li>
+<li><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">WaveLoc documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="next chapter">Getting Started</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/intro.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="WaveLoc documentation"
+             >previous</a> |</li>
+        <li><a href="index.html">waveloc 0.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 24, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
