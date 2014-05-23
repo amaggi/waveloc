@@ -121,7 +121,10 @@ def analyseLocs(locs,wo,test_info) :
 
     return n_locs,loc_dist,loc_dt,trig_loc
 
-def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=1) :
+def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=(1,1,1)) :
+
+    dec_x,dec_y,dec_z = decimation
+
 
     # get information from search grid
     nx = grid_info['nx']
@@ -129,9 +132,9 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=1) :
     nz = grid_info['nz']
 
     # get decimated grid
-    nx_dec = int(nx/decimation)
-    ny_dec = int(ny/decimation)
-    nz_dec = int(nz/decimation)
+    nx_dec = int(nx/dec_x)
+    ny_dec = int(ny/dec_y)
+    nz_dec = int(nz/dec_z)
     nb_dec = nx_dec*ny_dec*nz_dec
 
     # create info for decimated grid
@@ -139,9 +142,9 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=1) :
     dec_grid_info['nx'] = nx_dec
     dec_grid_info['ny'] = ny_dec
     dec_grid_info['nz'] = nz_dec
-    dec_grid_info['dx'] = grid_info['dx']*decimation
-    dec_grid_info['dy'] = grid_info['dy']*decimation
-    dec_grid_info['dz'] = grid_info['dz']*decimation
+    dec_grid_info['dx'] = grid_info['dx']*dec_x
+    dec_grid_info['dy'] = grid_info['dy']*dec_y
+    dec_grid_info['dz'] = grid_info['dz']*dec_z
     dec_grid_info['x_orig'] = grid_info['x_orig']
     dec_grid_info['y_orig'] = grid_info['y_orig']
     dec_grid_info['z_orig'] = grid_info['z_orig']
@@ -159,9 +162,9 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=1) :
         ix_dec,iy_dec,iz_dec = np.unravel_index(ib_dec,(nx_dec,ny_dec,nz_dec))
 
         # reconstruct the indexes in the original grid 
-	ix = ix_dec*decimation
-	iy = iy_dec*decimation
-	iz = iz_dec*decimation
+	ix = ix_dec*dec_x
+	iy = iy_dec*dec_y
+	iz = iz_dec*dec_z
 
         wo.opdict['syn_ix'] = ix
         wo.opdict['syn_iy'] = iy
@@ -282,7 +285,7 @@ if __name__ == '__main__' :
     plot_filename = 'waveloc_resolution.png'
 
     wo,grid_info = setUp()
-    #doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=5)
+    doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
     plotResolutionTest(hdf_filename,plot_filename)
 
 
