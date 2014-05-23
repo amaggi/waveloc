@@ -1,6 +1,7 @@
 import os, logging, h5py
 import numpy as np
 from random import randint
+from waveloc.filters import smooth
 from waveloc.NllGridLib import read_hdr_file
 from waveloc.options import WavelocOptions
 from waveloc.synth_migration import generateSyntheticDirac
@@ -77,9 +78,12 @@ def doPointTest(wo,loclevel=10.0) :
     max_x = f_stack['max_x']
     max_y = f_stack['max_y']
     max_z = f_stack['max_z']
+    
+    # smooth the max_val
+    max_val_smoothed = smooth(max_val[:])
 
     # launch a location trivver
-    locs=trigger_locations_inner(max_val,max_x,max_y,max_z,\
+    locs=trigger_locations_inner(max_val_smoothed,max_x,max_y,max_z,\
         loclevel,loclevel,stack_start_time,dt)
     
     f_stack.close()
@@ -91,28 +95,30 @@ def analyseLocs(locs,wo,test_info) :
     x_orig,y_orig,z_orig = test_info['grid_orig']
     ix_true,iy_true,iz_true,it_true = test_info['true_indexes']
 
-    # This is a dirac test, but we may have more than one loc (secondary maxima)
-    # so for safety, pull out best loc
-
 
     n_locs = len(locs)
+
+    loc_dt_list = [aloc['o_time'] - wo.opdict['syn_otime'] for aloc in locs]
+    loc_dist_list = [np.sqrt((ix_true*dx+x_orig - aloc['x_mean'])**2 +\
+                             (iy_true*dy+y_orig - aloc['y_mean'])**2 +\
+                             (iz_true*dy+z_orig - aloc['z_mean'])**2) \
+                     for aloc in locs]
+
+    # This is a dirac test, but we may have more than one loc (secondary maxima)
+    # so for safety, pull out best loc
     if n_locs > 0 :
         imax = np.argmax([loc['max_trig'] for loc in locs])
         trig_loc = locs[imax]
-        print trig_loc['max_trig']
+        loc_dt = loc_dt_list[imax]
+        loc_dist = loc_dist_list[imax]
 
-        loc_dist = np.sqrt( (ix_true*dx+x_orig - trig_loc['x_mean'])**2 +\
-                            (iy_true*dy+y_orig - trig_loc['y_mean'])**2 +\
-                            (iz_true*dy+z_orig - trig_loc['z_mean'])**2)
-        loc_dt = trig_loc['o_time'] - wo.opdict['syn_otime']
-        loc_dt_list = [aloc['o_time'] - wo.opdict['syn_otime'] for aloc in locs]
-        print loc_dt_list
     else :
+	trig_loc = None
 	loc_dist = None
         loc_dt = None
   
 
-    return n_locs,loc_dist,loc_dt
+    return n_locs,loc_dist,loc_dt,trig_loc
 
 
 if __name__ == '__main__' :
@@ -135,7 +141,9 @@ if __name__ == '__main__' :
 
     # do synthetic test for this point
     test_info, locs = doPointTest(wo,loclevel=10.0)
-    n_locs,best_dist,best_dt = analyseLocs(locs,wo,test_info)
+
+    # do analysis for this point
+    n_locs,best_dist,best_dt,trig_loc = analyseLocs(locs,wo,test_info)
 
     print ix,iy,iz,n_locs,best_dist,best_dt
 
