@@ -1,5 +1,6 @@
 import os, logging, h5py
 import numpy as np
+import matplotlib.pyplot as plt
 from random import randint
 from waveloc.filters import smooth
 from waveloc.NllGridLib import read_hdr_file
@@ -189,13 +190,100 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=1) :
 	f_dt.attrs[key] = value
     f.close()
     
+def plotResolutionTest(hdf_filename,plot_filename) :
+
+    # read HDF5 file
+    f = h5py.File(hdf_filename,'r')
+
+    # grilles
+    dist_grid_hdf = f['dist_grid']
+    nloc_grid_hdf = f['nloc_grid']
+    dt_grid_hdf = f['dt_grid']
+
+    # attributs
+    grid_info = dist_grid_hdf.attrs
+    nx = grid_info['nx']
+    ny = grid_info['ny']
+    nz = grid_info['nz']
+    dx = grid_info['dx']
+    dy = grid_info['dy']
+    dz = grid_info['dz']
+    x_orig = grid_info['x_orig']
+    y_orig = grid_info['y_orig']
+    z_orig = grid_info['z_orig']
+
+    # versions ram des grilles
+    dist_grid = dist_grid_hdf[:].reshape(nx,ny,nz)
+    nloc_grid = nloc_grid_hdf[:].reshape(nx,ny,nz)
+    dt_grid = dt_grid_hdf[:].reshape(nx,ny,nz)
+
+    # close HDF5 files
+    f.close()
+
+    # set up axes
+    x = np.arange(nx)*dx
+    y = np.arange(ny)*dy
+    z = np.arange(nz)*dz
+
+
+    # do plot
+    vmin_dist = np.min(dist_grid)
+    vmax_dist = np.max(dist_grid)
+    vmin_nloc = np.min(nloc_grid)
+    vmax_nloc = np.max(nloc_grid)
+    vmin_dt = np.min(dt_grid) 
+    vmax_dt = np.max(dt_grid)
+
+    col=plt.cm.hot_r
+    plt.clf()
+    fig = plt.figure()
+    fig.suptitle('Resolution test depths %.2f to %.2f km'%(z_orig,(nz-1)*dz+z_orig))
+    # first z step
+    for iz in xrange(nz) : 
+        xy_cut_dist = dist_grid[:,:,iz]
+        xy_cut_nloc = nloc_grid[:,:,iz]
+        xy_cut_dt = dt_grid[:,:,iz]
+        xy_extent = [np.min(x),np.max(x),np.min(y),np.max(y)]
+
+ 
+        p=plt.subplot(nz,3,iz*3+1)
+        plt.imshow(xy_cut_dist.T,vmin=vmin_dist,vmax=vmax_dist,\
+            origin='lower',interpolation='none',extent=xy_extent,cmap=col)
+        p.tick_params(labelsize=10)
+        p.xaxis.set_ticks_position('bottom')
+        plt.xlabel('x (km wrt ref)',size=10)
+        plt.ylabel('y (km wrt ref)',size=10)
+        plt.colorbar(orientation='horizontal',ticks=[0,0.1,0.2,0.3,0.4])
+        plt.title('Distance')
+
+        p=plt.subplot(nz,3,iz*3+2)
+        plt.imshow(xy_cut_nloc.T,vmin=vmin_nloc,vmax=vmax_nloc,\
+	    origin='lower',interpolation='none',extent=xy_extent,cmap=col)
+        p.tick_params(labelsize=10)
+        p.xaxis.set_ticks_position('bottom')
+        plt.xlabel('x (km wrt ref)',size=10)
+        plt.colorbar(orientation='horizontal',ticks=[0,1,2,3])
+        plt.title('Nloc')
+
+        p=plt.subplot(nz,3,iz*3+3)
+        plt.imshow(xy_cut_dt.T,vmin=vmin_dt,vmax=vmax_dt,\
+	    origin='lower',interpolation='none',extent=xy_extent,cmap=col)
+        p.tick_params(labelsize=10)
+        p.xaxis.set_ticks_position('bottom')
+        plt.xlabel('x (km wrt ref)',size=10)
+        plt.colorbar(orientation='horizontal',ticks=[0,0.01,0.02,0.03])
+        plt.title('Delta origin time')
+
+    plt.savefig(plot_filename)
 
 if __name__ == '__main__' :
 
-    filename = 'waveloc_resolution.hdf5'
+    hdf_filename = 'waveloc_resolution.hdf5'
+    plot_filename = 'waveloc_resolution.png'
 
     wo,grid_info = setUp()
-    #doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=5)
+    #doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=5)
+    plotResolutionTest(hdf_filename,plot_filename)
 
 
 
