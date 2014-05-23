@@ -13,6 +13,7 @@
 *.swo
 *.tgz
 *.prof
+*.png
 /nll/
 .DS_store
 /test_data/*.tgz
