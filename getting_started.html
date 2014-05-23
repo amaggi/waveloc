@@ -106,8 +106,8 @@ correctly).</p>
 example scripts :</p>
 <ol class="arabic simple">
 <li>a synthetic test example;</li>
-<li>a synthetic network response test example;</li>
-<li>a real migration example.</li>
+<li>a real migration example;</li>
+<li>a synthetic network response test example.</li>
 </ol>
 <p>You should find the relevant scripts in the <tt class="docutils literal"><span class="pre">examples</span></tt> directory in the
 waveloc distribution.</p>
@@ -158,6 +158,24 @@ like:</p>
 <p>and:</p>
 <a class="reference internal image-reference" href="_images/loc_2010-10-14T00:17:13.890000.png"><img alt="_images/loc_2010-10-14T00:17:13.890000.png" class="align-center" src="_images/loc_2010-10-14T00:17:13.890000.png" style="width: 800px;" /></a>
 </div>
+<div class="section" id="running-the-network-response-test">
+<h3>Running the network response test<a class="headerlink" href="#running-the-network-response-test" title="Permalink to this headline">¶</a></h3>
+<p>Run the <tt class="docutils literal"><span class="pre">run_syn_resolution_example.py</span></tt> script to run the network response
+test. Each point in the search grid is tested using a synthetic test to
+determine the location error. Location error is measured using three metrics:
+the Euclidean distance between the true location and that found by waveloc; the
+number of locations found by waveloc (there should be only one, but when the
+point tested is outside of the network more than one location may be found);
+the origin time shift (waveloc origin time minus true origin time).</p>
+<p>In the <tt class="docutils literal"><span class="pre">examples</span></tt> directory you should find figures that look like:</p>
+<a class="reference internal image-reference" href="_images/waveloc_resolution_-1.00km.png"><img alt="_images/waveloc_resolution_-1.00km.png" class="align-center" src="_images/waveloc_resolution_-1.00km.png" style="width: 800px;" /></a>
+<p>where the blue dots indicate the positions of the stations.
+In order to reduce computation time, the example uses decimation of the full
+grid (and the full grid itself only contains part of the domain covered by the
+stations). Modify the following line to increase / decreasce the decimation :</p>
+<blockquote>
+<div>doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))</div></blockquote>
+</div>
 </div>
 </div>
 
@@ -177,6 +195,7 @@ like:</p>
 <li><a class="reference internal" href="#running-the-examples">Running the examples</a><ul>
 <li><a class="reference internal" href="#running-the-synthetic-test">Running the synthetic test</a></li>
 <li><a class="reference internal" href="#running-the-migration-test">Running the migration test</a></li>
+<li><a class="reference internal" href="#running-the-network-response-test">Running the network response test</a></li>
 </ul>
 </li>
 </ul>
