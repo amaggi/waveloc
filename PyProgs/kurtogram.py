@@ -31,7 +31,7 @@ def get_h_parameters(NFIR, fcut):
     h = si.firwin(NFIR+1,fcut) * np.exp(2*1j*np.pi*np.arange(NFIR+1)*0.125)
     n = np.arange(2,NFIR+2)
     g = h[(1-n)%NFIR]*(-1)**(1-n)
-    NFIR = np.fix((3./2.*NFIR))
+    NFIR = int(np.fix((3./2.*NFIR)))
     h1 = si.firwin(NFIR+1,2./3*fcut)*np.exp(2j*np.pi*np.arange(NFIR+1)*0.25/3.)
     h2 = h1*np.exp(2j*np.pi*np.arange(NFIR+1)/6.)
     h3 = h1*np.exp(2j*np.pi*np.arange(NFIR+1)/3.)  
@@ -248,7 +248,7 @@ def K_wpQ_local(x,h,g,h1,h2,h3,nlevel,verbose,opt,level):
         #print ">", K12.shape, Kad.shape
         K = np.vstack((K12,Kad))
 
-        Long = 2./6*np.max(KaQ.shape)
+        Long = int(2./6*np.max(KaQ.shape))
         Ka1 = Ka1*np.ones(Long)
         Ka2 = Ka2*np.ones(Long)
         Ka3 = Ka3*np.ones(Long)
@@ -277,7 +277,7 @@ def K_wpQ_local(x,h,g,h1,h2,h3,nlevel,verbose,opt,level):
         Ka1 = kurt(a1[len(h)-1:],opt)
         Ka2 = kurt(a2[len(h)-1:],opt)
         Ka3 = kurt(a3[len(h)-1:],opt)
-        Long = 1./3*np.max(KQ.shape)
+        Long = int(1./3*np.max(KQ.shape))
         Ka1 = Ka1*np.ones(Long)
         Ka2 = Ka2*np.ones(Long)
         Ka3 = Ka3*np.ones(Long)
@@ -397,13 +397,13 @@ def Find_wav_kurt(x,h,g,h1,h2,h3,nlevel,Sc,Fr,Fs=1,verbose=False):
     fc = freq_w[J]
     i = int(np.round(fc/Bw-1./2))
     if level % 1 == 0:
-        acoeff = binary(i, level)
+        acoeff = binary(i, int(level))
         bcoeff = []
         temp_level = level
     else:
-        i2 = np.fix((i/3.))
+        i2 = int(np.fix((i/3.)))
         temp_level = np.fix((level))-1
-        acoeff = binary(i2,temp_level)
+        acoeff = binary(i2,int(temp_level))
         bcoeff = i-i2*3
     acoeff = acoeff[::-1]
     c = K_wpQ_filt(x,h,g,h1,h2,h3,acoeff,bcoeff,temp_level)
