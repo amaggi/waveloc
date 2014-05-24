@@ -8,7 +8,8 @@ from waveloc.options import WavelocOptions
 from waveloc.synth_migration import generateSyntheticDirac
 from waveloc.locations_trigger import trigger_locations_inner
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
+logging.basicConfig(level=logging.INFO,\
+    format='%(levelname)s : %(asctime)s : %(message)s')
 
 def setUp() :
 
@@ -39,7 +40,8 @@ def setUp() :
 
     # place default point at center of grid
     base_path = wo.opdict['base_path']
-    search_grid_filename = os.path.join(base_path,'lib',wo.opdict['search_grid'])
+    search_grid_filename = os.path.join(base_path,'lib',\
+        wo.opdict['search_grid'])
     grid_info = read_hdr_file(search_grid_filename)
     wo.opdict['syn_ix'] = grid_info['nx']/2
     wo.opdict['syn_iy'] = grid_info['ny']/2
@@ -183,7 +185,9 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=(1,1,1)) :
 	dt_grid[ib_dec] = best_dt
 
     # write HDF5 file
-    f = h5py.File(filename,'w')
+    resgrid_filename = os.path.join(wo.opdict['base_path'],\
+        'out',wo.opdict['outdir'],'grid',filename)
+    f = h5py.File(resgrid_filename,'w')
     f_dist = f.create_dataset('dist_grid',data=dist_grid)
     f_nloc = f.create_dataset('nloc_grid',data=nloc_grid)
     f_dt = f.create_dataset('dt_grid',data=dt_grid)
@@ -192,11 +196,15 @@ def doResolutionTest(wo,grid_info,filename,loclevel=10.0,decimation=(1,1,1)) :
 	f_nloc.attrs[key] = value
 	f_dt.attrs[key] = value
     f.close()
+
+    return resgrid_filename
     
-def plotResolutionTest(hdf_filename,plot_filename) :
+def plotResolutionTest(wo,hdf_filename,plot_filename) :
 
     # read HDF5 file
-    f = h5py.File(hdf_filename,'r')
+    full_filename = os.path.join(wo.opdict['base_path'],\
+        'out',wo.opdict['outdir'],'grid',hdf_filename)
+    f = h5py.File(full_filename,'r')
 
     # grilles
     dist_grid_hdf = f['dist_grid']
@@ -255,7 +263,6 @@ def plotResolutionTest(hdf_filename,plot_filename) :
     # filename
     (root,ext) = os.path.splitext(plot_filename)
 
-    #col=plt.cm.hot_r
     col=plt.cm.jet
     # iterate over iz
     for iz in xrange(nz) : 
@@ -265,7 +272,8 @@ def plotResolutionTest(hdf_filename,plot_filename) :
         # get depth
         zvalue = iz*dz+z_orig
         fname = root+'_%.2fkm'%zvalue+ext
-        #fig.suptitle('Resolution test depth %.2f km'%(zvalue))
+        full_fname = os.path.join(wo.opdict['base_path'],\
+            'out',wo.opdict['outdir'],'fig',fname)
 
         xy_cut_dist = dist_grid[:,:,iz]
         xy_cut_nloc = nloc_grid[:,:,iz]
@@ -303,7 +311,7 @@ def plotResolutionTest(hdf_filename,plot_filename) :
 	plt.scatter(sta_x,sta_y)
         plt.title('Dt origin time (s)')
 
-        plt.savefig(fname)
+        plt.savefig(full_fname)
 
 if __name__ == '__main__' :
 
@@ -311,8 +319,9 @@ if __name__ == '__main__' :
     plot_filename = 'waveloc_resolution.png'
 
     wo,grid_info = setUp()
-    doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
-    plotResolutionTest(hdf_filename,plot_filename)
+    doResolutionTest(wo,grid_info,hdf_filename,\
+        loclevel=10.0,decimation=(5,5,3))
+    plotResolutionTest(wo,hdf_filename,plot_filename)
 
 
 

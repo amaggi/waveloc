@@ -141,7 +141,8 @@ number of locations found by waveloc (there should be only one, but when the
 point tested is outside of the network more than one location may be found);
 the origin time shift (waveloc origin time minus true origin time).
 
-In the ``examples`` directory you should find figures that look like:
+In the ``$WAVELOC_PATH/out/TEST_Dirac/fig`` directory you should find figures
+that look like:
 
 .. image:: figures/waveloc_resolution_-1.00km.png
   :width: 800px
