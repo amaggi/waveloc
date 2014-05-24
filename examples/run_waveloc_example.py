@@ -60,7 +60,7 @@ wo.opdict['gradglob']='*grad.mseed'
 
 wo.opdict['load_ttimes_buf']=True
 
-wo.opdict['loclevel']=50.0
+wo.opdict['loclevel']=5000.0
 wo.opdict['snr_limit']=10.0
 wo.opdict['sn_time']=10.0
 wo.opdict['n_kurt_min']=4

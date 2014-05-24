@@ -11,6 +11,7 @@ Download and installation
 
 The latest stable source distributions are downloadable from `AmazonAWS <http://aws.amazon.com>`_:
 
+* `waveloc-0.2.0.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.0.tar.gz>`_
 * `waveloc-0.1.1.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.1.1.tar.gz>`_
 * `waveloc-0.1.0.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.1.0.tar.gz>`_
 
@@ -68,8 +69,9 @@ Running the examples
 In order to get you started running waveloc, we have prepared the following
 example scripts : 
 
-#. a synthetic example to verify the response of the recording network;
-#. a real migration example.
+#. a synthetic test example; 
+#. a real migration example;
+#. a synthetic network response test example.
 
 You should find the relevant scripts in the ``examples`` directory in the
 waveloc distribution.
@@ -94,8 +96,8 @@ you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
 directory ``$WAVELOC_PATH/out/TEST_Dirac/fig``:
   
-.. image:: figures/test_grid4D_hires.hdf5.png
-  :width: 600px
+.. image:: figures/test_grid4D_hires.png
+  :width: 800px
   :align: center
 
 You can test the effect of reducing the station coverage by uncommenting the
@@ -113,18 +115,42 @@ interpolated.  After the run, you should the find the a file named
 ``$WAVELOC_PATH/out/TEST_fullRes/loc``.  The file should contain the following
 lines, indicating that two events were found: ::
 
-  Max = 93.83, 2010-10-14T00:15:57.380000 - 0.13 s + 0.17 s, x= 366.2417 pm 0.3505 km, y= 7650.5250 pm 0.1627 km, z= -0.5417 pm 0.4087 km
-  Max = 70.13, 2010-10-14T00:17:13.830000 - 0.17 s + 0.17 s, x= 366.1324 pm 0.1940 km, y= 7650.6176 pm 0.1514 km, z= -0.6691 pm 0.5581 km
+  Max = 31765.70, 2010-10-14T00:15:57.470000 - 0.19 s + 0.16 s, x= 366.1429 pm 0.2412 km, y= 7650.5498 pm 0.2053 km, z= -0.6714 pm 0.5304 km
+  Max = 19545.76, 2010-10-14T00:17:13.890000 - 0.15 s + 0.13 s, x= 366.0179 pm 0.1627 km, y= 7650.7056 pm 0.1168 km, z= -0.8661 pm 0.4456 km
 
 In the ``$WAVELOC_PATH/out/TEST_fullRes/loc`` you should find figures that look
 like:
 
-.. image:: figures/grid_2010-10-14T00:15:57.380000.png
-  :width: 600px
+.. image:: figures/grid_2010-10-14T00:17:13.890000.png
+  :width: 800px
   :align: center
 
 and:
 
-.. image:: figures/loc_2010-10-14T00:15:57.380000.png
-  :width: 600px
+.. image:: figures/loc_2010-10-14T00:17:13.890000.png
+  :width: 800px
   :align: center
+
+Running the network response test
+---------------------------------
+Run the ``run_syn_resolution_example.py`` script to run the network response
+test. Each point in the search grid is tested using a synthetic test to
+determine the location error. Location error is measured using three metrics:
+the Euclidean distance between the true location and that found by waveloc; the
+number of locations found by waveloc (there should be only one, but when the
+point tested is outside of the network more than one location may be found);
+the origin time shift (waveloc origin time minus true origin time).
+
+In the ``examples`` directory you should find figures that look like:
+
+.. image:: figures/waveloc_resolution_-1.00km.png
+  :width: 800px
+  :align: center
+
+where the blue dots indicate the positions of the stations.  
+In order to reduce computation time, the example uses decimation of the full
+grid (and the full grid itself only contains part of the domain covered by the
+stations). Modify the following line to increase / decreasce the decimation: ::
+
+  doResolutionTest(wo,grid_info,hdf_filename,loclevel=10.0,decimation=(5,5,3))
+

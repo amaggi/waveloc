@@ -23,11 +23,11 @@ preliminary location of the events.
 Here is the result of an example run:
 
 .. image:: figures/loc_example.png
-  :width: 600px
+  :width: 800px
   :align: center
 
 
-The method is explained in greater detail below, and in a manuscript currently being written.
+The method is explained in greater detail below, and in Langet et al. (2014)
 
 The kurtosis filter
 ===================
@@ -72,3 +72,10 @@ Detection / Location
 We intend by *detection* the determination of the occurrence of a seismic event, and by *location* the determination of its origin time, its hypocentral coordinates and their corresponding uncertainties.  As described above, we detect events directly from the sumamry time-series, by applying a simple triggering algorithm with a given threshold. 
 
 Once the triggering algorithm detects the occurrence of an event on, we assign the time at which the corresponding local maximum occurs as the origin time, and define the left and right uncertainty bounds around this origin time by taking the times at which the summary stack descends to 95% of its value at the local maximum. We take as hypocentral coordinates and their uncertainties respectively the mean and standard deviation of the coordinates corresponding to the maximum values, between the left and right times.
+
+Reference
+=========
+
+If you use WaveLoc, please cite the following paper : 
+N. Langet, A. Maggi, A. Michelini, F. Brenguer, 2014. Continuous Kurtosis-Based Migration for Seismic Event Detection and Location, with Application to Piton de la Fournaise Volcano, La Réunion. Bul. Seis. Soc. Am., vol 104, no 1, pp 229-246, doi: 10.1785/0120130107
+

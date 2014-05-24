@@ -64,7 +64,6 @@ def hdf5_max_values(filename):
 
 class SyntheticMigrationTests(unittest.TestCase):
   
-  @unittest.skip('Skip for now')
   def test_dirac_migration(self):
     from locations_trigger import trigger_locations_inner
     from filters import smooth
@@ -156,7 +155,7 @@ class MigrationTests(unittest.TestCase):
  
 
 #  @unittest.skip('Not running small test')
-  @unittest.expectedFailure
+  #@unittest.expectedFailure
   def test_migration(self):
 
     self.wo.opdict['load_ttimes_buf'] = True
@@ -221,9 +220,7 @@ class MigrationTests(unittest.TestCase):
     np.testing.assert_allclose(lines_use_ram, lines_no_ram)
 
 
-  @unittest.skip('Not running full resolution test')
-  #@profile
-  #@unittest.expectedFailure
+  #@unittest.skip('Not running full resolution test')
   def test_migration_fullRes(self):
 
     self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'

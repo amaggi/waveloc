@@ -11,7 +11,7 @@ detector and locator.  Development of waveloc is being carried out as part of
 the European Union funded NERA project.
 
 This documentation is for the offline version of waveloc.  Development of a
-real-time version is planned to start soon.
+real-time version is ongoing (see developement repository : https://github.com/amaggi/rt-waveloc).
 
 Waveloc is open-source software. It is distributed under the CeCILL Free
 Software License Agreement. Feel free to fork the sofware from 
@@ -24,8 +24,6 @@ contributing your modifications back to the central version.
 
    intro
    getting_started
-   tutorial
-   api
    
 
 Indices and tables
