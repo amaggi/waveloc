@@ -1,6 +1,7 @@
 import os
 import glob
 import h5py
+import logging
 import unittest
 import numpy as np
 from options import WavelocOptions
@@ -248,7 +249,6 @@ class MigrationTests(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    import logging
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)s : %(asctime)s : %(message)s')
 
