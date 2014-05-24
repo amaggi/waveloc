@@ -24,6 +24,7 @@ contributing your modifications back to the central version.
 
    intro
    getting_started
+   api
    
 
 Indices and tables
