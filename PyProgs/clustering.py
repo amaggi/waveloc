@@ -5,7 +5,7 @@ import os, sys, optparse, glob
 import matplotlib.pyplot as plt
 import numpy as np
 import cProfile
-from CZ_Clust_2_color import *
+from CZ_color import CZ_Clust_2_color, CZ_W_2_color
 from CZ_W_2_color import *
 import cPickle
 from OP_waveforms import *
