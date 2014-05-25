@@ -23,6 +23,7 @@ def read_stations_file(filename):
         coordinates of the station are given by 'x' and 'y', otherwise they
         are 'lat', 'lon'; the depth and elevation of the station are given
         respectively by 'depth' and 'elevation'.
+    :raises UserWarning: if unknown 'loc_type' encoutered.
     """
 
     stations = {}
@@ -117,8 +118,8 @@ def latlon2rect(proj_name, lat, lon, proj_info={}):
 
     :type proj_name: string
     :param proj_name: 'TRANS_GLOBAL' | 'TRANS_NONE' | 'TRANS_SIMPLE' Only these
-        projections are supported. Other projection types will raise an
-        exception.
+        projection types are supported. 
+    :raises UserWarning: if unsupported projection type is encountered.
     :type lat: float
     :param lat: Latitude in decimal degrees (positive = North, negative =
         South)
@@ -162,8 +163,8 @@ def rect2latlon(proj_name, x, y, proj_info={}):
 
     :type proj_name: string
     :param proj_name: 'TRANS_GLOBAL' | 'TRANS_NONE' | 'TRANS_SIMPLE' Only these
-        projections are supported. Other projection types will raise an
-        exception.
+        projection types are supported. 
+    :raises UserWarning: if unsupported projection type is encountered.
     :type x: float
     :param x: x-coordinate in km wrt to the origin of the projection
     :type y: float
