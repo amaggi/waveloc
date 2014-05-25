@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='waveloc',
-	version='0.2.0',
+	version='0.2.1',
 	description='Earthquake location by waveform migration',
 	author='Alessia Maggi',
 	author_email='alessia.maggi@unistra.fr',
