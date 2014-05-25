@@ -131,7 +131,7 @@ python setup_examples.py
 <p>Run the <tt class="docutils literal"><span class="pre">run_syn_example.py</span></tt> script to run the synthetic test.  The first time
 you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
-directory <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_Dirac/fig</span></tt>:</p>
+directory <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/EXAMPLE_Dirac/fig</span></tt>:</p>
 <a class="reference internal image-reference" href="_images/test_grid4D_hires.png"><img alt="_images/test_grid4D_hires.png" class="align-center" src="_images/test_grid4D_hires.png" style="width: 800px;" /></a>
 <p>You can test the effect of reducing the station coverage by uncommenting the
 following line in the script and re-running the test.</p>
@@ -146,13 +146,13 @@ following line in the script and re-running the test.</p>
 time you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the a file named
 <tt class="docutils literal"><span class="pre">locations.dat</span></tt> in the following directory
-<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_fullRes/loc</span></tt>.  The file should contain the following
+<tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/EXAMPLE_fullRes/loc</span></tt>.  The file should contain the following
 lines, indicating that two events were found:</p>
 <div class="highlight-python"><div class="highlight"><pre>Max = 31765.70, 2010-10-14T00:15:57.470000 - 0.19 s + 0.16 s, x= 366.1429 pm 0.2412 km, y= 7650.5498 pm 0.2053 km, z= -0.6714 pm 0.5304 km
 Max = 19545.76, 2010-10-14T00:17:13.890000 - 0.15 s + 0.13 s, x= 366.0179 pm 0.1627 km, y= 7650.7056 pm 0.1168 km, z= -0.8661 pm 0.4456 km
 </pre></div>
 </div>
-<p>In the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_fullRes/loc</span></tt> you should find figures that look
+<p>In the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/EXAMPLE_fullRes/loc</span></tt> you should find figures that look
 like:</p>
 <a class="reference internal image-reference" href="_images/grid_2010-10-14T00:17:13.890000.png"><img alt="_images/grid_2010-10-14T00:17:13.890000.png" class="align-center" src="_images/grid_2010-10-14T00:17:13.890000.png" style="width: 800px;" /></a>
 <p>and:</p>
@@ -167,7 +167,7 @@ the Euclidean distance between the true location and that found by waveloc; the
 number of locations found by waveloc (there should be only one, but when the
 point tested is outside of the network more than one location may be found);
 the origin time shift (waveloc origin time minus true origin time).</p>
-<p>In the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/TEST_Dirac/fig</span></tt> directory you should find figures
+<p>In the <tt class="docutils literal"><span class="pre">$WAVELOC_PATH/out/EXAMPLE_Dirac/fig</span></tt> directory you should find figures
 that look like:</p>
 <a class="reference internal image-reference" href="_images/waveloc_resolution_-1.00km.png"><img alt="_images/waveloc_resolution_-1.00km.png" class="align-center" src="_images/waveloc_resolution_-1.00km.png" style="width: 800px;" /></a>
 <p>where the blue dots indicate the positions of the stations.

@@ -23,7 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="waveloc 0.2.0 documentation" href="index.html" /> 
+    <link rel="top" title="waveloc 0.2.0 documentation" href="index.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,6 +36,9 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             accesskey="P">previous</a> |</li>
         <li><a href="index.html">waveloc 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -46,20 +50,191 @@
             
   <div class="section" id="waveloc-api">
 <h1>WaveLoc API<a class="headerlink" href="#waveloc-api" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="waveform-manipulation">
-<h2>Waveform Manipulation<a class="headerlink" href="#waveform-manipulation" title="Permalink to this headline">¶</a></h2>
-<p>The main module for waveform manipulation is <a class="reference internal" href="#module-OP_waveforms" title="OP_waveforms"><tt class="xref py py-mod docutils literal"><span class="pre">OP_waveforms</span></tt></a>.  This module
-is a second-generation waveform processing module, adapted to use the
-functionality provided by <tt class="docutils literal"><span class="pre">obspy.stream</span></tt> objects (see the <a class="reference external" href="http://www.obspy.org">obspy website</a> for more information and installation instructions).</p>
+<div class="section" id="travel-times">
+<h2>TRAVEL-TIMES<a class="headerlink" href="#travel-times" title="Permalink to this headline">¶</a></h2>
+<p>Waveloc needs travel-times to migrate the kurtosis waveforms. These can in
+principle be obtained in many different ways. For simple Earth models, a
+convenient way to obtain travel-time grids is to take advantage of the
+<a class="reference external" href="http://alomax.free.fr/nlloc/">NonLinLoc</a> implementation of the eikonal
+solver of Podvin &amp; Lecomte (1991).</p>
+<div class="section" id="module-NllGridLib">
+<span id="nllgridlib"></span><h3>NllGridLib<a class="headerlink" href="#module-NllGridLib" title="Permalink to this headline">¶</a></h3>
+<p>The NllGridLib module contains functions to read the output of NonLinLoc (NLL)
+in order to use the travel-times within waveloc.
+Contributed by Alessia Maggi</p>
+<dl class="function">
+<dt id="NllGridLib.latlon2rect">
+<tt class="descclassname">NllGridLib.</tt><tt class="descname">latlon2rect</tt><big>(</big><em>proj_name</em>, <em>lat</em>, <em>lon</em>, <em>proj_info={}</em><big>)</big><a class="reference internal" href="_modules/NllGridLib.html#latlon2rect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NllGridLib.latlon2rect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Projects latitude and longitude coordinates into an x-y coordinate system.
+Takes the projection from the NLL header info as read by <em>read_hdr_file</em>.
+The inverse projection is provided by <em>rect2latlon</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>proj_name</strong> (<em>string</em>) &#8211; &#8216;TRANS_GLOBAL&#8217; | &#8216;TRANS_NONE&#8217; | &#8216;TRANS_SIMPLE&#8217; Only these
+projection types are supported.</li>
+<li><strong>lat</strong> (<em>float</em>) &#8211; Latitude in decimal degrees (positive = North, negative =
+South)</li>
+<li><strong>lon</strong> (<em>float</em>) &#8211; Longitude in decimal degrees (positive = East, negative = West)</li>
+<li><strong>proj_info</strong> (<em>dictionary, optional</em>) &#8211; NLL header info as read by <em>read_hdr_file</em>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">if unsupported projection type is encountered.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">tuple of floats</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">x and y coordinates in km wrt the origin of the projection</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="NllGridLib.qd_read_hyp_file">
+<tt class="descclassname">NllGridLib.</tt><tt class="descname">qd_read_hyp_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/NllGridLib.html#qd_read_hyp_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NllGridLib.qd_read_hyp_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quick and dirty routine to read a NLL hypocenter file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; File to read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">tuple of floats</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(otime, hypo_x, sigma_x, hypo_y, sigma_y, hypo_z, sigma_z)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="NllGridLib.qd_read_picks_from_hyp_file">
+<tt class="descclassname">NllGridLib.</tt><tt class="descname">qd_read_picks_from_hyp_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/NllGridLib.html#qd_read_picks_from_hyp_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NllGridLib.qd_read_picks_from_hyp_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Quick and dirty routine to read P-wave picks from NLL hypocenter file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; File to read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dictionary</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary where the keys are the station names and the values
+are the P-arrival times as UTCDateTime objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="NllGridLib.read_hdr_file">
+<tt class="descclassname">NllGridLib.</tt><tt class="descname">read_hdr_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/NllGridLib.html#read_hdr_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NllGridLib.read_hdr_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a NLL .hdr file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; File to read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary containing the information in the file. If filename is
+a grid geometry header, the second line will be the projection info. If
+filename is a travel-time grid header, there will also be a line with
+the station information. The dictionary keys for the geometry are
+&#8216;nx&#8217;, &#8216;ny&#8217;, &#8216;nz&#8217;, &#8216;x_orig&#8217;, &#8216;y_orig&#8217;, &#8216;z_orig&#8217;; those for the
+projection are &#8216;proj_name&#8217;, &#8216;orig_lat&#8217;, &#8216;orig_lon&#8217;, &#8216;map_rot&#8217;; those
+for the station information are &#8216;station&#8217;, &#8216;sta_x&#8217;, &#8216;sta_y&#8217;, &#8216;sta_z&#8217;.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="NllGridLib.read_stations_file">
+<tt class="descclassname">NllGridLib.</tt><tt class="descname">read_stations_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/NllGridLib.html#read_stations_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NllGridLib.read_stations_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a file formatted according the the NLL station format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; File to be read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of stations. Each station is itself a dictionary
+containing the following information: &#8216;station&#8217; = station name;
+&#8216;loc_type&#8217; = [&#8216;XYZ&#8217; | &#8216;LATLON&#8217;]; if &#8216;loc_type&#8217; = &#8216;XYZ&#8217;, then the
+coordinates of the station are given by &#8216;x&#8217; and &#8216;y&#8217;, otherwise they
+are &#8216;lat&#8217;, &#8216;lon&#8217;; the depth and elevation of the station are given
+respectively by &#8216;depth&#8217; and &#8216;elevation&#8217;.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if unknown &#8216;loc_type&#8217; encoutered.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="NllGridLib.rect2latlon">
+<tt class="descclassname">NllGridLib.</tt><tt class="descname">rect2latlon</tt><big>(</big><em>proj_name</em>, <em>x</em>, <em>y</em>, <em>proj_info={}</em><big>)</big><a class="reference internal" href="_modules/NllGridLib.html#rect2latlon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#NllGridLib.rect2latlon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Projects x and y coordinates into an latitude-longitude coordinate system.
+Takes the projection from the NLL header info as read by <em>read_hdr_file</em>.
+The inverse projection is provided by <em>latlon2rect</em>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>proj_name</strong> (<em>string</em>) &#8211; &#8216;TRANS_GLOBAL&#8217; | &#8216;TRANS_NONE&#8217; | &#8216;TRANS_SIMPLE&#8217; Only these
+projection types are supported.</li>
+<li><strong>x</strong> (<em>float</em>) &#8211; x-coordinate in km wrt to the origin of the projection</li>
+<li><strong>y</strong> (<em>float</em>) &#8211; y-coordinate in km wrt to the origin of the projection</li>
+<li><strong>proj_info</strong> (<em>dictionary, optional</em>) &#8211; NLL header info as read by <em>read_hdr_file</em>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first">if unsupported projection type is encountered.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">tuple of floats</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">latitude and longitude (latitude positive North, longitude
+positive East)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="waveforms">
+<h2>WAVEFORMS<a class="headerlink" href="#waveforms" title="Permalink to this headline">¶</a></h2>
+<p>The waveform manipulation routines in waveloc are heavily based on
+<a class="reference external" href="http://www.obspy.org">obspy</a>. As waveloc development started before obspy
+was fully functionnal, some external functions are used where obspy equivalents
+were not available. Updating all the waveform manipulation routines to use the
+latest obspy features will be completed at some time.</p>
 <div class="section" id="module-OP_waveforms">
-<span id="op-waveforms"></span><h3>OP_waveforms<a class="headerlink" href="#module-OP_waveforms" title="Permalink to this headline">¶</a></h3>
+<span id="op-waveform"></span><h3>OP_waveform<a class="headerlink" href="#module-OP_waveforms" title="Permalink to this headline">¶</a></h3>
 <p>The <a class="reference internal" href="#module-OP_waveforms" title="OP_waveforms"><tt class="xref py py-mod docutils literal"><span class="pre">OP_waveforms</span></tt></a> module provides the <a class="reference internal" href="#OP_waveforms.Waveform" title="OP_waveforms.Waveform"><tt class="xref py py-class docutils literal"><span class="pre">Waveform</span></tt></a> class through
-which most time-series manipulation is carried out.</p>
+which most time-series manipulation is carried out, as well as several
+useful functions.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Requires <strong>scikits.samplerate</strong> for full functionality (on linux systems install with
-<tt class="docutils literal"><span class="pre">easy_install</span> <span class="pre">scikits.samplerate</span></tt> after having installed the
-<tt class="docutils literal"><span class="pre">libsamplerate0</span></tt> libraries using e.g. <tt class="docutils literal"><span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">libsamplerate0</span></tt>).</p>
+<p class="last">Requires <strong>scikits.samplerate</strong> for full functionality (on linux systems
+install with <tt class="docutils literal"><span class="pre">easy_install</span> <span class="pre">scikits.samplerate</span></tt> after having installed the
+<tt class="docutils literal"><span class="pre">libsamplerate0</span></tt> libraries using e.g. <tt class="docutils literal"><span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">libsamplerate0</span></tt>).
+<strong>scikits.samplerate</strong> is used to provide high-fidelity resampling when
+standard decimation is not possible (e.g. to pass from 125Hz sampling to
+100Hz sampling).</p>
 </div>
 <dl class="class">
 <dt id="OP_waveforms.Waveform">
@@ -70,7 +245,7 @@ functionality specific to WaveLoc processing.</p>
 <dl class="attribute">
 <dt id="OP_waveforms.Waveform.stream">
 <tt class="descname">stream</tt><a class="headerlink" href="#OP_waveforms.Waveform.stream" title="Permalink to this definition">¶</a></dt>
-<dd><p>An <tt class="xref py py-class docutils literal"><span class="pre">obspy.core.Stream</span></tt> object.  Can be accessed directly.  
+<dd><p>An <tt class="xref py py-class docutils literal"><span class="pre">obspy.core.Stream</span></tt> object.  Can be accessed directly.
 Initialises to <tt class="docutils literal"><span class="pre">None</span></tt>.
 If you set this attribute directly, you should also set <a class="reference internal" href="#OP_waveforms.Waveform.trace" title="OP_waveforms.Waveform.trace"><tt class="xref py py-attr docutils literal"><span class="pre">trace</span></tt></a>
 to <a class="reference internal" href="#OP_waveforms.Waveform.stream" title="OP_waveforms.Waveform.stream"><tt class="xref py py-attr docutils literal"><span class="pre">stream</span></tt></a>.traces[0]</p>
@@ -79,9 +254,10 @@ to <a class="reference internal" href="#OP_waveforms.Waveform.stream" title="OP_
 <dl class="attribute">
 <dt id="OP_waveforms.Waveform.trace">
 <tt class="descname">trace</tt><a class="headerlink" href="#OP_waveforms.Waveform.trace" title="Permalink to this definition">¶</a></dt>
-<dd><p>An obspy.Trace object.  Can be accessed directly.  
+<dd><p>An obspy.Trace object.  Can be accessed directly.
 Initialises to <tt class="docutils literal"><span class="pre">None</span></tt>.
-If you set this directly, make sure it points to <a class="reference internal" href="#OP_waveforms.Waveform.stream" title="OP_waveforms.Waveform.stream"><tt class="xref py py-attr docutils literal"><span class="pre">stream</span></tt></a>.traces[0]</p>
+If you set this directly, make sure it points to
+<a class="reference internal" href="#OP_waveforms.Waveform.stream" title="OP_waveforms.Waveform.stream"><tt class="xref py py-attr docutils literal"><span class="pre">stream</span></tt></a>.traces[0]</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -92,6 +268,537 @@ Initialises to <tt class="docutils literal"><span class="pre">None</span></tt>.<
 </dd></dl>
 
 <p><strong>Methods</strong></p>
+<dl class="method">
+<dt id="OP_waveforms.Waveform.bp_filter">
+<tt class="descname">bp_filter</tt><big>(</big><em>freqmin</em>, <em>freqmax</em>, <em>zerophase=False</em>, <em>rmean=False</em>, <em>taper=False</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.bp_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.bp_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a band-pass filter to the data.  If data are segmented into
+multiple traces, apply the same filter to all traces.  Calls
+<tt class="xref py py-func docutils literal"><span class="pre">obspy.signal.filter()</span></tt> to do the filtering.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>freqmin</strong> (<em>float</em>) &#8211; Low frequency corner</li>
+<li><strong>freqmax</strong> (<em>float</em>) &#8211; High frequency corner</li>
+<li><strong>zerophase</strong> (<em>bool</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> applies a non-causal bandpass filter.  If
+<tt class="docutils literal"><span class="pre">False</span></tt> applies a causal bandpass filter.</li>
+<li><strong>rmean</strong> (<em>bool</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> remove mean before filtering.</li>
+<li><strong>taper</strong> (<em>bool</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> apply taper before filtering.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">if no data in stream.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.channel">
+<tt class="descname">channel</tt><a class="headerlink" href="#OP_waveforms.Waveform.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel name from <tt class="docutils literal"><span class="pre">self.trace</span></tt> (read-only).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.comp">
+<tt class="descname">comp</tt><a class="headerlink" href="#OP_waveforms.Waveform.comp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel name from <tt class="docutils literal"><span class="pre">self.trace</span></tt> (read-only).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.compute_signature">
+<tt class="descname">compute_signature</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.compute_signature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.compute_signature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes a signature for a waveform, made up by the maximum of the
+trace and its sum.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tuple of floats</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">maximum, datasum</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.decimate">
+<tt class="descname">decimate</tt><big>(</big><em>factor=1</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.decimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.decimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies <tt class="docutils literal"><span class="pre">obspy</span></tt> decimation, after applying an anti-aliasing,
+non-causal filter of 0.4*(new sample rate).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>factor</strong> (<em>integer</em>) &#8211; Decimation factor.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.delta">
+<tt class="descname">delta</tt><a class="headerlink" href="#OP_waveforms.Waveform.delta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time step between data points in <a class="reference internal" href="#OP_waveforms.Waveform.trace" title="OP_waveforms.Waveform.trace"><tt class="xref py py-attr docutils literal"><span class="pre">trace</span></tt></a> (read-only).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.display">
+<tt class="descname">display</tt><big>(</big><em>title=''</em>, <em>filename=''</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.display"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.display" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a quick and dirty plot of the waveform.
+If filename is given (and is different from &#8220;&#8221;) then the plot of the
+waveform is written to file, otherwise it is shown on the screen.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>title</strong> (<em>string</em>) &#8211; Title for the plot.</li>
+<li><strong>filename</strong> (<em>string</em>) &#8211; Filename for the plot (format defined by the file
+extension).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.dt">
+<tt class="descname">dt</tt><a class="headerlink" href="#OP_waveforms.Waveform.dt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time step between data points in <a class="reference internal" href="#OP_waveforms.Waveform.trace" title="OP_waveforms.Waveform.trace"><tt class="xref py py-attr docutils literal"><span class="pre">trace</span></tt></a> (read-only).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.get_snr">
+<tt class="descname">get_snr</tt><big>(</big><em>o_time</em>, <em>left_time</em>, <em>right_time</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.get_snr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.get_snr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns signal-to-noise ratio, where signal = max(abs(signal between
+left_time and right_time)) and noise = median(abs(signal between
+left_time- and otime)).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>o_time</strong> (<em>UTCDateTime</em>) &#8211; center time for SNR calculation</li>
+<li><strong>left_time</strong> (<em>UTCDateTime</em>) &#8211; left time for SNR calculation</li>
+<li><strong>right_time</strong> (<em>UTCDateTime</em>) &#8211; right time for SNR calculation</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.npts">
+<tt class="descname">npts</tt><a class="headerlink" href="#OP_waveforms.Waveform.npts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of points in <a class="reference internal" href="#OP_waveforms.Waveform.trace" title="OP_waveforms.Waveform.trace"><tt class="xref py py-attr docutils literal"><span class="pre">trace</span></tt></a> (read-only).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.process_envelope">
+<tt class="descname">process_envelope</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.process_envelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.process_envelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs envelope processing on a waveform. Replaces self.trace and sets
+self.proc to &#8220;Envelope&#8217;.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.process_gaussian">
+<tt class="descname">process_gaussian</tt><big>(</big><em>threshold</em>, <em>mu=0.0</em>, <em>sigma=0.1</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.process_gaussian"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.process_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace local maxima by a series of dirac and convolve them with a
+gaussian distribution. Overwrites the waveform. Sets self.proc to
+&#8216;Gaussian&#8217;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>threshold</strong> (<em>float</em>) &#8211; value over which the convolution is applied</li>
+<li><strong>mu</strong> (<em>float</em>) &#8211; expected value of the gaussian distribution</li>
+<li><strong>sigma</strong> (<em>float</em>) &#8211; variance of the gaussian distribution</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.process_kurtosis">
+<tt class="descname">process_kurtosis</tt><big>(</big><em>win</em>, <em>recursive=False</em>, <em>pre_rmean=False</em>, <em>pre_taper=False</em>, <em>post_taper=True</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.process_kurtosis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.process_kurtosis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processing waveform using kurtosis (from statlib package).
+Calls filters.sw_kurtosis1(), and overwrites the waveform.
+Sets self.prof to &#8216;Kurtosis&#8217;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>win</strong> &#8211; length of the window (in seconds) on which to calculate the
+kurtosis</li>
+<li><strong>recursive</strong> (<em>boolean, optional</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> applies recursive kurtosis calculation</li>
+<li><strong>pre_rmean</strong> (<em>boolean, optional</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> removes mean of signal before processing.</li>
+<li><strong>pre_taper</strong> (<em>boolean, optional</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> applies taper to signal before
+processing.</li>
+<li><strong>post_taper</strong> (<em>boolean, optional</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> applies taper to signal after
+processing.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.process_none">
+<tt class="descname">process_none</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.process_none"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.process_none" title="Permalink to this definition">¶</a></dt>
+<dd><p>No processing on a waveform.  Sets self.proc to &#8220;None&#8221;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.process_sta_lta">
+<tt class="descname">process_sta_lta</tt><big>(</big><em>stawin</em>, <em>ltawin</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.process_sta_lta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.process_sta_lta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs classic short to long term average ratio processing on waveform.
+Replaces self.trace and sets self.proc to StaLta.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stawin</strong> &#8211; length of the short term average window in seconds</li>
+<li><strong>ltawin</strong> &#8211; length of the long term average window in seconds</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.read_from_SDS">
+<tt class="descname">read_from_SDS</tt><big>(</big><em>sds_root</em>, <em>net_name</em>, <em>sta_name</em>, <em>comp_name</em>, <em>starttime=None</em>, <em>endtime=None</em>, <em>rmean=False</em>, <em>taper=False</em>, <em>pad_value=None</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.read_from_SDS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.read_from_SDS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read waveform data from an SDS structured archive.  Simple overlaps and
+adjacent traces are merged if possile.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sds_root</strong> (<em>string</em>) &#8211; root of the SDS archive</li>
+<li><strong>net_name</strong> (<em>string</em>) &#8211; network name</li>
+<li><strong>sta_name</strong> (<em>string</em>) &#8211; station name</li>
+<li><strong>comp_name</strong> (<em>string</em>) &#8211; component name</li>
+<li><strong>starttime</strong> (<tt class="docutils literal"><span class="pre">obspy.core.utcdatetime.UTCDateTime</span></tt> object,
+optional) &#8211; Start time of data to be read.</li>
+<li><strong>endtime</strong> (<tt class="docutils literal"><span class="pre">obspy.core.utcdatetime.UTCDateTime</span></tt> object, optional) &#8211; End time of data to be read.</li>
+<li><strong>rmean</strong> (<em>boolean, optional</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> removes the mean from the data upon reading.
+If data are segmented, the mean will be removed from all segments
+individually.</li>
+<li><strong>taper</strong> (<em>boolean, optional</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> applies a cosine taper to the data upon
+reading.  If data are segmented, tapers are applied to all segments
+individually.</li>
+<li><strong>pad_value</strong> (<em>float, optional</em>) &#8211; If this parameter is set, points between
+<tt class="docutils literal"><span class="pre">starttime</span></tt> and the first point in the file, and points between
+the last point in the file and <tt class="docutils literal"><span class="pre">endtime</span></tt>, will be set to
+<tt class="docutils literal"><span class="pre">pad_value</span></tt>.  You may want to also use the <tt class="docutils literal"><span class="pre">rmean</span></tt> and
+<tt class="docutils literal"><span class="pre">taper</span></tt> parameters, depending on the nature of the data.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">If there are no data between <tt class="docutils literal"><span class="pre">starttime</span></tt> and
+<tt class="docutils literal"><span class="pre">endtime</span></tt></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.read_from_file">
+<tt class="descname">read_from_file</tt><big>(</big><em>filename</em>, <em>format=None</em>, <em>starttime=None</em>, <em>endtime=None</em>, <em>rmean=False</em>, <em>taper=False</em>, <em>pad_value=None</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.read_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.read_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read waveform data from file.  Multiple traces are merged if they
+overlap exactly or are adjacent.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> &#8211; Waveform filename</li>
+<li><strong>format</strong> (<em>string</em>) &#8211; <tt class="docutils literal"><span class="pre">obspy</span></tt> format type (e.g. &#8216;SAC&#8217;, &#8216;mseed&#8217;...)</li>
+<li><strong>starttime</strong> (<tt class="docutils literal"><span class="pre">obspy.core.utcdatetime.UTCDateTime</span></tt> object) &#8211; Start time of data to be read.</li>
+<li><strong>endtime</strong> (<tt class="docutils literal"><span class="pre">obspy.core.utcdatetime.UTCDateTime</span></tt> object) &#8211; End time of data to be read.</li>
+<li><strong>rmean</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> removes the mean from the data upon reading.
+If data are segmented, the mean will be removed from all segments
+individually.</li>
+<li><strong>taper</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> applies a cosine taper to the data upon
+reading.  If data are segmented, tapers are applied to all segments
+individually.</li>
+<li><strong>pad_value</strong> (<em>float</em>) &#8211; If this parameter is set, points between
+<tt class="docutils literal"><span class="pre">starttime</span></tt> and the first point in the file, and points between
+the last point in the file and <tt class="docutils literal"><span class="pre">endtime</span></tt>, will be set to
+<tt class="docutils literal"><span class="pre">pad_value</span></tt>.  You may want to also use the <tt class="docutils literal"><span class="pre">rmean</span></tt> and
+<tt class="docutils literal"><span class="pre">taper</span></tt> parameters, depending on the nature of the data.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">If there are no data between <tt class="docutils literal"><span class="pre">starttime</span></tt> and
+<tt class="docutils literal"><span class="pre">endtime</span></tt></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.resample">
+<tt class="descname">resample</tt><big>(</big><em>new_samplerate</em>, <em>resample_type='sinc_best'</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.resample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.resample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies audio-quality resampling in place. Requires installation of
+<tt class="docutils literal"><span class="pre">scikits.samplerate</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>new_samplerate</strong> (<em>float</em>) &#8211; New sample rate.</li>
+<li><strong>resample_type</strong> (<em>string</em>) &#8211; Can be <tt class="docutils literal"><span class="pre">'sinc_best'</span></tt>, ...</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.rmean">
+<tt class="descname">rmean</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.rmean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.rmean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the mean of the stream (iterates over all traces).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if no data in stream.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.starttime">
+<tt class="descname">starttime</tt><a class="headerlink" href="#OP_waveforms.Waveform.starttime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start time of <tt class="docutils literal"><span class="pre">self.trace</span></tt> (read-only).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.station">
+<tt class="descname">station</tt><a class="headerlink" href="#OP_waveforms.Waveform.station" title="Permalink to this definition">¶</a></dt>
+<dd><p>Station name from <tt class="docutils literal"><span class="pre">self.trace</span></tt> (read-only).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.t_array">
+<tt class="descname">t_array</tt><a class="headerlink" href="#OP_waveforms.Waveform.t_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <tt class="docutils literal"><span class="pre">numpy.array</span></tt> containing times in seconds from
+<tt class="docutils literal"><span class="pre">self.trace.stats.starttime</span></tt> for data points in <tt class="docutils literal"><span class="pre">self.trace</span></tt>
+(read-only).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.take_positive_derivative">
+<tt class="descname">take_positive_derivative</tt><big>(</big><em>pre_rmean=False</em>, <em>pre_taper=False</em>, <em>post_taper=True</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.take_positive_derivative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.take_positive_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes positive derivative of a stream (used to calculate the positive
+kurtosis gradient).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pre_mean</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> then remove the mean before taking
+positive gradient</li>
+<li><strong>pre_taper</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> then apply a taper before taking positive</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>gradient
+:param post_taper: If <tt class="docutils literal"><span class="pre">True</span></tt> then apply a taper after taking positive
+gradient.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if no data in stream.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.taper">
+<tt class="descname">taper</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.taper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.taper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a cosine taper the stream (iterates over all traces).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if no data in stream.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="OP_waveforms.Waveform.values">
+<tt class="descname">values</tt><a class="headerlink" href="#OP_waveforms.Waveform.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Values of <tt class="docutils literal"><span class="pre">self.trace.data</span></tt> (read-only).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.write_to_file">
+<tt class="descname">write_to_file</tt><big>(</big><em>filename</em>, <em>format=None</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.write_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.write_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write waveform to file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename</strong> (<em>string</em>) &#8211; Output filename.</li>
+<li><strong>format</strong> (<em>string</em>) &#8211; <tt class="docutils literal"><span class="pre">obspy</span></tt> format type (e.g. &#8216;SAC&#8217;, &#8216;mseed&#8217;...)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="OP_waveforms.Waveform.write_to_file_filled">
+<tt class="descname">write_to_file_filled</tt><big>(</big><em>filename</em>, <em>format=None</em>, <em>fill_value=0</em>, <em>rmean=False</em>, <em>taper=False</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#Waveform.write_to_file_filled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.Waveform.write_to_file_filled" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Write waveform to file, after merging and filling blanks with</dt>
+<dd><tt class="docutils literal"><span class="pre">fill_value</span></tt>.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>filename</strong> (<em>string</em>) &#8211; Output filename.</li>
+<li><strong>format</strong> &#8211; <tt class="docutils literal"><span class="pre">obspy</span></tt> format type (e.g. &#8216;SAC&#8217;, &#8216;mseed&#8217;...)</li>
+<li><strong>fill_value</strong> (<em>float, optional</em>) &#8211; Value used to fill in gaps</li>
+<li><strong>rmean</strong> (<em>bool, optional</em>) &#8211; Remove the mean before merging.</li>
+<li><strong>taper</strong> (<em>bool, optional</em>) &#8211; Apply taper before merging.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="OP_waveforms.compute_gauss">
+<tt class="descclassname">OP_waveforms.</tt><tt class="descname">compute_gauss</tt><big>(</big><em>dt</em>, <em>mu</em>, <em>sig</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#compute_gauss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.compute_gauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a time-step, a mean and sigma, returns an array with a Gaussian
+signal from -4*sigma to +4*sigma around the mean.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dt</strong> (<em>float</em>) &#8211; time-step in seconds</li>
+<li><strong>mu</strong> (<em>float</em>) &#8211; mean of the Gaussian</li>
+<li><strong>sig</strong> (<em>float</em>) &#8211; half-width sigma of the Gaussian</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">array with Gaussian signal</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="OP_waveforms.read_data_compatible_with_time_dict">
+<tt class="descclassname">OP_waveforms.</tt><tt class="descname">read_data_compatible_with_time_dict</tt><big>(</big><em>filenames</em>, <em>time_dict</em>, <em>starttime</em>, <em>endtime</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#read_data_compatible_with_time_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.read_data_compatible_with_time_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads data that have the same station names as those used as keys to a
+given time dictionary</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<em>list of strings</em>) &#8211; list of filenames</li>
+<li><strong>time_dict</strong> (<em>dictionary</em>) &#8211; dictionary indexed by station names</li>
+<li><strong>starttime</strong> (<em>UTCDateTime</em>) &#8211; start-time to read data</li>
+<li><strong>endtime</strong> (<em>UTCDateTime</em>) &#8211; end-time to read data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises UserWarning:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">if sampling is different between the files</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="OP_waveforms.stream_positive_derivative">
+<tt class="descclassname">OP_waveforms.</tt><tt class="descname">stream_positive_derivative</tt><big>(</big><em>st</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#stream_positive_derivative"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.stream_positive_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes first time derivative of a stream (iterates over all available
+traces) and keep only positive values (set negative values to zero).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>st</strong> (<em>An obspy.stream object</em>) &#8211; Input stream, processed in place</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="OP_waveforms.stream_rmean">
+<tt class="descclassname">OP_waveforms.</tt><tt class="descname">stream_rmean</tt><big>(</big><em>st</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#stream_rmean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.stream_rmean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes mean from a stream (iterates over all available traces).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>st</strong> (<em>An obspy.stream object</em>) &#8211; Input stream, processed in place</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="OP_waveforms.stream_taper">
+<tt class="descclassname">OP_waveforms.</tt><tt class="descname">stream_taper</tt><big>(</big><em>st</em><big>)</big><a class="reference internal" href="_modules/OP_waveforms.html#stream_taper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#OP_waveforms.stream_taper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies cosine taper to a stream (iterates over all available traces).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>st</strong> (<em>An obspy.stream object</em>) &#8211; Input stream, processed in place</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -107,14 +814,21 @@ Initialises to <tt class="docutils literal"><span class="pre">None</span></tt>.<
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">WaveLoc API</a><ul>
-<li><a class="reference internal" href="#waveform-manipulation">Waveform Manipulation</a><ul>
-<li><a class="reference internal" href="#module-OP_waveforms">OP_waveforms</a></li>
+<li><a class="reference internal" href="#travel-times">TRAVEL-TIMES</a><ul>
+<li><a class="reference internal" href="#module-NllGridLib">NllGridLib</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#waveforms">WAVEFORMS</a><ul>
+<li><a class="reference internal" href="#module-OP_waveforms">OP_waveform</a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Getting Started</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/api.txt"
@@ -146,12 +860,15 @@ Initialises to <tt class="docutils literal"><span class="pre">None</span></tt>.<
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             >previous</a> |</li>
         <li><a href="index.html">waveloc 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Alessia Maggi.
-      Last updated on May 24, 2014.
+      Last updated on May 25, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

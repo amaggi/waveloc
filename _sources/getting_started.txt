@@ -94,7 +94,7 @@ Running the synthetic test
 Run the ``run_syn_example.py`` script to run the synthetic test.  The first time
 you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the following figure in the
-directory ``$WAVELOC_PATH/out/TEST_Dirac/fig``:
+directory ``$WAVELOC_PATH/out/EXAMPLE_Dirac/fig``:
   
 .. image:: figures/test_grid4D_hires.png
   :width: 800px
@@ -112,13 +112,13 @@ Run the ``run_waveloc_example.py`` script to run the synthetic test.  The first
 time you run the script it will take a long time, as the time grids need to be
 interpolated.  After the run, you should the find the a file named
 ``locations.dat`` in the following directory
-``$WAVELOC_PATH/out/TEST_fullRes/loc``.  The file should contain the following
+``$WAVELOC_PATH/out/EXAMPLE_fullRes/loc``.  The file should contain the following
 lines, indicating that two events were found: ::
 
   Max = 31765.70, 2010-10-14T00:15:57.470000 - 0.19 s + 0.16 s, x= 366.1429 pm 0.2412 km, y= 7650.5498 pm 0.2053 km, z= -0.6714 pm 0.5304 km
   Max = 19545.76, 2010-10-14T00:17:13.890000 - 0.15 s + 0.13 s, x= 366.0179 pm 0.1627 km, y= 7650.7056 pm 0.1168 km, z= -0.8661 pm 0.4456 km
 
-In the ``$WAVELOC_PATH/out/TEST_fullRes/loc`` you should find figures that look
+In the ``$WAVELOC_PATH/out/EXAMPLE_fullRes/loc`` you should find figures that look
 like:
 
 .. image:: figures/grid_2010-10-14T00:17:13.890000.png
@@ -141,7 +141,7 @@ number of locations found by waveloc (there should be only one, but when the
 point tested is outside of the network more than one location may be found);
 the origin time shift (waveloc origin time minus true origin time).
 
-In the ``$WAVELOC_PATH/out/TEST_Dirac/fig`` directory you should find figures
+In the ``$WAVELOC_PATH/out/EXAMPLE_Dirac/fig`` directory you should find figures
 that look like:
 
 .. image:: figures/waveloc_resolution_-1.00km.png
