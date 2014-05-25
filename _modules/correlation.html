@@ -1,0 +1,569 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>correlation &mdash; waveloc 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for correlation</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides classes and functions for cross-correlation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">cPickle</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">Waveform</span>
+<span class="kn">from</span> <span class="nn">locations_trigger</span> <span class="kn">import</span> <span class="n">read_locs_from_file</span>
+
+
+<div class="viewcode-block" id="BinaryFile"><a class="viewcode-back" href="../api.html#correlation.BinaryFile">[docs]</a><span class="k">class</span> <span class="nc">BinaryFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that reads, writes and stores the binary files containing the</span>
+<span class="sd">    correlation matrix.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param filename: Filename of binary file to be read/written</span>
+<span class="sd">        :type filename: string</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+
+<div class="viewcode-block" id="BinaryFile.read_binary_file"><a class="viewcode-back" href="../api.html#correlation.BinaryFile.read_binary_file">[docs]</a>    <span class="k">def</span> <span class="nf">read_binary_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reads the binary file from disk and returns un-pickled data</span>
+<span class="sd">        :rtype: numpy array ?</span>
+<span class="sd">        :returns: data read from tile</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">test</span><span class="p">:</span>
+            <span class="n">my_depickler</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">Unpickler</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">my_depickler</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="n">test</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span>
+</div>
+<div class="viewcode-block" id="BinaryFile.write_binary_file"><a class="viewcode-back" href="../api.html#correlation.BinaryFile.write_binary_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_binary_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes a binary file from disk</span>
+
+<span class="sd">        :param input: input data ready to be pickled</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">test</span><span class="p">:</span>
+            <span class="n">my_pickler</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">Pickler</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+            <span class="n">my_pickler</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="n">test</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="fourier"><a class="viewcode-back" href="../api.html#correlation.fourier">[docs]</a><span class="k">def</span> <span class="nf">fourier</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes cross-correlation and auto-correlation vectors of two signals in</span>
+<span class="sd">    the frequency domain.</span>
+
+<span class="sd">    :param x: first signal</span>
+<span class="sd">    :param y: second signal</span>
+<span class="sd">    :param dt: time-step of both signals</span>
+
+<span class="sd">    :type x: numpy array</span>
+<span class="sd">    :type y: numpy array</span>
+<span class="sd">    :type dt: float</span>
+
+<span class="sd">    :rtype: numpy arrays</span>
+<span class="sd">    :returns: Cxy, Cxx, Cyy, f</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># remove the mean of both signals</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="c"># compute fft</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="c"># Compute the cross-correlation and auto-correlation vectors</span>
+    <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">Cxy</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="n">Cxy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span>
+    <span class="n">Cxx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">*</span><span class="n">X</span>
+    <span class="n">Cyy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conjugate</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftfreq</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">f</span>
+
+</div>
+<div class="viewcode-block" id="corr_time"><a class="viewcode-back" href="../api.html#correlation.corr_time">[docs]</a><span class="k">def</span> <span class="nf">corr_time</span><span class="p">(</span><span class="n">Cxy</span><span class="p">,</span> <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns maximum of cross-correlation and time-lag given frequency domain</span>
+<span class="sd">    cross- and auto- correlation vectors.</span>
+
+<span class="sd">    :param Cxy: frequency domain cross-correlation</span>
+<span class="sd">    :param Cxx: frequency domain auto-correlation</span>
+<span class="sd">    :param Cyy: frequency domain auto-correlation</span>
+<span class="sd">    :param dt: time step</span>
+<span class="sd">    :param v: If ``True`` plots cross-correlation in the time-domain</span>
+
+<span class="sd">    :type Cxy: numpy array</span>
+<span class="sd">    :type Cxx: numpy array</span>
+<span class="sd">    :type Cyy: numpy array</span>
+<span class="sd">    :type dt: float</span>
+<span class="sd">    :type v: boolean</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: value_t, tau_t, respectively the cross-correlation maximum value</span>
+<span class="sd">        and time-lag</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># get time-domain arrays</span>
+    <span class="n">cxy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">Cxy</span><span class="p">)</span>
+    <span class="n">cxx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">Cxx</span><span class="p">)</span>
+    <span class="n">cyy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">Cyy</span><span class="p">)</span>
+
+    <span class="c"># time vector</span>
+    <span class="n">tc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="o">+</span><span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+
+    <span class="c"># normalize the cross-correlation vector (cf Schwartz inequality)</span>
+    <span class="n">cxy</span> <span class="o">=</span> <span class="n">cxy</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cxx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">cyy</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c"># rewrite the cross-correlation vector cxy in proper order</span>
+    <span class="n">cxy</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)]</span> <span class="o">=</span> <span class="n">cxy</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>    <span class="c"># &quot;positive&quot; part</span>
+    <span class="n">cxy</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cxy</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">cxy</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c"># &quot;negative&quot; part</span>
+    <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cxy</span><span class="p">,</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c"># get maximum of cross-correlation and time lag</span>
+    <span class="n">value_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">cxy</span><span class="p">))</span>
+    <span class="n">tau_t</span> <span class="o">=</span> <span class="n">tc</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">cxy</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">value_t</span><span class="p">,</span> <span class="n">tau_t</span>
+
+</div>
+<div class="viewcode-block" id="corr_freq"><a class="viewcode-back" href="../api.html#correlation.corr_freq">[docs]</a><span class="k">def</span> <span class="nf">corr_freq</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the time lag entirely in the spectral domain, using the slope of</span>
+<span class="sd">    the phase spectrum where the amplitude is strong.</span>
+
+<span class="sd">    :param f: frequency vector</span>
+<span class="sd">    :param Cxy: frequency domain cross-correlation vector</span>
+<span class="sd">    :param v: If ``True`` displays Cxy</span>
+
+<span class="sd">    :type f: numpy array</span>
+<span class="sd">    :type Cxy: numpy array</span>
+<span class="sd">    :type v: boolean</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: time-lag</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Determine the limits of the amplitude spectrum</span>
+    <span class="n">mini</span><span class="p">,</span> <span class="n">maxi</span> <span class="o">=</span> <span class="n">cum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Cxy</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">]),</span> <span class="n">v</span><span class="p">)</span>
+    <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">mini</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="n">maxi</span><span class="p">]</span>
+    <span class="n">f_min_max</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">mini</span><span class="p">:</span><span class="n">maxi</span><span class="p">]</span>
+    <span class="c"># Plot</span>
+    <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">Cxy</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">f_min_max</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c"># Compute the slope of the phase spectrum where the amplitude is strong...</span>
+    <span class="c"># This is only performed after time-realignment - do not unwrap the phase</span>
+    <span class="n">phase_min_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">Cxy</span><span class="p">[</span><span class="n">mini</span><span class="p">:</span><span class="n">maxi</span><span class="p">],</span> <span class="n">deg</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">f_min_max</span><span class="o">*</span><span class="n">phase_min_max</span><span class="p">)</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">f_min_max</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c"># ... and deduce the time delay</span>
+    <span class="n">tau_f</span> <span class="o">=</span> <span class="n">a</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tau_f</span>
+
+</div>
+<div class="viewcode-block" id="cum"><a class="viewcode-back" href="../api.html#correlation.cum">[docs]</a><span class="k">def</span> <span class="nf">cum</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param x:</span>
+<span class="sd">    :param v: If ``True`` then plot x and cumulative sum of x</span>
+
+<span class="sd">    :type x: numpy array</span>
+<span class="sd">    :type v: boolean</span>
+
+<span class="sd">    :rtype: int</span>
+<span class="sd">    :returns: mini, max_i</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">s</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">+</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">s</span><span class="o">-</span><span class="n">line</span>
+
+    <span class="n">ind_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">l</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ind_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">l</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">mini</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="n">ind_min</span><span class="p">:</span><span class="n">ind_max</span><span class="p">])</span><span class="o">+</span><span class="n">ind_min</span>
+    <span class="n">maxi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="n">ind_min</span><span class="p">:</span><span class="n">ind_max</span><span class="p">])</span><span class="o">+</span><span class="n">ind_min</span>
+
+    <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mini</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="n">mini</span><span class="p">],</span> <span class="s">&#39;mo&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">maxi</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="n">maxi</span><span class="p">],</span> <span class="s">&#39;mo&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">mini</span><span class="p">,</span> <span class="n">maxi</span>
+
+</div>
+<div class="viewcode-block" id="waveform"><a class="viewcode-back" href="../api.html#correlation.waveform">[docs]</a><span class="k">def</span> <span class="nf">waveform</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convenience function to read a seismogram and return its data, time-step,</span>
+<span class="sd">    station name and start-time</span>
+
+<span class="sd">    :param filename: File to read</span>
+<span class="sd">    :type filename: string</span>
+
+<span class="sd">    :returns: val, dt, name, tdeb</span>
+
+<span class="sd">        * val = seismogram values</span>
+<span class="sd">        * dt = time-step</span>
+<span class="sd">        * name = station name</span>
+<span class="sd">        * tdeb = start-time (UTCDateTime)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+    <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">station</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">delta</span>
+    <span class="n">tdeb</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">starttime</span>
+
+    <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tdeb</span>
+
+</div>
+<div class="viewcode-block" id="plot_waveform"><a class="viewcode-back" href="../api.html#correlation.plot_waveform">[docs]</a><span class="k">def</span> <span class="nf">plot_waveform</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">ev1</span><span class="p">,</span> <span class="n">ev2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots the waveforms.</span>
+
+<span class="sd">    :param x: waveform</span>
+<span class="sd">    :param y: waveform</span>
+<span class="sd">    :param dt: time-step</span>
+<span class="sd">    :param tau: time-lag</span>
+<span class="sd">    :param ev1: name of event shown in waveform x</span>
+<span class="sd">    :param ev2: name of event shown in waveform y</span>
+
+<span class="sd">    :type x: numpy array</span>
+<span class="sd">    :type y: numpy array</span>
+<span class="sd">    :type dt: float</span>
+<span class="sd">    :type tau: float</span>
+<span class="sd">    :type ev1: string</span>
+<span class="sd">    :type ev2: string</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">*</span><span class="n">dt</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tau</span><span class="p">)):</span>
+        <span class="n">itau</span> <span class="o">=</span> <span class="n">tau</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tau</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="n">itau</span><span class="p">,</span> <span class="n">y</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s">&#39;Event pair: (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ev1</span><span class="p">,</span> <span class="n">ev2</span><span class="p">))</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">211</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;event </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ev1</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">212</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;event: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ev2</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="display"><a class="viewcode-back" href="../api.html#correlation.display">[docs]</a><span class="k">def</span> <span class="nf">display</span><span class="p">(</span><span class="n">Cxy</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f_min_max</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Displays amplitude and phase of the frequency domain cross-correlation.</span>
+
+<span class="sd">    :param Cxy: frequency domain cross-correlation</span>
+<span class="sd">    :param f: frequency vector</span>
+<span class="sd">    :param a:</span>
+<span class="sd">    :param f_min_max:</span>
+
+<span class="sd">    :type Cxy: numpy array</span>
+<span class="sd">    :type f: numpy array</span>
+<span class="sd">    :type a:</span>
+<span class="sd">    :type f_min_max: numpy array</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">211</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;Amplitude spectrum&quot;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">Cxy</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">212</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;Phase spectrum&quot;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">Cxy</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">],</span> <span class="n">deg</span><span class="o">=</span><span class="bp">False</span><span class="p">),</span> <span class="s">&#39;+&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">f_min_max</span><span class="p">,</span> <span class="n">a</span><span class="o">*</span><span class="n">f_min_max</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="correlate"><a class="viewcode-back" href="../api.html#correlation.correlate">[docs]</a><span class="k">def</span> <span class="nf">correlate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs correlation on two signals.</span>
+
+<span class="sd">    :param x: waveform</span>
+<span class="sd">    :param y: waveform</span>
+<span class="sd">    :param dt: time-step</span>
+<span class="sd">    :param v: If ``True`` makes plots</span>
+<span class="sd">    :param a: [&#39;t&#39; | &#39;f&#39;] for time-domain or frequency-domain extraction of</span>
+<span class="sd">        time-lag</span>
+
+<span class="sd">    :type x: numpy array</span>
+<span class="sd">    :type y: numpy array</span>
+<span class="sd">    :type dt: float</span>
+<span class="sd">    :type v: boolean</span>
+<span class="sd">    :type a: char</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: The returned values depend on the *a* input parameter:</span>
+
+<span class="sd">        * a=&#39;t&#39; : returns time-lag and correlation value</span>
+<span class="sd">        * a=&#39;f&#39; : returns time-lag</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">fourier</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="s">&#39;t&#39;</span><span class="p">:</span>
+        <span class="n">corr</span><span class="p">,</span> <span class="n">tau</span> <span class="o">=</span> <span class="n">corr_time</span><span class="p">(</span><span class="n">Cxy</span><span class="p">,</span> <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tau</span><span class="p">,</span> <span class="n">corr</span>
+    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="s">&#39;f&#39;</span><span class="p">:</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">corr_freq</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tau</span>
+
+</div>
+<div class="viewcode-block" id="do_correlation_setup_and_run"><a class="viewcode-back" href="../api.html#correlation.do_correlation_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_correlation_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Runs correlation using options contained in a WavelocOptions.opdict</span>
+<span class="sd">    dictionary.</span>
+
+<span class="sd">    TODO : Flesh out this doc-string by explaining the sequence of operations</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]</span>
+
+    <span class="c"># data</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+    <span class="n">data_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="c"># location file</span>
+    <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+    <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+
+    <span class="c"># file containing correlation values</span>
+    <span class="n">coeff_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_corr&#39;</span><span class="p">])</span>
+    <span class="c"># file containing time delays</span>
+    <span class="n">delay_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_delay&#39;</span><span class="p">])</span>
+
+    <span class="c"># threshold and time window</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_threshold&#39;</span><span class="p">])</span>
+    <span class="n">t_before</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_before&#39;</span><span class="p">])</span>
+    <span class="n">t_after</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_after&#39;</span><span class="p">])</span>
+
+    <span class="c"># Read location</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">)</span>
+
+    <span class="c"># Create 2 empty dictionnaries</span>
+    <span class="n">coeff</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">delay</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># ------------------------------------------------------------------------</span>
+    <span class="c"># MAIN PROGRAM : Compute the correlation value and the time delay for each</span>
+    <span class="c"># possible event pair</span>
+
+    <span class="n">tref</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">for</span> <span class="nb">file</span> <span class="ow">in</span> <span class="n">data_files</span><span class="p">:</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">val_all</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tdeb</span> <span class="o">=</span> <span class="n">waveform</span><span class="p">(</span><span class="nb">file</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">delay</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">loc_a</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">:</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">event</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">stack_time</span> <span class="o">=</span> <span class="n">loc_a</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">tdeb</span>
+
+            <span class="n">start_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">stack_time</span><span class="o">-</span><span class="n">t_before</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">stack_time</span><span class="o">+</span><span class="n">t_after</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+            <span class="n">val1</span> <span class="o">=</span> <span class="n">val_all</span><span class="p">[</span><span class="n">start_time</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">end_time</span><span class="p">]</span>
+
+            <span class="n">compteur</span> <span class="o">=</span> <span class="n">event</span><span class="o">-</span><span class="mi">1</span>
+
+            <span class="n">liste</span><span class="p">,</span> <span class="n">list_tau</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="c"># Add zeros to liste as we only compute a semi matrix</span>
+            <span class="n">liste</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">event</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">list_tau</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">event</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+            <span class="c"># for every event occurring after the event &quot;event&quot; ; replace by</span>
+            <span class="c"># event-1 if the autocorrelation is considered</span>
+            <span class="k">for</span> <span class="n">loc_b</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">[</span><span class="n">event</span><span class="o">-</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">compteur</span> <span class="o">=</span> <span class="n">compteur</span><span class="o">+</span><span class="mi">1</span>
+                <span class="n">stack_time_2</span> <span class="o">=</span> <span class="n">loc_b</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">tdeb</span>
+                <span class="n">start_time_2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">stack_time_2</span><span class="o">-</span><span class="n">t_before</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+                <span class="n">end_time_2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">stack_time_2</span><span class="o">+</span><span class="n">t_after</span><span class="p">)</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+
+                <span class="n">val2</span> <span class="o">=</span> <span class="n">val_all</span><span class="p">[</span><span class="n">start_time_2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">end_time_2</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">val1</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">val2</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="n">liste</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;NaN&#39;</span><span class="p">)</span>
+                    <span class="n">list_tau</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;NaN&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tau</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">correlate</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="s">&#39;t&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="n">threshold</span> <span class="ow">and</span> <span class="n">event</span> <span class="o">!=</span> <span class="n">compteur</span><span class="p">:</span>
+                        <span class="n">ntau</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+                        <span class="n">val3</span> <span class="o">=</span> <span class="n">val_all</span><span class="p">[</span><span class="n">start_time_2</span><span class="o">-</span><span class="n">ntau</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">end_time_2</span><span class="o">-</span><span class="n">ntau</span><span class="p">]</span>
+
+                        <span class="n">tau_t</span> <span class="o">=</span> <span class="n">tau</span>
+                        <span class="n">tau</span> <span class="o">=</span> <span class="n">correlate</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val3</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="s">&#39;f&#39;</span><span class="p">)</span>
+                        <span class="n">tau</span> <span class="o">=</span> <span class="n">tau_t</span><span class="o">+</span><span class="n">tau</span>
+
+                        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                            <span class="n">tau_f</span> <span class="o">=</span> <span class="n">tau</span>
+                            <span class="n">plot_waveform</span><span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="p">[</span><span class="n">tau_t</span><span class="p">,</span> <span class="n">tau_f</span><span class="p">],</span>
+                                          <span class="n">event</span><span class="p">,</span> <span class="n">compteur</span><span class="p">)</span>
+                            <span class="k">print</span> <span class="s">&quot;time: </span><span class="si">%.4f</span><span class="s">, </span><span class="si">%.4f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">tau_t</span><span class="p">)</span>
+                            <span class="k">print</span> <span class="s">&quot;frequency : </span><span class="si">%.4f</span><span class="s">, </span><span class="si">%.4f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">tau_f</span><span class="p">)</span>
+                            <span class="k">print</span> <span class="s">&quot;final delay : </span><span class="si">%.4f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">tau</span>
+                            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+                    <span class="n">liste</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">value</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">tau</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                        <span class="n">list_tau</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tau</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">list_tau</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;NaN&#39;</span><span class="p">)</span>
+
+            <span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">liste</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">list_tau</span><span class="p">)</span>
+
+    <span class="c"># finished run, print timing info</span>
+    <span class="k">print</span> <span class="s">&quot;Elapsed time: &quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">tref</span>
+
+    <span class="c"># Save the results in 2 binary files</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Saving coeff and delay files&quot;</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">coeff_file</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span>
+
+    <span class="n">b</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">delay_file</span><span class="p">)</span>
+    <span class="n">b</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&quot;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&quot;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_correlation_options</span><span class="p">()</span>
+
+    <span class="n">do_correlation_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 25, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

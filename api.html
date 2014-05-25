@@ -860,6 +860,250 @@ channel-name as strings.</td>
 <div class="section" id="clustering">
 <h2>CLUSTERING<a class="headerlink" href="#clustering" title="Permalink to this headline">¶</a></h2>
 </div>
+<div class="section" id="module-correlation">
+<span id="correlation"></span><h2>correlation<a class="headerlink" href="#module-correlation" title="Permalink to this headline">¶</a></h2>
+<p>Provides classes and functions for cross-correlation.</p>
+<dl class="class">
+<dt id="correlation.BinaryFile">
+<em class="property">class </em><tt class="descclassname">correlation.</tt><tt class="descname">BinaryFile</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/correlation.html#BinaryFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.BinaryFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that reads, writes and stores the binary files containing the
+correlation matrix.</p>
+<dl class="method">
+<dt id="correlation.BinaryFile.read_binary_file">
+<tt class="descname">read_binary_file</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/correlation.html#BinaryFile.read_binary_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.BinaryFile.read_binary_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the binary file from disk and returns un-pickled data
+:rtype: numpy array ?
+:returns: data read from tile</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="correlation.BinaryFile.write_binary_file">
+<tt class="descname">write_binary_file</tt><big>(</big><em>input</em><big>)</big><a class="reference internal" href="_modules/correlation.html#BinaryFile.write_binary_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.BinaryFile.write_binary_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a binary file from disk</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input</strong> &#8211; input data ready to be pickled</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.corr_freq">
+<tt class="descclassname">correlation.</tt><tt class="descname">corr_freq</tt><big>(</big><em>f</em>, <em>Cxy</em>, <em>v</em><big>)</big><a class="reference internal" href="_modules/correlation.html#corr_freq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.corr_freq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the time lag entirely in the spectral domain, using the slope of
+the phase spectrum where the amplitude is strong.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>f</strong> (<em>numpy array</em>) &#8211; frequency vector</li>
+<li><strong>Cxy</strong> (<em>numpy array</em>) &#8211; frequency domain cross-correlation vector</li>
+<li><strong>v</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> displays Cxy</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">time-lag</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.corr_time">
+<tt class="descclassname">correlation.</tt><tt class="descname">corr_time</tt><big>(</big><em>Cxy</em>, <em>Cxx</em>, <em>Cyy</em>, <em>dt</em>, <em>v</em><big>)</big><a class="reference internal" href="_modules/correlation.html#corr_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.corr_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns maximum of cross-correlation and time-lag given frequency domain
+cross- and auto- correlation vectors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Cxy</strong> (<em>numpy array</em>) &#8211; frequency domain cross-correlation</li>
+<li><strong>Cxx</strong> (<em>numpy array</em>) &#8211; frequency domain auto-correlation</li>
+<li><strong>Cyy</strong> (<em>numpy array</em>) &#8211; frequency domain auto-correlation</li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; time step</li>
+<li><strong>v</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> plots cross-correlation in the time-domain</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">value_t, tau_t, respectively the cross-correlation maximum value
+and time-lag</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.correlate">
+<tt class="descclassname">correlation.</tt><tt class="descname">correlate</tt><big>(</big><em>x</em>, <em>y</em>, <em>dt</em>, <em>v</em>, <em>a</em><big>)</big><a class="reference internal" href="_modules/correlation.html#correlate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.correlate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs correlation on two signals.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; waveform</li>
+<li><strong>y</strong> (<em>numpy array</em>) &#8211; waveform</li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; time-step</li>
+<li><strong>v</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> makes plots</li>
+<li><strong>a</strong> (<em>char</em>) &#8211; [&#8216;t&#8217; | &#8216;f&#8217;] for time-domain or frequency-domain extraction of
+time-lag</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>The returned values depend on the <em>a</em> input parameter:</p>
+<ul class="simple">
+<li>a=&#8217;t&#8217; : returns time-lag and correlation value</li>
+<li>a=&#8217;f&#8217; : returns time-lag</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.cum">
+<tt class="descclassname">correlation.</tt><tt class="descname">cum</tt><big>(</big><em>x</em>, <em>v</em><big>)</big><a class="reference internal" href="_modules/correlation.html#cum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.cum" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; </li>
+<li><strong>v</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> then plot x and cumulative sum of x</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">int</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">mini, max_i</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.display">
+<tt class="descclassname">correlation.</tt><tt class="descname">display</tt><big>(</big><em>Cxy</em>, <em>f</em>, <em>a</em>, <em>f_min_max</em><big>)</big><a class="reference internal" href="_modules/correlation.html#display"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.display" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays amplitude and phase of the frequency domain cross-correlation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Cxy</strong> (<em>numpy array</em>) &#8211; frequency domain cross-correlation</li>
+<li><strong>f</strong> (<em>numpy array</em>) &#8211; frequency vector</li>
+<li><strong>a</strong> &#8211; </li>
+<li><strong>f_min_max</strong> (<em>numpy array</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.do_correlation_setup_and_run">
+<tt class="descclassname">correlation.</tt><tt class="descname">do_correlation_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/correlation.html#do_correlation_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.do_correlation_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs correlation using options contained in a WavelocOptions.opdict
+dictionary.</p>
+<p>TODO : Flesh out this doc-string by explaining the sequence of operations</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.fourier">
+<tt class="descclassname">correlation.</tt><tt class="descname">fourier</tt><big>(</big><em>x</em>, <em>y</em>, <em>dt</em><big>)</big><a class="reference internal" href="_modules/correlation.html#fourier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.fourier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes cross-correlation and auto-correlation vectors of two signals in
+the frequency domain.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; first signal</li>
+<li><strong>y</strong> (<em>numpy array</em>) &#8211; second signal</li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; time-step of both signals</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy arrays</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Cxy, Cxx, Cyy, f</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.plot_waveform">
+<tt class="descclassname">correlation.</tt><tt class="descname">plot_waveform</tt><big>(</big><em>x</em>, <em>y</em>, <em>dt</em>, <em>tau</em>, <em>ev1</em>, <em>ev2</em><big>)</big><a class="reference internal" href="_modules/correlation.html#plot_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.plot_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the waveforms.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; waveform</li>
+<li><strong>y</strong> (<em>numpy array</em>) &#8211; waveform</li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; time-step</li>
+<li><strong>tau</strong> (<em>float</em>) &#8211; time-lag</li>
+<li><strong>ev1</strong> (<em>string</em>) &#8211; name of event shown in waveform x</li>
+<li><strong>ev2</strong> (<em>string</em>) &#8211; name of event shown in waveform y</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="correlation.waveform">
+<tt class="descclassname">correlation.</tt><tt class="descname">waveform</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/correlation.html#waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convenience function to read a seismogram and return its data, time-step,
+station name and start-time</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; File to read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">val, dt, name, tdeb<ul class="simple">
+<li>val = seismogram values</li>
+<li>dt = time-step</li>
+<li>name = station name</li>
+<li>tdeb = start-time (UTCDateTime)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="id1">
 <h2>clustering<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="module-clustering"></span><p>Provides classes and functions for clustering of earthquakes based on the
@@ -1131,6 +1375,7 @@ Uses mlab from mayavi</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#clustering">CLUSTERING</a></li>
+<li><a class="reference internal" href="#module-correlation">correlation</a></li>
 <li><a class="reference internal" href="#id1">clustering</a></li>
 <li><a class="reference internal" href="#module-CZ_color">CZ_color</a></li>
 </ul>
