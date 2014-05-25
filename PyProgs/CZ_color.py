@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
+"""
+Provides colors for clustering routines.
+"""
 
 import numpy as np
 
@@ -24,6 +27,15 @@ cmap = [[0, 0, 0.5625], [0, 0, 0.6250], [0, 0, 0.6875], [0, 0, 0.7500],
 
 
 def CZ_Clust_2_color(dt):
+    """
+    TODO: Add doc-string.
+
+    :param dt:
+    :type dt: float
+
+    :returns: List of 3 values between 0 and 1 for color indexing.
+
+    """
 
     tt = range(0, 105, 5)
     liste = [dt-tt[i] for i in range(len(tt))]
@@ -36,6 +48,15 @@ def CZ_Clust_2_color(dt):
 
 
 def CZ_W_2_color(dt):
+    """
+    TODO: Add doc-string.
+
+    :param dt:
+    :type dt: float
+
+    :returns: List of 3 values between 0 and 1 for color indexing.
+
+    """
 
     tt = range(1, 21, 1)
     liste = [dt-tt[i] for i in range(len(tt))]

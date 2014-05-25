@@ -47,3 +47,17 @@ SDS_processing
 .. automodule:: SDS_processing
     :members:
 
+CLUSTERING
+----------
+
+clustering
+----------
+
+.. automodule:: clustering
+    :members:
+
+CZ_color
+--------
+
+.. automodule:: CZ_color
+    :members:
