@@ -9,11 +9,16 @@ This is a quick guide for getting started with WaveLoc.
 Download and installation
 =========================
 
-The latest stable source distributions are downloadable from `AmazonAWS <http://aws.amazon.com>`_:
+The latest stable source distributions (most recent first) are downloadable
+from `AmazonAWS <http://aws.amazon.com>`_:
 
+* `waveloc-0.2.1.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.1.tar.gz>`_
 * `waveloc-0.2.0.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.0.tar.gz>`_
 * `waveloc-0.1.1.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.1.1.tar.gz>`_
 * `waveloc-0.1.0.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.1.0.tar.gz>`_
+
+You should if possible always use the latest version. The documentation here
+will only reflect the latest version of the code.
 
 The `latest development source archive
 <https://github.com/amaggi/waveloc/archive/master.zip>`_ is available from the
