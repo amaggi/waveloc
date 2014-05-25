@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>WaveLoc API &mdash; waveloc 0.2.0 documentation</title>
+    <title>WaveLoc API &mdash; waveloc 0.2.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '0.2.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="waveloc 0.2.0 documentation" href="index.html" />
+    <link rel="top" title="waveloc 0.2.1 documentation" href="index.html" />
     <link rel="prev" title="Getting Started" href="getting_started.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="getting_started.html" title="Getting Started"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">waveloc 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">waveloc 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -857,11 +857,12 @@ channel-name as strings.</td>
 
 </div>
 </div>
-<div class="section" id="clustering">
-<h2>CLUSTERING<a class="headerlink" href="#clustering" title="Permalink to this headline">¶</a></h2>
-</div>
+<div class="section" id="clustering-and-double-difference-relocation">
+<h2>CLUSTERING AND DOUBLE DIFFERENCE RELOCATION<a class="headerlink" href="#clustering-and-double-difference-relocation" title="Permalink to this headline">¶</a></h2>
+<p>This part of the waveloc code was contributed by Nadège Langet during her PhD
+thesis.</p>
 <div class="section" id="module-correlation">
-<span id="correlation"></span><h2>correlation<a class="headerlink" href="#module-correlation" title="Permalink to this headline">¶</a></h2>
+<span id="correlation"></span><h3>correlation<a class="headerlink" href="#module-correlation" title="Permalink to this headline">¶</a></h3>
 <p>Provides classes and functions for cross-correlation.</p>
 <dl class="class">
 <dt id="correlation.BinaryFile">
@@ -1104,9 +1105,9 @@ station name and start-time</p>
 </dd></dl>
 
 </div>
-<div class="section" id="id1">
-<h2>clustering<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="module-clustering"></span><p>Provides classes and functions for clustering of earthquakes based on the
+<div class="section" id="module-clustering">
+<span id="clustering"></span><h3>clustering<a class="headerlink" href="#module-clustering" title="Permalink to this headline">¶</a></h3>
+<p>Provides classes and functions for clustering of earthquakes based on the
 depth-first algorithm.</p>
 <dl class="function">
 <dt id="clustering.CZ_DFS">
@@ -1318,8 +1319,232 @@ Uses mlab from mayavi</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-double_diff">
+<span id="double-diff"></span><h3>double_diff<a class="headerlink" href="#module-double_diff" title="Permalink to this headline">¶</a></h3>
+<p>Routines to do double-difference relative location of events.</p>
+<dl class="function">
+<dt id="double_diff.centroid_constraint">
+<tt class="descclassname">double_diff.</tt><tt class="descname">centroid_constraint</tt><big>(</big><em>G</em>, <em>d</em>, <em>W</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#centroid_constraint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.centroid_constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies centroid constraint: sum(delta m)=0.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>G</strong> &#8211; matrix of partial derivatives</li>
+<li><strong>d</strong> &#8211; vector of double-difference times</li>
+<li><strong>W</strong> &#8211; weighting matrix</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Updated versions of G, d, W</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.coord_cluster">
+<tt class="descclassname">double_diff.</tt><tt class="descname">coord_cluster</tt><big>(</big><em>cluster</em>, <em>locs</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#coord_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.coord_cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the coordinates of the events of a given cluster
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cluster</strong> &#8211; </li>
+<li><strong>locs</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">xini, yini, zini, zini_ph, to_ini</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.do_double_diff">
+<tt class="descclassname">double_diff.</tt><tt class="descname">do_double_diff</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>to</em>, <em>stations</em>, <em>coeff</em>, <em>delay</em>, <em>cluster</em>, <em>threshold</em>, <em>t_th</em>, <em>arr_times</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#do_double_diff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.do_double_diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do double difference location (inner routine)
+TODO : flesh out this doc-string explaining the sequence of operations</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> &#8211; </li>
+<li><strong>y</strong> &#8211; </li>
+<li><strong>z</strong> &#8211; </li>
+<li><strong>to</strong> &#8211; </li>
+<li><strong>stations</strong> &#8211; </li>
+<li><strong>coeff</strong> &#8211; </li>
+<li><strong>delay</strong> &#8211; </li>
+<li><strong>cluster</strong> &#8211; </li>
+<li><strong>threshold</strong> &#8211; </li>
+<li><strong>t_th</strong> &#8211; </li>
+<li><strong>arr_times</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.do_double_diff_setup_and_run">
+<tt class="descclassname">double_diff.</tt><tt class="descname">do_double_diff_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#do_double_diff_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.do_double_diff_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do double difference (outer routine). Takes options from a
+WavelocOptions.opdict dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Dictionary of parameters and options</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.fill_matrix">
+<tt class="descclassname">double_diff.</tt><tt class="descname">fill_matrix</tt><big>(</big><em>cluster</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>t_orig</em>, <em>stations</em>, <em>t_th</em>, <em>t_arr</em>, <em>coeff</em>, <em>delay</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#fill_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.fill_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills in matrix G (partial derivatives) data-vector d (double differences)
+and matrix W (weights)
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cluster</strong> &#8211; </li>
+<li><strong>x</strong> &#8211; </li>
+<li><strong>y</strong> &#8211; </li>
+<li><strong>z</strong> &#8211; </li>
+<li><strong>t_orig</strong> &#8211; </li>
+<li><strong>stations</strong> &#8211; </li>
+<li><strong>t_th</strong> &#8211; </li>
+<li><strong>t_arr</strong> &#8211; </li>
+<li><strong>coeff</strong> &#8211; </li>
+<li><strong>delay</strong> &#8211; </li>
+<li><strong>threshold</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.inversion">
+<tt class="descclassname">double_diff.</tt><tt class="descname">inversion</tt><big>(</big><em>G</em>, <em>d</em>, <em>W</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#inversion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.inversion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inverts G, d, W using LSQR to obtain parameter vector m</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>G</strong> &#8211; matrix of partial derivatives</li>
+<li><strong>d</strong> &#8211; vector of double-difference times</li>
+<li><strong>W</strong> &#8211; weighting matrix</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Parameter vector m</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.partial_deriv">
+<tt class="descclassname">double_diff.</tt><tt class="descname">partial_deriv</tt><big>(</big><em>coord</em>, <em>ev</em>, <em>tth</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#partial_deriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.partial_deriv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes partial derivatives
+TODO flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>coord</strong> &#8211; </li>
+<li><strong>ev</strong> &#8211; </li>
+<li><strong>tth</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dpx, dpy, dpz</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.plot_events">
+<tt class="descclassname">double_diff.</tt><tt class="descname">plot_events</tt><big>(</big><em>cluster</em>, <em>locs</em>, <em>stations</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>i</em>, <em>threshold</em>, <em>nbmin</em>, <em>area</em>, <em>nbsta</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#plot_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.plot_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot old and new locations (uses mayavi)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cluster</strong> &#8211; </li>
+<li><strong>locs</strong> &#8211; </li>
+<li><strong>stations</strong> &#8211; </li>
+<li><strong>x</strong> &#8211; </li>
+<li><strong>y</strong> &#8211; </li>
+<li><strong>z</strong> &#8211; </li>
+<li><strong>i</strong> &#8211; </li>
+<li><strong>threshold</strong> &#8211; </li>
+<li><strong>nbmin</strong> &#8211; </li>
+<li><strong>area</strong> &#8211; </li>
+<li><strong>nbsta</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="double_diff.traveltimes">
+<tt class="descclassname">double_diff.</tt><tt class="descname">traveltimes</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>t_orig</em>, <em>stations</em>, <em>time_grids</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#traveltimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.traveltimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute theoretical traveltimes and arrival times for a point to all
+stations using pre-calculated time-grids</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>float</em>) &#8211; x-coordinate of point</li>
+<li><strong>y</strong> (<em>float</em>) &#8211; y-coordinate of point</li>
+<li><strong>z</strong> (<em>float</em>) &#8211; z-coordinate of point</li>
+<li><strong>t_orig</strong> (<em>UTCDateTime</em>) &#8211; origin time of envent (used to calculate arrival times)</li>
+<li><strong>stations</strong> (<em>string</em>) &#8211; list of station names</li>
+<li><strong>time_grids</strong> &#8211; dictionary of time-grids</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dictionary</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">t_th, arr_times</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-CZ_color">
-<span id="cz-color"></span><h2>CZ_color<a class="headerlink" href="#module-CZ_color" title="Permalink to this headline">¶</a></h2>
+<span id="cz-color"></span><h3>CZ_color<a class="headerlink" href="#module-CZ_color" title="Permalink to this headline">¶</a></h3>
 <p>Provides colors for clustering routines.</p>
 <dl class="function">
 <dt id="CZ_color.CZ_Clust_2_color">
@@ -1355,6 +1580,7 @@ Uses mlab from mayavi</p>
 
 </div>
 </div>
+</div>
 
 
           </div>
@@ -1374,10 +1600,13 @@ Uses mlab from mayavi</p>
 <li><a class="reference internal" href="#module-SDS_processing">SDS_processing</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#clustering">CLUSTERING</a></li>
+<li><a class="reference internal" href="#clustering-and-double-difference-relocation">CLUSTERING AND DOUBLE DIFFERENCE RELOCATION</a><ul>
 <li><a class="reference internal" href="#module-correlation">correlation</a></li>
-<li><a class="reference internal" href="#id1">clustering</a></li>
+<li><a class="reference internal" href="#module-clustering">clustering</a></li>
+<li><a class="reference internal" href="#module-double_diff">double_diff</a></li>
 <li><a class="reference internal" href="#module-CZ_color">CZ_color</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1419,7 +1648,7 @@ Uses mlab from mayavi</p>
         <li class="right" >
           <a href="getting_started.html" title="Getting Started"
              >previous</a> |</li>
-        <li><a href="index.html">waveloc 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">waveloc 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
