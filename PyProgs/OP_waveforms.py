@@ -13,6 +13,7 @@ useful functions.
    **scikits.samplerate** is used to provide high-fidelity resampling when
    standard decimation is not possible (e.g. to pass from 125Hz sampling to
    100Hz sampling).
+
 """
 
 import os
@@ -55,12 +56,14 @@ class Waveform(object):
         Initialises to ``None``.
 
     **Methods**
+
   """
 
     def __init__(self):
         """
         Initialises Waveform to have empty stream, trace and proc
         (they are all set to None).
+
         """
         self.stream = None
         self.trace = None
@@ -145,6 +148,7 @@ class Waveform(object):
 
         :raises UserWarning: If there are no data between ``starttime`` and
             ``endtime``
+
         """
 
         logging.info("Reading from SDS structure %s %s %s ..." %
@@ -295,6 +299,7 @@ class Waveform(object):
 
         :raises UserWarning: If there are no data between ``starttime`` and
             ``endtime``
+
         """
 
         logging.debug("Reading from %s..." % filename)
@@ -394,6 +399,7 @@ class Waveform(object):
         :type fill_value: float, optional
         :type rmean: bool, optional
         :type taper: bool, optional
+
         """
 
         logging.info("Merging traces before writing file %s\n" % filename)
@@ -421,6 +427,7 @@ class Waveform(object):
 
         :type filename: string
         :type format: string
+
         """
         st = self.stream
 
@@ -434,6 +441,7 @@ class Waveform(object):
         Removes the mean of the stream (iterates over all traces).
 
         :raises UserWarning: if no data in stream.
+
         """
 
         self.stream = stream_rmean(self.stream)
@@ -447,6 +455,7 @@ class Waveform(object):
         Applies a cosine taper the stream (iterates over all traces).
 
         :raises UserWarning: if no data in stream.
+
         """
         self.stream = stream_taper(self.stream)
         try:
@@ -466,6 +475,7 @@ class Waveform(object):
 
         :type title: string
         :type filename: string
+
         """
 
         plt.clf()
@@ -517,6 +527,7 @@ class Waveform(object):
         :type taper: bool
 
         :raises UserWarning: if no data in stream.
+
         """
 
         if zerophase:
@@ -554,6 +565,7 @@ class Waveform(object):
 
         :type new_samplerate: float
         :type resample_type: string
+
         """
         old_samplerate = 1/np.float(self.delta)
         ratio = new_samplerate/old_samplerate
@@ -583,6 +595,7 @@ class Waveform(object):
 
         :param factor: Decimation factor.
         :type factor: integer
+
         """
         self.trace.filter('lowpass',
                           freq=0.4*self.trace.stats.sampling_rate /
@@ -603,6 +616,7 @@ class Waveform(object):
         :type o_time: UTCDateTime
         :type left_time: UTCDateTime
         :type right_time: UTCDateTime
+
         """
         tr_signal = self.trace.slice(left_time, right_time)
         signal_value = np.max(np.abs(tr_signal.data))
@@ -624,6 +638,7 @@ class Waveform(object):
 
         :rtype: tuple of floats
         :returns: maximum, datasum
+
         """
         maximum = np.max(self.trace.data)
         datasum = np.sum(self.trace.data)
@@ -633,6 +648,7 @@ class Waveform(object):
         """
         Runs envelope processing on a waveform. Replaces self.trace and sets
         self.proc to "Envelope'.
+
         """
         xs = filter.envelope(self.values)
         self.trace.data = xs
@@ -641,6 +657,7 @@ class Waveform(object):
     def process_none(self):
         """
         No processing on a waveform.  Sets self.proc to "None"
+
         """
         self.proc = "None"
 
@@ -651,6 +668,7 @@ class Waveform(object):
 
         :param stawin: length of the short term average window in seconds
         :param ltawin: length of the long term average window in seconds
+
         """
 
         nsta = int(stawin/self.delta)
@@ -677,6 +695,7 @@ class Waveform(object):
         :type post_taper: boolean, optional
 
         :raises UserWarning: if no data in stream.
+
         """
 
         if pre_rmean:
@@ -714,6 +733,7 @@ class Waveform(object):
         :type pre_rmean: boolean, optional
         :type pre_taper: boolean, optional
         :type post_taper: boolean, optional
+
         """
 
         logging.info("Applying kurtosis to single traces, window = %.2f s\n" %
@@ -786,6 +806,7 @@ class Waveform(object):
         :type threshold: float
         :type mu: float
         :type sigma: float
+
         """
 
         logging.info("Convolving traces with a gaussian distribution\n")
@@ -840,6 +861,7 @@ def stream_rmean(st):
 
     :param st: Input stream, processed in place
     :type st: An obspy.stream object
+
     """
     for tr in st:
         t_tr = (tr.data-np.mean(tr.data))
@@ -854,6 +876,7 @@ def stream_positive_derivative(st):
 
     :param st: Input stream, processed in place
     :type st: An obspy.stream object
+
     """
     for tr in st:
         xs = tr.data
@@ -876,6 +899,7 @@ def stream_taper(st):
 
     :param st: Input stream, processed in place
     :type st: An obspy.stream object
+
     """
     for tr in st:
         try:
@@ -906,6 +930,7 @@ def read_data_compatible_with_time_dict(filenames, time_dict, starttime,
     :type endtime: UTCDateTime
 
     :raises UserWarning: if sampling is different between the files
+
     """
     data = {}
     deltas = []
@@ -960,6 +985,7 @@ def compute_gauss(dt, mu, sig):
 
     :rtype: numpy array
     :returns: array with Gaussian signal
+
     """
     win = 4*sig
     x = np.array(np.arange(-win, win, dt))

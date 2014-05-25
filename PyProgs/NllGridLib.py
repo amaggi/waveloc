@@ -2,6 +2,7 @@
 The NllGridLib module contains functions to read the output of NonLinLoc (NLL)
 in order to use the travel-times within waveloc.
 Contributed by Alessia Maggi
+
 """
 import numpy as np
 from obspy.core import utcdatetime
@@ -24,6 +25,7 @@ def read_stations_file(filename):
         are 'lat', 'lon'; the depth and elevation of the station are given
         respectively by 'depth' and 'elevation'.
     :raises UserWarning: if unknown 'loc_type' encoutered.
+
     """
 
     stations = {}
@@ -70,6 +72,7 @@ def read_hdr_file(filename):
         'nx', 'ny', 'nz', 'x_orig', 'y_orig', 'z_orig'; those for the
         projection are 'proj_name', 'orig_lat', 'orig_lon', 'map_rot'; those
         for the station information are 'station', 'sta_x', 'sta_y', 'sta_z'.
+
     """
 
     # read header file
@@ -129,6 +132,7 @@ def latlon2rect(proj_name, lat, lon, proj_info={}):
     :param proj_info: NLL header info as read by *read_hdr_file*.
     :rtype: tuple of floats
     :returns: x and y coordinates in km wrt the origin of the projection
+
     """
 
     try:
@@ -174,6 +178,7 @@ def rect2latlon(proj_name, x, y, proj_info={}):
     :rtype: tuple of floats
     :returns: latitude and longitude (latitude positive North, longitude
         positive East)
+
     """
 
     try:
@@ -203,6 +208,7 @@ def qd_read_hyp_file(filename):
     :param filename: File to read
     :rtype: tuple of floats
     :returns: (otime, hypo_x, sigma_x, hypo_y, sigma_y, hypo_z, sigma_z)
+
     """
 
     f = open(filename, 'r')
@@ -244,6 +250,7 @@ def qd_read_picks_from_hyp_file(filename):
     :rtype: dictionary
     :returns: A dictionary where the keys are the station names and the values
         are the P-arrival times as UTCDateTime objects.
+
     """
 
     f = open(filename, 'r')
