@@ -47,23 +47,31 @@ SDS_processing
 .. automodule:: SDS_processing
     :members:
 
-CLUSTERING
-----------
+CLUSTERING AND DOUBLE DIFFERENCE RELOCATION
+-------------------------------------------
+This part of the waveloc code was contributed by Nadège Langet during her PhD
+thesis.
 
 correlation
------------
+===========
 
 .. automodule:: correlation
     :members:
 
 clustering
-----------
+===========
 
 .. automodule:: clustering
     :members:
 
+double_diff
+===========
+
+.. automodule:: double_diff
+    :members:
+
 CZ_color
---------
+===========
 
 .. automodule:: CZ_color
     :members:
