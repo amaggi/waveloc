@@ -50,6 +50,12 @@ SDS_processing
 CLUSTERING
 ----------
 
+correlation
+-----------
+
+.. automodule:: correlation
+    :members:
+
 clustering
 ----------
 
