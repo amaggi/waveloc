@@ -41,6 +41,12 @@ OP_waveform
 .. automodule:: OP_waveforms
     :members:
 
+filters
+=======
+
+.. automodule:: filters
+    :members:
+
 SDS_processing
 ==============
 

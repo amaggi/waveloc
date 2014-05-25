@@ -6,18 +6,16 @@ Routines to do double-difference relative location of events.
 """
 
 import os
-import h5py
 import numpy as np
 import logging
-import time
 
 from obspy.core import utcdatetime
 
 from locations_trigger import read_locs_from_file, read_header_from_file, \
     write_header_options
 from correlation import BinaryFile
-from NllGridLib import read_stations_file
-from hdf5_grids import *
+from NllGridLib import read_stations_file, read_hdr_file
+from hdf5_grids import get_interpolated_time_grids
 
 
 def traveltimes(x, y, z, t_orig, stations, time_grids):
@@ -55,15 +53,15 @@ def traveltimes(x, y, z, t_orig, stations, time_grids):
         for i in range(len(x)):
             # travel-time
             t_th[staname].append(time_grids[staname].value_at_point(x[i], y[i],
-                                 z[i]))  
+                                 z[i]))
             # arrival-time
             arr_times[staname].append(utcdatetime.UTCDateTime(t_orig[i]) +
-                                                              t_th[staname][i])
+                                      t_th[staname][i])
 
     return t_th, arr_times
 
 
-def partial_deriv(coord,ev,tth):
+def partial_deriv(coord, ev, tth):
     """
     Computes partial derivatives
     TODO flesh out this doc-string
@@ -86,7 +84,7 @@ def partial_deriv(coord,ev,tth):
     dpy = -(coord[1]-ev[1])*tth/norm
     dpz = -(coord[2]-ev[2])*tth/norm
 
-    return [dpx,dpy,dpz]
+    return [dpx, dpy, dpz]
 
 
 def fill_matrix(cluster, x, y, z, t_orig, stations, t_th, t_arr, coeff, delay,
@@ -118,22 +116,21 @@ def fill_matrix(cluster, x, y, z, t_orig, stations, t_th, t_arr, coeff, delay,
             continue
         if not staname in t_th.keys():
             continue
-        grid_id = "%s.HHZ" % staname
         coord = [stations[staname]['x'], stations[staname]['y'],
                  -stations[staname]['elev']]
         for n in range(N):
             ev1 = [x[n], y[n], z[n]]
             e1 = cluster[n]
-            dp1 = partial_deriv(coord, ev1, t_th[staname][n]) 
+            dp1 = partial_deriv(coord, ev1, t_th[staname][n])
 
-            for nn in range(n+1,N):
+            for nn in range(n+1, N):
                 e2 = cluster[nn]
                 if delay[staname][e1-1][e2-1] != 'NaN' and \
-                   coeff[staname][e1-1][e2-1] >= threshold: 
+                   coeff[staname][e1-1][e2-1] >= threshold:
                     # fill G
                     G.append(np.zeros(4*N))
                     ev2 = [x[nn], y[nn], z[nn]]
-                    dp2  =  partial_deriv(coord, ev2, t_th[staname][nn])
+                    dp2 = partial_deriv(coord, ev2, t_th[staname][nn])
                     dp2 = [-elt for elt in dp2]
 
                     G[nline][4*n:4*n+4] = dp1+[1]
@@ -216,7 +213,7 @@ def coord_cluster(cluster, locs):
         xini.append(locs[ind-1]['x_mean'])
         yini.append(locs[ind-1]['y_mean'])
         zini.append(locs[ind-1]['z_mean'])
-        zini_ph.append(-locs[ind-1]['z_mean']) # positive z axis upwards
+        zini_ph.append(-locs[ind-1]['z_mean'])  # positive z axis upwards
         to_ini.append(locs[ind-1]['o_time'])
 
     return xini, yini, zini, zini_ph, to_ini
@@ -241,6 +238,7 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
 
     """
     from mayavi import mlab
+    from CZ_color import CZ_W_2_color
 
     # Stations coordinates
     xsta, ysta, zsta = [], [], []
@@ -254,7 +252,7 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
     # Initial hypocentral parameters
     xini, yini, zini, zini_ph, to_ini = coord_cluster(cluster[i], locs)
 
-    s = mlab.figure(i, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(1000, 900))
+    mlab.figure(i, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(1000, 900))
     mlab.clf()
     # yellow : initial locations
     mlab.points3d(xini, yini, zini_ph, color=(1, 1, 0), scale_factor=0.2)
@@ -262,11 +260,10 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
                   mode='cube')
     # cyan : new locations
     mlab.points3d(x, y, z_ph, color=(0, 1, 1), scale_factor=0.2)
-    mlab.axes(extent=area, color=(0, 0, 0)) # axe des z positif vers le haut
+    mlab.axes(extent=area, color=(0, 0, 0))  # axe des z positif vers le haut
     mlab.outline(extent=area, color=(0, 0, 0))
-    mlab.title("cluster=%s,  threshold=%s,  nbmin=%s"%(i, threshold, nbmin),
+    mlab.title("cluster=%s,  threshold=%s,  nbmin=%s" % (i, threshold, nbmin),
                height=0.1, size=0.35, color=(0, 0, 0))
-
 
     if len(cluster[i]) < 20:
         for ind_I in range(len(cluster[i])):
@@ -320,7 +317,7 @@ def do_double_diff(x, y, z, to, stations, coeff, delay, cluster, threshold,
     G, d, W = centroid_constraint(G, d, W)
 
     # Inversion
-    m = inversion(G,d,W)
+    m = inversion(G, d, W)
 
     for i in range(N):
         x[i] = x[i]+m[4*i, 0]
@@ -329,13 +326,13 @@ def do_double_diff(x, y, z, to, stations, coeff, delay, cluster, threshold,
         to[i] = utcdatetime.UTCDateTime(to[i])+m[4*i+3, 0]
 
     return x, y, z, to
-    
+
 
 def do_double_diff_setup_and_run(opdict):
     """
     Do double difference (outer routine). Takes options from a
     WavelocOptions.opdict dictionary.
-    
+
     :param opdict: Dictionary of parameters and options
     """
 
@@ -346,9 +343,6 @@ def do_double_diff_setup_and_run(opdict):
     # Station
     stations_filename = os.path.join(base_path, 'lib', opdict['stations'])
     stations = read_stations_file(stations_filename)
-
-    # Output directory
-    output_dir = os.path.join(base_path, 'out', opdict['outdir'])
 
     # Location file
     locdir = os.path.join(base_path, 'out', opdict['outdir'], 'loc')
@@ -361,7 +355,6 @@ def do_double_diff_setup_and_run(opdict):
     search_grid_filename = os.path.join(base_path, 'lib',
                                         opdict['search_grid'])
     # traveltimes grid
-    grid_filename_base = os.path.join(base_path, 'lib', opdict['time_grid'])
     grid_info = read_hdr_file(search_grid_filename)
     time_grids = get_interpolated_time_grids(opdict)
 
@@ -375,8 +368,8 @@ def do_double_diff_setup_and_run(opdict):
     area = [xstart, xend, ystart, yend, zstart, zend]
 
     # ------------------------------------------------------------------------
-    nbmin=int(opdict['nbsta'])
-    threshold=float(opdict['clus'])
+    nbmin = int(opdict['nbsta'])
+    threshold = float(opdict['clus'])
 
     # Correlation,  time delay and cluster files
     corr_file = os.path.join(locdir, opdict['xcorr_corr'])
@@ -387,14 +380,13 @@ def do_double_diff_setup_and_run(opdict):
     dfile = BinaryFile(delay_file)
     delay = dfile.read_binary_file()
 
-    cluster_file = os.path.join(locdir, 'cluster-%s-%s'%(str(threshold),
-                                                         str(nbmin)))
+    cluster_file = os.path.join(locdir, 'cluster-%s-%s' % (str(threshold),
+                                                           str(nbmin)))
     clfile = BinaryFile(cluster_file)
     cluster = clfile.read_binary_file()
 
     # ------------------------------------------------------------------------
     # Input parameters
-    nb_iter = 2
     len_cluster_min = 2
 
     if dd_loc:
@@ -406,7 +398,6 @@ def do_double_diff_setup_and_run(opdict):
     # Iterate over clusters
     for i in cluster.keys():
         print "CLUSTER %d:" % i, cluster[i], len(cluster[i])
-        iter = 0
         N = len(cluster[i])
 
         # Hypocentral parameters to be changed
