@@ -4,6 +4,13 @@
 WaveLoc API
 ###########
 
+This page contains the documentation on each of the modules / classes /
+functions that make up the waveloc package. The modules are ordered by subject
+type. This is documentation is automatically generated from the doc-strings in
+the code itself. It is meant as an aide to developpers or advanced users who
+need access to the intrigacies of the code. It is not a tutorial (one will be
+coming soon).
+
 TRAVEL-TIMES
 ------------
 
@@ -32,5 +39,11 @@ OP_waveform
 ===========
 
 .. automodule:: OP_waveforms
+    :members:
+
+SDS_processing
+==============
+
+.. automodule:: SDS_processing
     :members:
 
