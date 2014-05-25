@@ -77,7 +77,7 @@ def corr_freq(f,Cxy,v):
   phase_min_max=np.angle(Cxy[mini:maxi],deg=False)
   a=sum(f_min_max*phase_min_max)/sum(f_min_max**2)
   # ... and deduce the time delay
-  tau_f=a/(2*pi)
+  tau_f=a/(2*np.pi)
   return tau_f
 
 def cum(x,v):
