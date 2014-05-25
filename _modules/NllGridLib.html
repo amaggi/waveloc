@@ -51,6 +51,7 @@
 <span class="sd">The NllGridLib module contains functions to read the output of NonLinLoc (NLL)</span>
 <span class="sd">in order to use the travel-times within waveloc.</span>
 <span class="sd">Contributed by Alessia Maggi</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">utcdatetime</span>
@@ -73,6 +74,7 @@
 <span class="sd">        are &#39;lat&#39;, &#39;lon&#39;; the depth and elevation of the station are given</span>
 <span class="sd">        respectively by &#39;depth&#39; and &#39;elevation&#39;.</span>
 <span class="sd">    :raises UserWarning: if unknown &#39;loc_type&#39; encoutered.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">stations</span> <span class="o">=</span> <span class="p">{}</span>
@@ -119,6 +121,7 @@
 <span class="sd">        &#39;nx&#39;, &#39;ny&#39;, &#39;nz&#39;, &#39;x_orig&#39;, &#39;y_orig&#39;, &#39;z_orig&#39;; those for the</span>
 <span class="sd">        projection are &#39;proj_name&#39;, &#39;orig_lat&#39;, &#39;orig_lon&#39;, &#39;map_rot&#39;; those</span>
 <span class="sd">        for the station information are &#39;station&#39;, &#39;sta_x&#39;, &#39;sta_y&#39;, &#39;sta_z&#39;.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c"># read header file</span>
@@ -178,6 +181,7 @@
 <span class="sd">    :param proj_info: NLL header info as read by *read_hdr_file*.</span>
 <span class="sd">    :rtype: tuple of floats</span>
 <span class="sd">    :returns: x and y coordinates in km wrt the origin of the projection</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">try</span><span class="p">:</span>
@@ -223,6 +227,7 @@
 <span class="sd">    :rtype: tuple of floats</span>
 <span class="sd">    :returns: latitude and longitude (latitude positive North, longitude</span>
 <span class="sd">        positive East)</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">try</span><span class="p">:</span>
@@ -252,6 +257,7 @@
 <span class="sd">    :param filename: File to read</span>
 <span class="sd">    :rtype: tuple of floats</span>
 <span class="sd">    :returns: (otime, hypo_x, sigma_x, hypo_y, sigma_y, hypo_z, sigma_z)</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
@@ -293,6 +299,7 @@
 <span class="sd">    :rtype: dictionary</span>
 <span class="sd">    :returns: A dictionary where the keys are the station names and the values</span>
 <span class="sd">        are the P-arrival times as UTCDateTime objects.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>

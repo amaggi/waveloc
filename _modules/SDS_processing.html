@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>SDS_processing &mdash; waveloc 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for SDS_processing</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The module SDS_processing contains functions to apply Waveloc specific</span>
+<span class="sd">processing on data contained in an SDS file structure.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">utcdatetime</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">Waveform</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="read_channel_file"><a class="viewcode-back" href="../api.html#SDS_processing.read_channel_file">[docs]</a><span class="k">def</span> <span class="nf">read_channel_file</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads a channel file containing network-code, station-name, component-name</span>
+<span class="sd">    triplets. Can be used to provide fine control of data to be processed.</span>
+
+<span class="sd">    :param fname: File to be read</span>
+<span class="sd">    :type fname: string</span>
+
+<span class="sd">    :returns: List of tuples. Each tuple contains network-name, station-name,</span>
+<span class="sd">        channel-name as strings.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">triplet_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="n">triplet_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">triplet_list</span>
+
+</div>
+<div class="viewcode-block" id="do_SDS_processing_setup_and_run"><a class="viewcode-back" href="../api.html#SDS_processing.do_SDS_processing_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_SDS_processing_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Does all the processing for an SDS archive. All options are given within a</span>
+<span class="sd">    *WavlocOptions* object. Steps are:</span>
+
+<span class="sd">    * reading data</span>
+<span class="sd">    * filtering</span>
+<span class="sd">    * resampling if requested</span>
+<span class="sd">    * applying kurtosis processing</span>
+<span class="sd">    * calculating kurtosis gradient if requested</span>
+<span class="sd">    * convolving with gaussian if requested</span>
+<span class="sd">    * writing processed files at each stage</span>
+
+<span class="sd">    :param opdict: Dictionary of options. Refers the the opdict attribute of</span>
+<span class="sd">        *WavelocOptions* objects.</span>
+<span class="sd">    :type opdict: dictionary</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+
+    <span class="n">filter_c1</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c1&#39;</span><span class="p">]</span>
+    <span class="n">filter_c2</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c2&#39;</span><span class="p">]</span>
+    <span class="n">kurt_window</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kwin&#39;</span><span class="p">]</span>
+
+    <span class="n">dataglob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+    <span class="n">kurtglob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]</span>
+    <span class="n">gradglob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gradglob&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]:</span>
+        <span class="n">gaussglob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gaussglob&#39;</span><span class="p">]</span>
+
+    <span class="c"># start and end time to process</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;starttime&#39;</span><span class="p">])</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;endtime&#39;</span><span class="p">])</span>
+
+    <span class="c"># if have a channel file then read it</span>
+    <span class="k">if</span> <span class="s">&#39;channel_file&#39;</span> <span class="ow">in</span> <span class="n">opdict</span><span class="p">:</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;channel_file&#39;</span><span class="p">])</span>
+        <span class="n">triplet_list</span> <span class="o">=</span> <span class="n">read_channel_file</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># else make triplet list from net, sta, comp lists</span>
+        <span class="n">triplet_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">net_list</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;net_list&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">sta_list</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sta_list&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+        <span class="n">comp_list</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;comp_list&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">net</span> <span class="ow">in</span> <span class="n">net_list</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="n">sta_list</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_list</span><span class="p">:</span>
+                    <span class="n">triplet_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">))</span>
+
+    <span class="c"># loop over data</span>
+    <span class="k">for</span> <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">triplet_list</span><span class="p">:</span>
+        <span class="n">full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.D&quot;</span> <span class="o">%</span> <span class="n">comp</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Full path : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">full_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">full_path</span><span class="p">):</span>
+
+            <span class="c"># construct the base filename for output and create the wf object</span>
+            <span class="n">filt_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span>
+                                         <span class="s">&quot;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                         <span class="p">(</span><span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                          <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span> <span class="n">dataglob</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Processing to create </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filt_filename</span><span class="p">))</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+
+            <span class="c"># read and process the data</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># read and filter data</span>
+                <span class="n">wf</span><span class="o">.</span><span class="n">read_from_SDS</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span>
+                                 <span class="n">starttime</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">end_time</span><span class="p">)</span>
+                <span class="n">wf</span><span class="o">.</span><span class="n">bp_filter</span><span class="p">(</span><span class="n">filter_c1</span><span class="p">,</span> <span class="n">filter_c2</span><span class="p">,</span> <span class="n">rmean</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">taper</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;resample&#39;</span><span class="p">]:</span>
+                    <span class="n">wf</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;fs&#39;</span><span class="p">])</span>
+                <span class="n">wf</span><span class="o">.</span><span class="n">write_to_file_filled</span><span class="p">(</span><span class="n">filt_filename</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;MSEED&#39;</span><span class="p">,</span>
+                                        <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="c"># do kurtosis processing</span>
+                <span class="n">kurt_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span>
+                                             <span class="s">&quot;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                             <span class="p">(</span><span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                              <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span> <span class="n">kurtglob</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Processing to create </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">kurt_filename</span><span class="p">))</span>
+                <span class="n">wf</span><span class="o">.</span><span class="n">process_kurtosis</span><span class="p">(</span><span class="n">kurt_window</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">],</span>
+                                    <span class="n">pre_taper</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">post_taper</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">wf</span><span class="o">.</span><span class="n">write_to_file_filled</span><span class="p">(</span><span class="n">kurt_filename</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;MSEED&#39;</span><span class="p">,</span>
+                                        <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="c"># calculate kurtosis gradient if requested</span>
+                <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">]:</span>
+                    <span class="n">kurt_grad_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span>
+                                                      <span class="s">&quot;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                                      <span class="p">(</span><span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                                       <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span>
+                                                       <span class="n">gradglob</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Processing to create </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                  <span class="p">(</span><span class="n">kurt_grad_filename</span><span class="p">))</span>
+                    <span class="n">wf</span><span class="o">.</span><span class="n">take_positive_derivative</span><span class="p">(</span><span class="n">pre_taper</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                                <span class="n">post_taper</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="n">wf</span><span class="o">.</span><span class="n">write_to_file_filled</span><span class="p">(</span><span class="n">kurt_grad_filename</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;MSEED&#39;</span><span class="p">,</span>
+                                            <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="c"># do convolution with gaussian if requested</span>
+                <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]:</span>
+                    <span class="n">thres</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gthreshold&#39;</span><span class="p">]</span>
+                    <span class="n">mu</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;mu&#39;</span><span class="p">]</span>
+                    <span class="n">sigma</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sigma&#39;</span><span class="p">]</span>
+                    <span class="n">gauss_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span>
+                                                  <span class="s">&quot;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                                  <span class="p">(</span><span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                                   <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">,</span>
+                                                   <span class="n">gaussglob</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Processing to create </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">gauss_filename</span><span class="p">))</span>
+                    <span class="n">wf</span><span class="o">.</span><span class="n">process_gaussian</span><span class="p">(</span><span class="n">thres</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+                    <span class="n">wf</span><span class="o">.</span><span class="n">write_to_file_filled</span><span class="p">(</span><span class="n">gauss_filename</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;MSEED&#39;</span><span class="p">,</span>
+                                            <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">UserWarning</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;No data within time limits for </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">comp</span><span class="p">))</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_SDS_processing_options</span><span class="p">()</span>
+
+    <span class="n">do_SDS_processing_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 25, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

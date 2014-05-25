@@ -50,6 +50,12 @@
             
   <div class="section" id="waveloc-api">
 <h1>WaveLoc API<a class="headerlink" href="#waveloc-api" title="Permalink to this headline">¶</a></h1>
+<p>This page contains the documentation on each of the modules / classes /
+functions that make up the waveloc package. The modules are ordered by subject
+type. This is documentation is automatically generated from the doc-strings in
+the code itself. It is meant as an aide to developpers or advanced users who
+need access to the intrigacies of the code. It is not a tutorial (one will be
+coming soon).</p>
 <div class="section" id="travel-times">
 <h2>TRAVEL-TIMES<a class="headerlink" href="#travel-times" title="Permalink to this headline">¶</a></h2>
 <p>Waveloc needs travel-times to migrate the kurtosis waveforms. These can in
@@ -802,6 +808,307 @@ traces) and keep only positive values (set negative values to zero).</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-SDS_processing">
+<span id="sds-processing"></span><h3>SDS_processing<a class="headerlink" href="#module-SDS_processing" title="Permalink to this headline">¶</a></h3>
+<p>The module SDS_processing contains functions to apply Waveloc specific
+processing on data contained in an SDS file structure.</p>
+<dl class="function">
+<dt id="SDS_processing.do_SDS_processing_setup_and_run">
+<tt class="descclassname">SDS_processing.</tt><tt class="descname">do_SDS_processing_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/SDS_processing.html#do_SDS_processing_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#SDS_processing.do_SDS_processing_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does all the processing for an SDS archive. All options are given within a
+<em>WavlocOptions</em> object. Steps are:</p>
+<ul class="simple">
+<li>reading data</li>
+<li>filtering</li>
+<li>resampling if requested</li>
+<li>applying kurtosis processing</li>
+<li>calculating kurtosis gradient if requested</li>
+<li>convolving with gaussian if requested</li>
+<li>writing processed files at each stage</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> (<em>dictionary</em>) &#8211; Dictionary of options. Refers the the opdict attribute of
+<em>WavelocOptions</em> objects.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="SDS_processing.read_channel_file">
+<tt class="descclassname">SDS_processing.</tt><tt class="descname">read_channel_file</tt><big>(</big><em>fname</em><big>)</big><a class="reference internal" href="_modules/SDS_processing.html#read_channel_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#SDS_processing.read_channel_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a channel file containing network-code, station-name, component-name
+triplets. Can be used to provide fine control of data to be processed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fname</strong> (<em>string</em>) &#8211; File to be read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of tuples. Each tuple contains network-name, station-name,
+channel-name as strings.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="clustering">
+<h2>CLUSTERING<a class="headerlink" href="#clustering" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="id1">
+<h2>clustering<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-clustering"></span><p>Provides classes and functions for clustering of earthquakes based on the
+depth-first algorithm.</p>
+<dl class="function">
+<dt id="clustering.CZ_DFS">
+<tt class="descclassname">clustering.</tt><tt class="descname">CZ_DFS</tt><big>(</big><em>GRAPH</em>, <em>sommet_first</em>, <em>cluster_ind</em><big>)</big><a class="reference internal" href="_modules/clustering.html#CZ_DFS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.CZ_DFS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the depth first search algorithm. This is a recursive
+algorithm.
+TODO : flesh out this doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>GRAPH</strong> (<em>Graph object</em>) &#8211; </li>
+<li><strong>sommet_first</strong> (<em>integer</em>) &#8211; </li>
+<li><strong>cluster_ind</strong> (<em>integer</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="clustering.Graph">
+<em class="property">class </em><tt class="descclassname">clustering.</tt><tt class="descname">Graph</tt><a class="reference internal" href="_modules/clustering.html#Graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class of Graph objects. Contains 4 attributes:</p>
+<ul class="simple">
+<li>flag</li>
+<li>cluster_index</li>
+<li>voisins (neighbours)</li>
+<li>nb_voisins (number of neighbours)</li>
+</ul>
+<p>TODO: Flesh out this doc-string. The structure of this object is very
+obscure...</p>
+<dl class="method">
+<dt id="clustering.Graph.set_cluster_index">
+<tt class="descname">set_cluster_index</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_cluster_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_cluster_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends value to cluster_index attribute</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>integer ??</em>) &#8211; Value to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="clustering.Graph.set_flag">
+<tt class="descname">set_flag</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_flag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_flag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends value to flag attribute</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>int</em>) &#8211; Value to append (0=False, 1=True).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="clustering.Graph.set_voisins">
+<tt class="descname">set_voisins</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_voisins"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_voisins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends value to voisins attribute</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>integer ??</em>) &#8211; Value to append.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.compute_nbsta">
+<tt class="descclassname">clustering.</tt><tt class="descname">compute_nbsta</tt><big>(</big><em>event</em>, <em>coeff</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#compute_nbsta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.compute_nbsta" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>event</strong> &#8211; </li>
+<li><strong>coeff</strong> &#8211; </li>
+<li><strong>threshold</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy maxtrix containing integers</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">matrix of number of stations</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.do_clustering">
+<tt class="descclassname">clustering.</tt><tt class="descname">do_clustering</tt><big>(</big><em>event</em>, <em>nbsta</em>, <em>nbmin</em><big>)</big><a class="reference internal" href="_modules/clustering.html#do_clustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.do_clustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>event</strong> &#8211; </li>
+<li><strong>nbsta</strong> (<em>integer</em>) &#8211; </li>
+<li><strong>nbmin</strong> (<em>integer</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.do_clustering_setup_and_run">
+<tt class="descclassname">clustering.</tt><tt class="descname">do_clustering_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/clustering.html#do_clustering_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.do_clustering_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Dictionary of waveloc options</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.plot_graphs">
+<tt class="descclassname">clustering.</tt><tt class="descname">plot_graphs</tt><big>(</big><em>locs</em>, <em>stations</em>, <em>nbsta</em>, <em>CLUSTER</em>, <em>nbmin</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#plot_graphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.plot_graphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string
+Uses mlab from mayavi</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>locs</strong> &#8211; </li>
+<li><strong>stations</strong> &#8211; </li>
+<li><strong>nbsta</strong> &#8211; </li>
+<li><strong>CLUSTER</strong> &#8211; </li>
+<li><strong>nbmin</strong> &#8211; </li>
+<li><strong>threshold</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.plot_traces">
+<tt class="descclassname">clustering.</tt><tt class="descname">plot_traces</tt><big>(</big><em>CLUSTER</em>, <em>delay_file</em>, <em>coeff</em>, <em>locs</em>, <em>stations</em>, <em>datadir</em>, <em>data_files</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#plot_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.plot_traces" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>CLUSTER</strong> &#8211; </li>
+<li><strong>delay_file</strong> &#8211; </li>
+<li><strong>coeff</strong> &#8211; </li>
+<li><strong>locs</strong> &#8211; </li>
+<li><strong>statons</strong> &#8211; </li>
+<li><strong>datadir</strong> &#8211; </li>
+<li><strong>data_files</strong> &#8211; </li>
+<li><strong>threshold</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="clustering.waveval">
+<tt class="descclassname">clustering.</tt><tt class="descname">waveval</tt><big>(</big><em>stack_time</em>, <em>t_before</em>, <em>t_after</em>, <em>dt</em>, <em>tdeb</em><big>)</big><a class="reference internal" href="_modules/clustering.html#waveval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.waveval" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>stack_time</strong> (<em>float?</em>) &#8211; </li>
+<li><strong>t_before</strong> (<em>float?</em>) &#8211; </li>
+<li><strong>t_after</strong> (<em>float?</em>) &#8211; </li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; </li>
+<li><strong>tdeb</strong> (<em>float ?</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">integer</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">indexes corresponding to t_before and t_after</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-CZ_color">
+<span id="cz-color"></span><h2>CZ_color<a class="headerlink" href="#module-CZ_color" title="Permalink to this headline">¶</a></h2>
+<p>Provides colors for clustering routines.</p>
+<dl class="function">
+<dt id="CZ_color.CZ_Clust_2_color">
+<tt class="descclassname">CZ_color.</tt><tt class="descname">CZ_Clust_2_color</tt><big>(</big><em>dt</em><big>)</big><a class="reference internal" href="_modules/CZ_color.html#CZ_Clust_2_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#CZ_color.CZ_Clust_2_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Add doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dt</strong> (<em>float</em>) &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of 3 values between 0 and 1 for color indexing.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="CZ_color.CZ_W_2_color">
+<tt class="descclassname">CZ_color.</tt><tt class="descname">CZ_W_2_color</tt><big>(</big><em>dt</em><big>)</big><a class="reference internal" href="_modules/CZ_color.html#CZ_W_2_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#CZ_color.CZ_W_2_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO: Add doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dt</strong> (<em>float</em>) &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of 3 values between 0 and 1 for color indexing.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 </div>
 
@@ -820,8 +1127,12 @@ traces) and keep only positive values (set negative values to zero).</p>
 </li>
 <li><a class="reference internal" href="#waveforms">WAVEFORMS</a><ul>
 <li><a class="reference internal" href="#module-OP_waveforms">OP_waveform</a></li>
+<li><a class="reference internal" href="#module-SDS_processing">SDS_processing</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#clustering">CLUSTERING</a></li>
+<li><a class="reference internal" href="#id1">clustering</a></li>
+<li><a class="reference internal" href="#module-CZ_color">CZ_color</a></li>
 </ul>
 </li>
 </ul>

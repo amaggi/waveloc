@@ -1,0 +1,613 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>clustering &mdash; waveloc 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for clustering</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides classes and functions for clustering of earthquakes based on the</span>
+<span class="sd">depth-first algorithm.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">CZ_color</span> <span class="kn">import</span> <span class="n">CZ_Clust_2_color</span><span class="p">,</span> <span class="n">CZ_W_2_color</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">Waveform</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">correlation</span> <span class="kn">import</span> <span class="n">BinaryFile</span>
+<span class="kn">from</span> <span class="nn">locations_trigger</span> <span class="kn">import</span> <span class="n">read_locs_from_file</span>
+<span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_stations_file</span>
+
+
+<div class="viewcode-block" id="Graph"><a class="viewcode-back" href="../api.html#clustering.Graph">[docs]</a><span class="k">class</span> <span class="nc">Graph</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class of Graph objects. Contains 4 attributes:</span>
+
+<span class="sd">    * flag</span>
+<span class="sd">    * cluster_index</span>
+<span class="sd">    * voisins (neighbours)</span>
+<span class="sd">    * nb_voisins (number of neighbours)</span>
+
+<span class="sd">    TODO: Flesh out this doc-string. The structure of this object is very</span>
+<span class="sd">    obscure...</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialises all attributes to empty lists []</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flag</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_index</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voisins</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nb_voisins</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Graph.set_flag"><a class="viewcode-back" href="../api.html#clustering.Graph.set_flag">[docs]</a>    <span class="k">def</span> <span class="nf">set_flag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends value to flag attribute</span>
+
+<span class="sd">        :param value: Value to append (0=False, 1=True).</span>
+<span class="sd">        :type value: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Graph.set_cluster_index"><a class="viewcode-back" href="../api.html#clustering.Graph.set_cluster_index">[docs]</a>    <span class="k">def</span> <span class="nf">set_cluster_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends value to cluster_index attribute</span>
+
+<span class="sd">        :param value: Value to append.</span>
+<span class="sd">        :type value: integer ??</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Graph.set_voisins"><a class="viewcode-back" href="../api.html#clustering.Graph.set_voisins">[docs]</a>    <span class="k">def</span> <span class="nf">set_voisins</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends value to voisins attribute</span>
+
+<span class="sd">        :param value: Value to append.</span>
+<span class="sd">        :type value: integer ??</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voisins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="CZ_DFS"><a class="viewcode-back" href="../api.html#clustering.CZ_DFS">[docs]</a><span class="k">def</span> <span class="nf">CZ_DFS</span><span class="p">(</span><span class="n">GRAPH</span><span class="p">,</span> <span class="n">sommet_first</span><span class="p">,</span> <span class="n">cluster_ind</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implementation of the depth first search algorithm. This is a recursive</span>
+<span class="sd">    algorithm.</span>
+<span class="sd">    TODO : flesh out this doc-string.</span>
+
+<span class="sd">    :param GRAPH:</span>
+<span class="sd">    :param sommet_first:</span>
+<span class="sd">    :param cluster_ind:</span>
+
+<span class="sd">    :type GRAPH: Graph object</span>
+<span class="sd">    :type sommet_first: integer</span>
+<span class="sd">    :type cluster_ind: integer</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">GRAPH</span><span class="o">.</span><span class="n">flag</span><span class="p">[</span><span class="n">sommet_first</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">GRAPH</span><span class="o">.</span><span class="n">cluster_index</span><span class="p">[</span><span class="n">sommet_first</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_ind</span>
+
+    <span class="k">for</span> <span class="n">ind_sommet_fils</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">GRAPH</span><span class="o">.</span><span class="n">voisins</span><span class="p">[</span><span class="n">sommet_first</span><span class="p">])):</span>
+        <span class="n">sommet_fils</span> <span class="o">=</span> <span class="n">GRAPH</span><span class="o">.</span><span class="n">voisins</span><span class="p">[</span><span class="n">sommet_first</span><span class="p">][</span><span class="n">ind_sommet_fils</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">GRAPH</span><span class="o">.</span><span class="n">flag</span><span class="p">[</span><span class="n">sommet_fils</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">GRAPH</span><span class="p">,</span> <span class="n">cluster_ind</span> <span class="o">=</span> <span class="n">CZ_DFS</span><span class="p">(</span><span class="n">GRAPH</span><span class="p">,</span> <span class="n">sommet_fils</span><span class="p">,</span> <span class="n">cluster_ind</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">GRAPH</span><span class="p">,</span> <span class="n">cluster_ind</span>
+
+</div>
+<div class="viewcode-block" id="waveval"><a class="viewcode-back" href="../api.html#clustering.waveval">[docs]</a><span class="k">def</span> <span class="nf">waveval</span><span class="p">(</span><span class="n">stack_time</span><span class="p">,</span> <span class="n">t_before</span><span class="p">,</span> <span class="n">t_after</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param stack_time:</span>
+<span class="sd">    :param t_before:</span>
+<span class="sd">    :param t_after:</span>
+<span class="sd">    :param dt:</span>
+<span class="sd">    :param tdeb:</span>
+
+<span class="sd">    :type stack_time: float?</span>
+<span class="sd">    :type t_before: float?</span>
+<span class="sd">    :type t_after: float?</span>
+<span class="sd">    :type dt: float</span>
+<span class="sd">    :type tdeb: float ?</span>
+
+<span class="sd">    :rtype: integer</span>
+<span class="sd">    :returns: indexes corresponding to t_before and t_after</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tstart</span> <span class="o">=</span> <span class="n">stack_time</span><span class="o">-</span><span class="n">t_before</span><span class="o">-</span><span class="n">tdeb</span>
+    <span class="n">tend</span> <span class="o">=</span> <span class="n">stack_time</span><span class="o">+</span><span class="n">t_after</span><span class="o">-</span><span class="n">tdeb</span>
+    <span class="n">i_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tstart</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="n">i_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tend</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">i_start</span><span class="p">,</span> <span class="n">i_end</span>
+
+</div>
+<div class="viewcode-block" id="plot_traces"><a class="viewcode-back" href="../api.html#clustering.plot_traces">[docs]</a><span class="k">def</span> <span class="nf">plot_traces</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">,</span> <span class="n">delay_file</span><span class="p">,</span> <span class="n">coeff</span><span class="p">,</span> <span class="n">locs</span><span class="p">,</span> <span class="n">stations</span><span class="p">,</span> <span class="n">datadir</span><span class="p">,</span>
+                <span class="n">data_files</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param CLUSTER:</span>
+<span class="sd">    :param delay_file:</span>
+<span class="sd">    :param coeff:</span>
+<span class="sd">    :param locs:</span>
+<span class="sd">    :param statons:</span>
+<span class="sd">    :param datadir:</span>
+<span class="sd">    :param data_files:</span>
+<span class="sd">    :param threshold:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Read the file containing the time delays</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">delay_file</span><span class="p">)</span>
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">read_binary_file</span><span class="p">()</span>
+
+    <span class="n">t_before</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">t_after</span> <span class="o">=</span> <span class="mf">6.0</span>
+
+    <span class="n">tr</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">data_file</span> <span class="ow">in</span> <span class="n">data_files</span><span class="p">:</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+        <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">data_file</span><span class="p">)</span>
+        <span class="n">tr</span><span class="p">[</span><span class="n">wf</span><span class="o">.</span><span class="n">station</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">delta</span>
+        <span class="n">tdeb</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">starttime</span>
+
+    <span class="n">list_name</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>  <span class="c"># cluster index</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>  <span class="c"># first event index</span>
+            <span class="n">e1</span> <span class="o">=</span> <span class="n">CLUSTER</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>  <span class="c"># second event index</span>
+                <span class="n">e2</span> <span class="o">=</span> <span class="n">CLUSTER</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">co</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_name</span><span class="p">)):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">list_name</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">delay</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">e1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">e2</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;NaN&#39;</span><span class="p">:</span>
+                        <span class="n">stack_time_1</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">e1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+                        <span class="n">i_start_1</span><span class="p">,</span> <span class="n">i_end_1</span> <span class="o">=</span> <span class="n">waveval</span><span class="p">(</span><span class="n">stack_time_1</span><span class="p">,</span> <span class="n">t_before</span><span class="p">,</span>
+                                                     <span class="n">t_after</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">)</span>
+                        <span class="n">val1</span> <span class="o">=</span> <span class="n">tr</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">i_start_1</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">i_end_1</span><span class="p">]</span>
+                        <span class="n">stack_time_2</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">e2</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+                        <span class="n">i_start_2</span><span class="p">,</span> <span class="n">i_end_2</span> <span class="o">=</span> \
+                            <span class="n">waveval</span><span class="p">(</span><span class="n">stack_time_2</span><span class="o">-</span><span class="n">delay</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">e1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">e2</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                    <span class="n">t_before</span><span class="p">,</span> <span class="n">t_after</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">)</span>
+                        <span class="n">val2</span> <span class="o">=</span> <span class="n">tr</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">i_start_2</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">i_end_2</span><span class="p">]</span>
+                        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">t_after</span><span class="o">+</span><span class="n">t_before</span><span class="p">,</span>
+                                        <span class="p">(</span><span class="n">t_after</span><span class="o">+</span><span class="n">t_before</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">list_name</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">l</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+                        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">val1</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="n">val1</span><span class="p">),</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+                        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">val2</span><span class="o">/</span><span class="nb">max</span><span class="p">(</span><span class="n">val2</span><span class="p">),</span> <span class="s">&#39;y--&#39;</span><span class="p">)</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="s">&#39;k&#39;</span>
+                        <span class="k">if</span> <span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">e1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">e2</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">:</span>
+                            <span class="n">co</span> <span class="o">=</span> <span class="n">co</span><span class="o">+</span><span class="mi">1</span>
+                            <span class="n">c</span> <span class="o">=</span> <span class="s">&#39;r&#39;</span>
+                        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">e1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">e2</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+                                 <span class="nb">str</span><span class="p">(</span><span class="n">delay</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">e1</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">e2</span><span class="o">-</span><span class="mi">1</span><span class="p">])),</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">)</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s">&quot;Cluster : </span><span class="si">%s</span><span class="s"> ; Event pair : (</span><span class="si">%s</span><span class="s">,</span><span class="si">%s</span><span class="s">) ; </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">e1</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">e2</span><span class="p">),</span> <span class="n">co</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c"># TODO : Are the following lines still necessary ? What do they do ?</span>
+<span class="c">#                # Plot location</span>
+<span class="c">#                fig = plt.figure()</span>
+<span class="c">#                x1 = locs[e1-1][&#39;x_mean&#39;]</span>
+<span class="c">#                y1 = locs[e1-1][&#39;y_mean&#39;]</span>
+<span class="c">#                z1 = -locs[e1-1][&#39;z_mean&#39;]</span>
+<span class="c">#                x2 = locs[e2-1][&#39;x_mean&#39;]</span>
+<span class="c">#                y2 = locs[e2-1][&#39;y_mean&#39;]</span>
+<span class="c">#                z2 = -locs[e2-1][&#39;z_mean&#39;]</span>
+<span class="c">#                ax1 = fig.add_subplot(221,xlabel=&#39;x&#39; ,ylabel=&#39;y&#39;)</span>
+<span class="c">#                ax1.plot(x1, y1, &#39;bo&#39;, x2, y2, &#39;ro&#39;)</span>
+<span class="c">#                ax1.axis(rg_x+rg_y)</span>
+<span class="c">#                ax1.text(367.5, 7652.5, &quot;dx=%.03f&quot; % np.abs(x1-x2))</span>
+<span class="c">#                ax2 = fig.add_subplot(222, xlabel=&#39;x&#39;, ylabel=&#39;z&#39;)</span>
+<span class="c">#                ax2.plot(x1,z1, &#39;bo&#39;, x2, z2, &#39;ro&#39;)</span>
+<span class="c">#                ax2.axis(rg_x+rg_z)</span>
+<span class="c">#                ax2.text(367.5, 2, &quot;dz=%.03f&quot; % np.abs(z1-z2))</span>
+<span class="c">#                ax3 = fig.add_subplot(223, xlabel=&#39;y&#39;, ylabel=&#39;z&#39;)</span>
+<span class="c">#                ax3.plot(y1, z1, &#39;bo&#39;, y2, z2, &#39;ro&#39;)</span>
+<span class="c">#                ax3.axis(rg_y+rg_z)</span>
+<span class="c">#                ax3.text(7651, 2, &quot;dy=%.03f&quot; % np.abs(y1-y2))</span>
+<span class="c">#                #plt.show()</span>
+<span class="c">#</span>
+<span class="c">#                fig = plt.figure()</span>
+<span class="c">#                fig.set_facecolor(&#39;white&#39;)</span>
+<span class="c">#                for l in range(len(list_name)):</span>
+<span class="c">#                    name = list_name[l]</span>
+<span class="c">#                    if delay[name][e1-1][e2-1] != &#39;NaN&#39; and \</span>
+<span class="c">#                    coeff[name][e1-1][e2-1]&gt;0.8:</span>
+<span class="c">#                        stack_time_1 = locs[e1-1][&#39;o_time&#39;]</span>
+<span class="c">#                        i_start_1, i_end_1 = waveval(stack_time_1, t_before,</span>
+<span class="c">#                                                     t_after, dt, tdeb)</span>
+<span class="c">#                        val1 = tr[name][i_start_1-1:i_end_1]</span>
+<span class="c">#                        stack_time_2 = locs[e2-1][&#39;o_time&#39;]</span>
+<span class="c">#                        i_start_2, i_end_2 = \</span>
+<span class="c">#                            waveval(stack_time_2-delay[name][e1-1][e2-1],</span>
+<span class="c">#                                    t_before, t_after, dt, tdeb)</span>
+<span class="c">#                        val2 = tr[name][i_start_2-1:i_end_2]</span>
+<span class="c">#                        t = np.linspace(0, t_after+t_before,</span>
+<span class="c">#                                        (t_after+t_before)/dt+1)</span>
+<span class="c">#                        plt.plot(t,val1/max(val1))</span>
+<span class="c">#                        plt.plot(t,val2/max(val2), &#39;r&#39;)</span>
+<span class="c">#                        plt.title(&quot;%s - coeff: %s&quot; %</span>
+<span class="c">#                                  (name,coeff[name][e1-1][e2-1]))</span>
+<span class="c">#                        #plt.show()</span>
+
+</div>
+<div class="viewcode-block" id="compute_nbsta"><a class="viewcode-back" href="../api.html#clustering.compute_nbsta">[docs]</a><span class="k">def</span> <span class="nf">compute_nbsta</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">coeff</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param event:</span>
+<span class="sd">    :param coeff:</span>
+<span class="sd">    :param threshold:</span>
+
+<span class="sd">    :rtype: numpy maxtrix containing integers</span>
+<span class="sd">    :returns: matrix of number of stations</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Compute the number of stations where the correlation value is &gt;=</span>
+    <span class="c"># threshold for every event pair</span>
+    <span class="n">nbsta</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="n">liste</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="n">liste</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">coeff</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">and</span> <span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">threshold</span> <span class="ow">and</span> \
+                       <span class="n">coeff</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;NaN&#39;</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="o">+</span><span class="mi">1</span>
+                <span class="n">liste</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">liste</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">nbsta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">liste</span><span class="p">)</span>
+
+    <span class="n">nbsta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">nbsta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">nbsta</span>
+
+</div>
+<div class="viewcode-block" id="do_clustering"><a class="viewcode-back" href="../api.html#clustering.do_clustering">[docs]</a><span class="k">def</span> <span class="nf">do_clustering</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">nbsta</span><span class="p">,</span> <span class="n">nbmin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param event:</span>
+<span class="sd">    :param nbsta:</span>
+<span class="sd">    :param nbmin:</span>
+
+<span class="sd">    :type event:</span>
+<span class="sd">    :type nbsta: integer</span>
+<span class="sd">    :type nbmin: integer</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># CODE CHRISTOPHE - CLUSTERING : DEPTH FIRST SEARCH</span>
+    <span class="n">voisins_du_sommet_I__horiz</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">voisins_du_sommet_I__verti</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">GRAPH</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+    <span class="n">sommets</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">I</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="n">voisins_du_sommet_I__verti</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nbsta</span><span class="p">[:,</span> <span class="n">I</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">nbmin</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">voisins_du_sommet_I__horiz</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nbsta</span><span class="p">[</span><span class="n">I</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&gt;=</span> <span class="n">nbmin</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">GRAPH</span><span class="o">.</span><span class="n">set_voisins</span><span class="p">(</span><span class="n">voisins_du_sommet_I__verti</span> <span class="o">+</span>
+                          <span class="n">voisins_du_sommet_I__horiz</span><span class="p">)</span>
+        <span class="n">GRAPH</span><span class="o">.</span><span class="n">set_flag</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">GRAPH</span><span class="o">.</span><span class="n">set_cluster_index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">voisins_du_sommet_I__verti</span><span class="o">+</span><span class="n">voisins_du_sommet_I__horiz</span><span class="p">:</span>
+            <span class="n">sommets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">sommets</span><span class="p">:</span>
+        <span class="n">NB_MAX_VOISINS</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ind_sommet</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sommets</span><span class="p">)):</span>
+            <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">GRAPH</span><span class="o">.</span><span class="n">voisins</span><span class="p">[</span><span class="n">sommets</span><span class="p">[</span><span class="n">ind_sommet</span><span class="p">]])</span>
+            <span class="k">if</span> <span class="n">l</span> <span class="o">&gt;</span> <span class="n">NB_MAX_VOISINS</span><span class="p">:</span>
+                <span class="n">sommet_first</span> <span class="o">=</span> <span class="n">sommets</span><span class="p">[</span><span class="n">ind_sommet</span><span class="p">]</span>
+                <span class="n">NB_MAX_VOISINS</span> <span class="o">=</span> <span class="n">l</span>
+
+        <span class="n">ind_sommet_first</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cluster_ind</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">CLUSTER</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">event_index_flagged</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">event_index_non_flagged_with_neighbours</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">ind_sommet_first</span> <span class="o">=</span> <span class="n">ind_sommet_first</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">cluster_ind</span> <span class="o">=</span> <span class="n">cluster_ind</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">GRAPH</span><span class="p">,</span> <span class="n">cluster_ind</span> <span class="o">=</span> <span class="n">CZ_DFS</span><span class="p">(</span><span class="n">GRAPH</span><span class="p">,</span> <span class="n">sommet_first</span><span class="p">,</span> <span class="n">cluster_ind</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">GRAPH</span><span class="o">.</span><span class="n">voisins</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">GRAPH</span><span class="o">.</span><span class="n">flag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> \
+                   <span class="n">GRAPH</span><span class="o">.</span><span class="n">cluster_index</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="n">ind_sommet_first</span><span class="p">:</span>
+                    <span class="n">event_index_flagged</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">GRAPH</span><span class="o">.</span><span class="n">flag</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">GRAPH</span><span class="o">.</span><span class="n">voisins</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">event_index_non_flagged_with_neighbours</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+            <span class="c"># add 1 to each event number as the first one is number one (and</span>
+            <span class="c"># not zero)</span>
+            <span class="n">CLUSTER</span><span class="p">[</span><span class="n">cluster_ind</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">event_index_flagged</span> <span class="o">+</span>
+                                        <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">event_index_flagged</span><span class="p">),</span>
+                                                <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_index_non_flagged_with_neighbours</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">sommet_first</span> <span class="o">=</span> <span class="n">event_index_non_flagged_with_neighbours</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">CLUSTER</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+</div>
+<div class="viewcode-block" id="plot_graphs"><a class="viewcode-back" href="../api.html#clustering.plot_graphs">[docs]</a><span class="k">def</span> <span class="nf">plot_graphs</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">stations</span><span class="p">,</span> <span class="n">nbsta</span><span class="p">,</span> <span class="n">CLUSTER</span><span class="p">,</span> <span class="n">nbmin</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+<span class="sd">    Uses mlab from mayavi</span>
+
+<span class="sd">    :param locs:</span>
+<span class="sd">    :param stations:</span>
+<span class="sd">    :param nbsta:</span>
+<span class="sd">    :param CLUSTER:</span>
+<span class="sd">    :param nbmin:</span>
+<span class="sd">    :param threshold:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">mayavi</span> <span class="kn">import</span> <span class="n">mlab</span>
+
+    <span class="c"># Event coordinates</span>
+    <span class="n">stack_x</span><span class="p">,</span> <span class="n">stack_y</span><span class="p">,</span> <span class="n">stack_z</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="n">stack_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">])</span>
+        <span class="n">stack_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">])</span>
+        <span class="n">stack_z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">])</span>
+
+    <span class="c"># Extract coordinates</span>
+    <span class="n">xsta</span><span class="p">,</span> <span class="n">ysta</span><span class="p">,</span> <span class="n">zsta</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">stations</span><span class="p">):</span>
+        <span class="n">xsta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stations</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="s">&#39;x&#39;</span><span class="p">])</span>
+        <span class="n">ysta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stations</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+        <span class="n">zsta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stations</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="s">&#39;elev&#39;</span><span class="p">])</span>
+
+    <span class="c"># 3D PLOT USING MAYAVI</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Plotting...&quot;</span><span class="p">)</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">900</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">xsta</span><span class="p">,</span> <span class="n">ysta</span><span class="p">,</span> <span class="n">zsta</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+                  <span class="n">mode</span><span class="o">=</span><span class="s">&#39;cube&#39;</span><span class="p">)</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="mi">362</span><span class="p">,</span> <span class="mi">370</span><span class="p">,</span> <span class="mi">7647</span><span class="p">,</span> <span class="mi">7653</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">outline</span><span class="p">(</span><span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="mi">362</span><span class="p">,</span> <span class="mi">370</span><span class="p">,</span> <span class="mi">7647</span><span class="p">,</span> <span class="mi">7653</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">,</span> <span class="n">stack_y</span><span class="p">,</span> <span class="n">stack_z</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                  <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;threshold=</span><span class="si">%s</span><span class="s">,  nbmin=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">nbmin</span><span class="p">),</span> <span class="n">height</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+               <span class="n">size</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i_ev</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nbsta</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">i_c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i_ev</span><span class="o">+</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">CLUSTER</span><span class="p">[</span><span class="n">i_c</span><span class="p">]:</span>
+                <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">[</span><span class="n">i_ev</span><span class="p">],</span> <span class="n">stack_y</span><span class="p">[</span><span class="n">i_ev</span><span class="p">],</span> <span class="n">stack_z</span><span class="p">[</span><span class="n">i_ev</span><span class="p">],</span>
+                              <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                              <span class="n">color</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">CZ_Clust_2_color</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span>
+                                          <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">)</span><span class="o">-</span><span class="n">i_c</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">))))</span>
+                <span class="n">mlab</span><span class="o">.</span><span class="n">text3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">[</span><span class="n">i_ev</span><span class="p">],</span> <span class="n">stack_y</span><span class="p">[</span><span class="n">i_ev</span><span class="p">],</span> <span class="n">stack_z</span><span class="p">[</span><span class="n">i_ev</span><span class="p">],</span>
+                            <span class="nb">str</span><span class="p">(</span><span class="n">i_c</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Done!&quot;</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Plotting...&quot;</span><span class="p">)</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">bgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">fgcolor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">900</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">xsta</span><span class="p">,</span> <span class="n">ysta</span><span class="p">,</span> <span class="n">zsta</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+                  <span class="n">mode</span><span class="o">=</span><span class="s">&#39;cube&#39;</span><span class="p">)</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="mi">362</span><span class="p">,</span> <span class="mi">370</span><span class="p">,</span> <span class="mi">7647</span><span class="p">,</span> <span class="mi">7653</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">outline</span><span class="p">(</span><span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="mi">362</span><span class="p">,</span> <span class="mi">370</span><span class="p">,</span> <span class="mi">7647</span><span class="p">,</span> <span class="mi">7653</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">,</span> <span class="n">stack_y</span><span class="p">,</span> <span class="n">stack_z</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                  <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;threshold=</span><span class="si">%s</span><span class="s">,  nbmin=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">nbmin</span><span class="p">),</span> <span class="n">height</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+               <span class="n">size</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">print</span> <span class="n">nbsta</span>
+    <span class="k">for</span> <span class="n">ind_I</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nbsta</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">ind_J</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ind_I</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">nbsta</span><span class="p">)):</span>
+            <span class="n">W_IJ</span> <span class="o">=</span> <span class="n">nbsta</span><span class="p">[</span><span class="n">ind_I</span><span class="p">,</span> <span class="n">ind_J</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">W_IJ</span> <span class="o">&gt;=</span> <span class="n">nbmin</span><span class="p">:</span>
+                <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">[</span><span class="n">ind_J</span><span class="p">],</span> <span class="n">stack_y</span><span class="p">[</span><span class="n">ind_J</span><span class="p">],</span> <span class="n">stack_z</span><span class="p">[</span><span class="n">ind_J</span><span class="p">],</span>
+                              <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">mlab</span><span class="o">.</span><span class="n">points3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span> <span class="n">stack_y</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span> <span class="n">stack_z</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span>
+                              <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="p">(</span><span class="n">stack_x</span><span class="p">[</span><span class="n">ind_J</span><span class="p">]</span><span class="o">-</span><span class="n">stack_x</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span>
+                     <span class="n">stack_y</span><span class="p">[</span><span class="n">ind_J</span><span class="p">]</span><span class="o">-</span><span class="n">stack_y</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span>
+                     <span class="n">stack_z</span><span class="p">[</span><span class="n">ind_J</span><span class="p">]</span><span class="o">-</span><span class="n">stack_z</span><span class="p">[</span><span class="n">ind_I</span><span class="p">])</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">mlab</span><span class="o">.</span><span class="n">quiver3d</span><span class="p">(</span><span class="n">stack_x</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span> <span class="n">stack_y</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span> <span class="n">stack_z</span><span class="p">[</span><span class="n">ind_I</span><span class="p">],</span>
+                              <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                              <span class="n">color</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">CZ_W_2_color</span><span class="p">(</span><span class="n">W_IJ</span><span class="p">)),</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;2ddash&#39;</span><span class="p">,</span>
+                              <span class="n">scale_factor</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span> <span class="n">scale_mode</span><span class="o">=</span><span class="s">&#39;scalar&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Done!&quot;</span><span class="p">)</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="do_clustering_setup_and_run"><a class="viewcode-back" href="../api.html#clustering.do_clustering_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_clustering_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param opdict: Dictionary of waveloc options</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]</span>
+
+    <span class="c"># stations</span>
+    <span class="n">stations_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;stations&#39;</span><span class="p">])</span>
+
+    <span class="c"># data</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+    <span class="n">data_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="c"># location file</span>
+    <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+    <span class="n">loc_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+
+    <span class="c"># file containing correlation values</span>
+    <span class="n">coeff_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_corr&#39;</span><span class="p">])</span>
+    <span class="c"># Read correlation values</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">coeff_file</span><span class="p">)</span>
+    <span class="n">coeff</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">read_binary_file</span><span class="p">()</span>
+
+    <span class="c"># INPUT PARAMETERS</span>
+    <span class="n">nbmin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;nbsta&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">nbmin</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">coeff</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;the minimum number of stations cannot be &gt; to the</span><span class="se">\</span>
+<span class="s">                         number of stations !!&#39;</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coeff</span><span class="o">.</span><span class="n">values</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">tplot</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;clus&#39;</span><span class="p">])</span>  <span class="c"># threshold for which we save and plot</span>
+    <span class="n">cluster_file</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/cluster-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">tplot</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">nbmin</span><span class="p">))</span>
+
+    <span class="n">corr</span> <span class="o">=</span> <span class="p">[</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;clus&#39;</span><span class="p">]]</span>
+    <span class="c">#corr = np.arange(0, 1.1, 0.1)</span>
+    <span class="k">for</span> <span class="n">threshold</span> <span class="ow">in</span> <span class="n">corr</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="n">nbsta</span> <span class="o">=</span> <span class="n">compute_nbsta</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">coeff</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+
+        <span class="n">CLUSTER</span> <span class="o">=</span> <span class="n">do_clustering</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">nbsta</span><span class="p">,</span> <span class="n">nbmin</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">threshold</span> <span class="o">==</span> <span class="n">tplot</span><span class="p">:</span>
+
+            <span class="k">print</span> <span class="s">&quot;----------------------------------------------&quot;</span>
+            <span class="k">print</span> <span class="s">&quot;THRESHOLD : &quot;</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="s">&quot; # STATIONS : &quot;</span><span class="p">,</span> <span class="n">nbmin</span>
+            <span class="k">print</span> <span class="s">&quot;# CLUSTERS : &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">)</span>
+            <span class="k">print</span> <span class="n">CLUSTER</span>
+
+            <span class="n">c</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">cluster_file</span><span class="p">)</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">CLUSTER</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;Written in </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cluster_file</span>
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>  <span class="c"># PLOT</span>
+                <span class="c"># Read location file</span>
+                <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">loc_filename</span><span class="p">)</span>
+                <span class="c"># Read station file</span>
+                <span class="n">stations</span> <span class="o">=</span> <span class="n">read_stations_file</span><span class="p">(</span><span class="n">stations_filename</span><span class="p">)</span>
+
+                <span class="c"># Look at the waveforms</span>
+                <span class="c">#plot_traces(CLUSTER, delay_file, coeff, locs, stations,</span>
+                <span class="c">#            data_dir, data_files, threshold)</span>
+
+                <span class="c"># Plot graphs</span>
+                <span class="n">plot_graphs</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span> <span class="n">stations</span><span class="p">,</span> <span class="n">nbsta</span><span class="p">,</span> <span class="n">CLUSTER</span><span class="p">,</span> <span class="n">nbmin</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_cluster_options</span><span class="p">()</span>
+
+    <span class="n">do_clustering_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 25, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

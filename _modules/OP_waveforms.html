@@ -62,6 +62,7 @@
 <span class="sd">   **scikits.samplerate** is used to provide high-fidelity resampling when</span>
 <span class="sd">   standard decimation is not possible (e.g. to pass from 125Hz sampling to</span>
 <span class="sd">   100Hz sampling).</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
@@ -104,12 +105,14 @@
 <span class="sd">        Initialises to ``None``.</span>
 
 <span class="sd">    **Methods**</span>
+
 <span class="sd">  &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialises Waveform to have empty stream, trace and proc</span>
 <span class="sd">        (they are all set to None).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="bp">None</span>
@@ -194,6 +197,7 @@
 
 <span class="sd">        :raises UserWarning: If there are no data between ``starttime`` and</span>
 <span class="sd">            ``endtime``</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Reading from SDS structure </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> ...&quot;</span> <span class="o">%</span>
@@ -344,6 +348,7 @@
 
 <span class="sd">        :raises UserWarning: If there are no data between ``starttime`` and</span>
 <span class="sd">            ``endtime``</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Reading from </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
@@ -443,6 +448,7 @@
 <span class="sd">        :type fill_value: float, optional</span>
 <span class="sd">        :type rmean: bool, optional</span>
 <span class="sd">        :type taper: bool, optional</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Merging traces before writing file </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
@@ -470,6 +476,7 @@
 
 <span class="sd">        :type filename: string</span>
 <span class="sd">        :type format: string</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">st</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span>
 
@@ -483,6 +490,7 @@
 <span class="sd">        Removes the mean of the stream (iterates over all traces).</span>
 
 <span class="sd">        :raises UserWarning: if no data in stream.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream_rmean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
@@ -496,6 +504,7 @@
 <span class="sd">        Applies a cosine taper the stream (iterates over all traces).</span>
 
 <span class="sd">        :raises UserWarning: if no data in stream.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream_taper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -515,6 +524,7 @@
 
 <span class="sd">        :type title: string</span>
 <span class="sd">        :type filename: string</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
@@ -566,6 +576,7 @@
 <span class="sd">        :type taper: bool</span>
 
 <span class="sd">        :raises UserWarning: if no data in stream.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">zerophase</span><span class="p">:</span>
@@ -603,6 +614,7 @@
 
 <span class="sd">        :type new_samplerate: float</span>
 <span class="sd">        :type resample_type: string</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">old_samplerate</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
         <span class="n">ratio</span> <span class="o">=</span> <span class="n">new_samplerate</span><span class="o">/</span><span class="n">old_samplerate</span>
@@ -632,6 +644,7 @@
 
 <span class="sd">        :param factor: Decimation factor.</span>
 <span class="sd">        :type factor: integer</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s">&#39;lowpass&#39;</span><span class="p">,</span>
                           <span class="n">freq</span><span class="o">=</span><span class="mf">0.4</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span> <span class="o">/</span>
@@ -652,6 +665,7 @@
 <span class="sd">        :type o_time: UTCDateTime</span>
 <span class="sd">        :type left_time: UTCDateTime</span>
 <span class="sd">        :type right_time: UTCDateTime</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tr_signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">left_time</span><span class="p">,</span> <span class="n">right_time</span><span class="p">)</span>
         <span class="n">signal_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tr_signal</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
@@ -673,6 +687,7 @@
 
 <span class="sd">        :rtype: tuple of floats</span>
 <span class="sd">        :returns: maximum, datasum</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">maximum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="n">datasum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -682,6 +697,7 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Runs envelope processing on a waveform. Replaces self.trace and sets</span>
 <span class="sd">        self.proc to &quot;Envelope&#39;.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">xs</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">envelope</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">xs</span>
@@ -690,6 +706,7 @@
 <div class="viewcode-block" id="Waveform.process_none"><a class="viewcode-back" href="../api.html#OP_waveforms.Waveform.process_none">[docs]</a>    <span class="k">def</span> <span class="nf">process_none</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        No processing on a waveform.  Sets self.proc to &quot;None&quot;</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">proc</span> <span class="o">=</span> <span class="s">&quot;None&quot;</span>
 </div>
@@ -700,6 +717,7 @@
 
 <span class="sd">        :param stawin: length of the short term average window in seconds</span>
 <span class="sd">        :param ltawin: length of the long term average window in seconds</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">nsta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stawin</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
@@ -726,6 +744,7 @@
 <span class="sd">        :type post_taper: boolean, optional</span>
 
 <span class="sd">        :raises UserWarning: if no data in stream.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">pre_rmean</span><span class="p">:</span>
@@ -763,6 +782,7 @@
 <span class="sd">        :type pre_rmean: boolean, optional</span>
 <span class="sd">        :type pre_taper: boolean, optional</span>
 <span class="sd">        :type post_taper: boolean, optional</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Applying kurtosis to single traces, window = </span><span class="si">%.2f</span><span class="s"> s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span>
@@ -835,6 +855,7 @@
 <span class="sd">        :type threshold: float</span>
 <span class="sd">        :type mu: float</span>
 <span class="sd">        :type sigma: float</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Convolving traces with a gaussian distribution</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
@@ -889,6 +910,7 @@
 
 <span class="sd">    :param st: Input stream, processed in place</span>
 <span class="sd">    :type st: An obspy.stream object</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">:</span>
         <span class="n">t_tr</span> <span class="o">=</span> <span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
@@ -903,6 +925,7 @@
 
 <span class="sd">    :param st: Input stream, processed in place</span>
 <span class="sd">    :type st: An obspy.stream object</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">:</span>
         <span class="n">xs</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">data</span>
@@ -925,6 +948,7 @@
 
 <span class="sd">    :param st: Input stream, processed in place</span>
 <span class="sd">    :type st: An obspy.stream object</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -955,6 +979,7 @@
 <span class="sd">    :type endtime: UTCDateTime</span>
 
 <span class="sd">    :raises UserWarning: if sampling is different between the files</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">deltas</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1009,6 +1034,7 @@
 
 <span class="sd">    :rtype: numpy array</span>
 <span class="sd">    :returns: array with Gaussian signal</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">win</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">sig</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">win</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="n">dt</span><span class="p">))</span>
