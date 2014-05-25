@@ -226,6 +226,19 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
                 nbsta):
     """
     Plot old and new locations (uses mayavi)
+
+    :param cluster:
+    :param locs:
+    :param stations:
+    :param x:
+    :param y:
+    :param z:
+    :param i:
+    :param threshold:
+    :param nbmin:
+    :param area:
+    :param nbsta:
+
     """
     from mayavi import mlab
 
@@ -277,150 +290,190 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
 
     mlab.show()
 
-####################################################################################
-def do_double_diff(x,y,z,to,stations,coeff,delay,cluster,threshold,t_th, arr_times):
-    N=len(cluster)
+
+def do_double_diff(x, y, z, to, stations, coeff, delay, cluster, threshold,
+                   t_th,  arr_times):
+    """
+    Do double difference location (inner routine)
+    TODO : flesh out this doc-string explaining the sequence of operations
+
+    :param x:
+    :param y:
+    :param z:
+    :param to:
+    :param stations:
+    :param coeff:
+    :param delay:
+    :param cluster:
+    :param threshold:
+    :param t_th:
+    :param arr_times:
+
+    """
+    N = len(cluster)
 
     # Fill G, d and W
-    G, d, W=fill_matrix(cluster,x,y,z,to,stations,t_th,arr_times,coeff,delay,threshold)
+    G,  d,  W = fill_matrix(cluster, x, y, z, to, stations, t_th, arr_times,
+                            coeff, delay, threshold)
 
     # Centroid constraint : add 4 lines to G, d and W
-    G,d,W=centroid_constraint(G,d,W)
+    G, d, W = centroid_constraint(G, d, W)
 
     # Inversion
-    m=inversion(G,d,W)
+    m = inversion(G,d,W)
 
     for i in range(N):
-      x[i]=x[i]+m[4*i,0]
-      y[i]=y[i]+m[4*i+1,0]
-      z[i]=z[i]+m[4*i+2,0]
-      to[i]=utcdatetime.UTCDateTime(to[i])+m[4*i+3,0]
+        x[i] = x[i]+m[4*i, 0]
+        y[i] = y[i]+m[4*i+1, 0]
+        z[i] = z[i]+m[4*i+2, 0]
+        to[i] = utcdatetime.UTCDateTime(to[i])+m[4*i+3, 0]
 
-    return x,y,z,to
-####################################################################################
+    return x, y, z, to
+    
+
 def do_double_diff_setup_and_run(opdict):
+    """
+    Do double difference (outer routine). Takes options from a
+    WavelocOptions.opdict dictionary.
+    
+    :param opdict: Dictionary of parameters and options
+    """
 
-  base_path=opdict['base_path']
-  verbose=opdict['verbose']
-  dd_loc=opdict['dd_loc']
+    base_path = opdict['base_path']
+    verbose = opdict['verbose']
+    dd_loc = opdict['dd_loc']
 
-  # Station
-  stations_filename=os.path.join(base_path,'lib',opdict['stations'])
-  stations=read_stations_file(stations_filename)
+    # Station
+    stations_filename = os.path.join(base_path, 'lib', opdict['stations'])
+    stations = read_stations_file(stations_filename)
 
-  # Output directory
-  output_dir=os.path.join(base_path,'out',opdict['outdir'])
+    # Output directory
+    output_dir = os.path.join(base_path, 'out', opdict['outdir'])
 
-  # Location file
-  locdir=os.path.join(base_path,'out',opdict['outdir'],'loc')
-  loc_filename=os.path.join(locdir,'locations.dat')
-  locs=read_locs_from_file(loc_filename)
-  opdict=read_header_from_file(loc_filename,opdict)
+    # Location file
+    locdir = os.path.join(base_path, 'out', opdict['outdir'], 'loc')
+    loc_filename = os.path.join(locdir, 'locations.dat')
+    locs = read_locs_from_file(loc_filename)
+    opdict = read_header_from_file(loc_filename, opdict)
 
+    # ------------------------------------------------------------------------
+    # search grid
+    search_grid_filename = os.path.join(base_path, 'lib',
+                                        opdict['search_grid'])
+    # traveltimes grid
+    grid_filename_base = os.path.join(base_path, 'lib', opdict['time_grid'])
+    grid_info = read_hdr_file(search_grid_filename)
+    time_grids = get_interpolated_time_grids(opdict)
 
-  # ----------------------------------------------------------------------------------------
-  # search grid
-  search_grid_filename=os.path.join(base_path,'lib',opdict['search_grid'])
-  # traveltimes grid
-  grid_filename_base=os.path.join(base_path,'lib',opdict['time_grid'])
-  grid_info=read_hdr_file(search_grid_filename)
-  time_grids=get_interpolated_time_grids(opdict)
+    # Extract the UTM coordinates of the area of study
+    xstart = grid_info['x_orig']
+    xend = xstart+grid_info['nx']*grid_info['dx']
+    ystart = grid_info['y_orig']
+    yend = ystart+grid_info['ny']*grid_info['dy']
+    zend = -grid_info['z_orig']
+    zstart = -(-zend+grid_info['nz']*grid_info['dz'])
+    area = [xstart, xend, ystart, yend, zstart, zend]
 
-  # Extract the UTM coordinates of the area of study
-  xstart=grid_info['x_orig']
-  xend=xstart+grid_info['nx']*grid_info['dx']
-  ystart=grid_info['y_orig']
-  yend=ystart+grid_info['ny']*grid_info['dy']
-  zend=-grid_info['z_orig']
-  zstart=-(-zend+grid_info['nz']*grid_info['dz'])
-  area=[xstart,xend,ystart,yend,zstart,zend]
-  # ----------------------------------------------------------------------------------------
-  nbmin=int(opdict['nbsta'])
-  threshold=float(opdict['clus'])
+    # ------------------------------------------------------------------------
+    nbmin=int(opdict['nbsta'])
+    threshold=float(opdict['clus'])
 
-  # Correlation, time delay and cluster files
-  corr_file=os.path.join(locdir,opdict['xcorr_corr'])
-  cfile=BinaryFile(corr_file)
-  coeff=cfile.read_binary_file()
+    # Correlation,  time delay and cluster files
+    corr_file = os.path.join(locdir, opdict['xcorr_corr'])
+    cfile = BinaryFile(corr_file)
+    coeff = cfile.read_binary_file()
 
-  delay_file=os.path.join(locdir,opdict['xcorr_delay'])
-  dfile=BinaryFile(delay_file)
-  delay=dfile.read_binary_file()
+    delay_file = os.path.join(locdir, opdict['xcorr_delay'])
+    dfile = BinaryFile(delay_file)
+    delay = dfile.read_binary_file()
 
-  cluster_file=os.path.join(locdir,'cluster-%s-%s'%(str(threshold),str(nbmin)))
-  clfile=BinaryFile(cluster_file)
-  cluster=clfile.read_binary_file()
+    cluster_file = os.path.join(locdir, 'cluster-%s-%s'%(str(threshold),
+                                                         str(nbmin)))
+    clfile = BinaryFile(cluster_file)
+    cluster = clfile.read_binary_file()
 
-  # ----------------------------------------------------------------------------------------
-  # Input parameters
-  nb_iter=2
-  len_cluster_min=2
-
-  if dd_loc:
-    new_loc_filename=os.path.join(locdir,'relocations.dat')
-    new_loc_file=open(new_loc_filename,'w')
-    write_header_options(new_loc_file,opdict)
-
-  # ----------------------------------------------------------------------------------------
-  for i in cluster.keys():
-    print "CLUSTER %d:"%i,cluster[i],len(cluster[i])
-    iter = 0
-    N = len(cluster[i])
-
-    # Hypocentral parameters to be changed
-    x,y,z,z_ph,to = coord_cluster(cluster[i],locs)
-
-    # Replace bad locations by the centroid coordinates
-    centroid_x,centroid_y,centroid_z = np.mean(x), np.mean(y), np.mean(z)
-    for ii in range(len(cluster[i])):
-      if np.abs(x[ii]-centroid_x) > .75:
-        x[ii]=centroid_x
-      if np.abs(y[ii]-centroid_y) > .75:
-        y[ii]=centroid_y
-      if np.abs(z[ii]-centroid_z) > .75:
-        z[ii]=centroid_z
-
-    if N > len_cluster_min:
-
-      # Theroretical traveltimes and arrival times
-      t_th, arr_times = traveltimes(x,y,z,to,stations,time_grids)
-      
-      x,y,z,to = do_double_diff(x,y,z,to,stations,coeff,delay,cluster[i],threshold,t_th, arr_times)
-
-      if verbose:
-        from clustering import compute_nbsta
-        nbsta=compute_nbsta(len(locs),coeff,threshold)
-        plot_events(cluster,locs,stations,x,y,z,i,threshold,nbmin,area,nbsta)
+    # ------------------------------------------------------------------------
+    # Input parameters
+    nb_iter = 2
+    len_cluster_min = 2
 
     if dd_loc:
-      ind=0
-      for j in cluster[i]:
-          locs[j-1]['x_mean']=x[ind]
-          locs[j-1]['y_mean']=y[ind]
-          locs[j-1]['z_mean']=z[ind]
-          locs[j-1]['o_time']=to[ind]
-          locs[j-1]['x_sigma']=0
-          locs[j-1]['y_sigma']=0
-          locs[j-1]['z_sigma']=0
-          locs[j-1]['o_err_right']=0
-          locs[j-1]['o_err_left']=0
-          ind+=1
-          new_loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n"%(locs[j-1]['max_trig'],locs[j-1]['o_time'].isoformat(),locs[j-1]['o_err_left'], locs[j-1]['o_err_right'],locs[j-1]['x_mean'],locs[j-1]['x_sigma'],locs[j-1]['y_mean'],locs[j-1]['y_sigma'],locs[j-1]['z_mean'],locs[j-1]['z_sigma']))
+        new_loc_filename = os.path.join(locdir, 'relocations.dat')
+        new_loc_file = open(new_loc_filename, 'w')
+        write_header_options(new_loc_file, opdict)
 
-  if dd_loc:
-     new_loc_file.close()
+    # ------------------------------------------------------------------------
+    # Iterate over clusters
+    for i in cluster.keys():
+        print "CLUSTER %d:" % i, cluster[i], len(cluster[i])
+        iter = 0
+        N = len(cluster[i])
+
+        # Hypocentral parameters to be changed
+        x, y, z, z_ph, to = coord_cluster(cluster[i], locs)
+
+        # Replace bad locations by the centroid coordinates
+        centroid_x = np.mean(x)
+        centroid_y = np.mean(y)
+        centroid_z = np.mean(z)
+
+        for ii in range(len(cluster[i])):
+            if np.abs(x[ii]-centroid_x) > .75:
+                x[ii] = centroid_x
+            if np.abs(y[ii]-centroid_y) > .75:
+                y[ii] = centroid_y
+            if np.abs(z[ii]-centroid_z) > .75:
+                z[ii] = centroid_z
+
+        if N > len_cluster_min:
+            # Theroretical traveltimes and arrival times
+            t_th, arr_times = traveltimes(x, y, z, to, stations, time_grids)
+            # do double difference location
+            x, y, z, to = do_double_diff(x, y, z, to, stations, coeff, delay,
+                                         cluster[i], threshold, t_th,
+                                         arr_times)
+
+        if verbose:
+            from clustering import compute_nbsta
+            nbsta = compute_nbsta(len(locs), coeff, threshold)
+            plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin,
+                        area, nbsta)
+
+        if dd_loc:
+            ind = 0
+        for j in cluster[i]:
+            locs[j-1]['x_mean'] = x[ind]
+            locs[j-1]['y_mean'] = y[ind]
+            locs[j-1]['z_mean'] = z[ind]
+            locs[j-1]['o_time'] = to[ind]
+            locs[j-1]['x_sigma'] = 0
+            locs[j-1]['y_sigma'] = 0
+            locs[j-1]['z_sigma'] = 0
+            locs[j-1]['o_err_right'] = 0
+            locs[j-1]['o_err_left'] = 0
+            ind += 1
+            new_loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm\
+                %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n" %
+                (locs[j-1]['max_trig'], locs[j-1]['o_time'].isoformat(),
+                locs[j-1]['o_err_left'], locs[j-1]['o_err_right'],
+                locs[j-1]['x_mean'], locs[j-1]['x_sigma'],
+                locs[j-1]['y_mean'], locs[j-1]['y_sigma'],
+                locs[j-1]['z_mean'], locs[j-1]['z_sigma']))
+
+    if dd_loc:
+        new_loc_file.close()
 
 
-###############################################################################################
 if __name__ == '__main__':
-  from options import WavelocOptions
+    from options import WavelocOptions
 
-  logging.basicConfig(level=logging.INFO, format="%(levelname)s : %(asctime)s : %(message)s")
+    logging.basicConfig(level=logging.INFO,
+                        format="%(levelname)s : %(asctime)s : %(message)s")
 
-  wo = WavelocOptions()
-  args=wo.p.parse_args()
+    wo = WavelocOptions()
+    args = wo.p.parse_args()
 
-  wo.set_all_arguments(args)
-  wo.verify_doublediff_options()
+    wo.set_all_arguments(args)
+    wo.verify_doublediff_options()
 
-  do_double_diff_setup_and_run(wo.opdict)
+    do_double_diff_setup_and_run(wo.opdict)
