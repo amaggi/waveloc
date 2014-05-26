@@ -69,8 +69,17 @@ SDS_processing
 .. automodule:: SDS_processing
     :members:
 
-CLUSTERING AND DOUBLE DIFFERENCE RELOCATION
--------------------------------------------
+MIGRATION
+---------
+
+integrate4D
+===========
+
+.. automodule:: integrate4D
+    :members:
+
+CLUSTERING
+----------
 This part of the waveloc code was contributed by Nadège Langet during her PhD
 thesis.
 
