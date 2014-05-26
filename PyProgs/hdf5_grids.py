@@ -23,6 +23,10 @@ class H5SingleGrid(object):
     **Methods**
     """
 
+    grid_data = None
+    grid_info = None
+    _f = None
+
     def __init__(self, filename=None, grid_data=None, grid_info=None):
         """
         Initialises an instance of HDF5SingleGrid.
@@ -47,19 +51,15 @@ class H5SingleGrid(object):
         else:
             self._f = h5py.File(filename, 'w')
 
-        if not grid_data is None:
-            self.grid_data = self._f.create_dataset('grid_data',
-                                                    data=grid_data,
-                                                    compression='lzf')
-        else:
-            self.grid_data = None
+            if not grid_data is None:
+                self.grid_data = self._f.create_dataset('grid_data',
+                                                        data=grid_data,
+                                                        compression='lzf')
 
-        if not grid_info is None:
-            self.grid_info = self.grid_data.attrs
-            for key,value in grid_info.iteritems():
-                self.grid_info[key] = value
-        else:
-            self.grid_info = None
+            if not grid_info is None:
+                self.grid_info = self.grid_data.attrs
+                for key, value in grid_info.iteritems():
+                    self.grid_info[key] = value
       
     def __del__(self):
         self._f.close()
