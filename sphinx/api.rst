@@ -63,6 +63,12 @@ filters
 .. automodule:: filters
     :members:
 
+kurtogram
+=========
+
+.. automodule:: kurtogram
+    :members:
+
 SDS_processing
 ==============
 
