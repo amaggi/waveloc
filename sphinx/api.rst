@@ -87,6 +87,12 @@ integrate4D
 LOCATION
 --------
 
+locations_trigger
+=================
+
+.. automodule:: locations_trigger
+    :members:
+
 locations_prob
 ==============
 
