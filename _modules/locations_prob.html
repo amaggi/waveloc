@@ -1,0 +1,336 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>locations_prob &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for locations_prob</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">locations_trigger</span> <span class="kn">import</span> <span class="n">read_locs_from_file</span><span class="p">,</span> \
+    <span class="n">do_locations_trigger_setup_and_run</span>
+<span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_hdr_file</span>
+<span class="kn">from</span> <span class="nn">hdf5_grids</span> <span class="kn">import</span> <span class="n">get_interpolated_time_grids</span>
+<span class="kn">from</span> <span class="nn">migration</span> <span class="kn">import</span> <span class="n">do_migration_loop_continuous</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">read_data_compatible_with_time_dict</span>
+<span class="kn">from</span> <span class="nn">integrate4D</span> <span class="kn">import</span> <span class="n">compute_expected_coordinates4D</span><span class="p">,</span> \
+    <span class="n">compute_expected_coordinates3D</span>
+
+
+<div class="viewcode-block" id="read_prob_locs_from_file"><a class="viewcode-back" href="../api.html#locations_prob.read_prob_locs_from_file">[docs]</a><span class="k">def</span> <span class="nf">read_prob_locs_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read file containing probability determined locations.</span>
+
+<span class="sd">    :param filename: File to be read.</span>
+
+<span class="sd">    :returns: Dictionary of locations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">utcdatetime</span>
+
+    <span class="n">locs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">5</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">8</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">11</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">13</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">16</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">18</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">21</span><span class="p">])</span>
+        <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">23</span><span class="p">])</span>
+
+        <span class="n">locs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">locs</span>
+
+</div>
+<div class="viewcode-block" id="do_locations_prob_setup_and_run"><a class="viewcode-back" href="../api.html#locations_prob.do_locations_prob_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_locations_prob_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Setup and run probability-based locations on migration grids. Takes all</span>
+<span class="sd">    parameters from WavelocOptions.opdict.</span>
+
+<span class="sd">    :param opdict: Parameters and options for Waveloc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># get / set info</span>
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">space_only</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;probloc_spaceonly&#39;</span><span class="p">]</span>
+
+    <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+    <span class="n">locfile_prob</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                                <span class="s">&#39;locations_prob.dat&#39;</span><span class="p">)</span>
+    <span class="n">locfile_hdf5</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                                <span class="s">&#39;locations_prob.hdf5&#39;</span><span class="p">)</span>
+    <span class="n">f_prob</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">locfile_prob</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="c"># if locfile does not exist then make it by running trigger location</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;No location found at </span><span class="si">%s</span><span class="s">.  Running trigger location </span><span class="se">\</span>
+<span class="s">            first...&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+        <span class="n">do_locations_trigger_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">)</span>
+
+    <span class="c"># data files</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+    <span class="n">data_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+    <span class="n">kurt_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]</span>
+    <span class="n">grad_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gradglob&#39;</span><span class="p">]</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="n">kurt_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">kurt_glob</span><span class="p">))</span>
+    <span class="n">grad_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">grad_glob</span><span class="p">))</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">kurt_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">grad_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="c"># grids</span>
+    <span class="n">search_grid_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span>
+                                        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;search_grid&#39;</span><span class="p">])</span>
+
+    <span class="c"># read time grid information</span>
+    <span class="n">time_grids</span> <span class="o">=</span> <span class="n">get_interpolated_time_grids</span><span class="p">(</span><span class="n">opdict</span><span class="p">)</span>
+
+    <span class="c"># read locations</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">)</span>
+
+    <span class="c"># prepare file for output of marginals</span>
+    <span class="n">f_marginals</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">locfile_hdf5</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="c"># iterate over locations</span>
+    <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="c"># create the appropriate grid on the fly</span>
+
+        <span class="c"># generate the grids</span>
+        <span class="n">o_time</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">o_time</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">o_time</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">o_time</span><span class="o">-</span><span class="mi">3</span><span class="o">*</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">]</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">o_time</span><span class="o">+</span><span class="mi">3</span><span class="o">*</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">]</span>
+
+        <span class="c"># make a buffer for migration</span>
+        <span class="n">start_time_migration</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">-</span> <span class="mf">10.0</span>
+        <span class="n">end_time_migration</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">+</span> <span class="mf">10.0</span>
+
+        <span class="c"># re-read grid info to ensure clean copy</span>
+        <span class="n">grid_info</span> <span class="o">=</span> <span class="n">read_hdr_file</span><span class="p">(</span><span class="n">search_grid_filename</span><span class="p">)</span>
+
+        <span class="c"># read data</span>
+        <span class="n">grad_dict</span><span class="p">,</span> <span class="n">delta</span> <span class="o">=</span> \
+            <span class="n">read_data_compatible_with_time_dict</span><span class="p">(</span><span class="n">grad_files</span><span class="p">,</span> <span class="n">time_grids</span><span class="p">,</span>
+                                                <span class="n">start_time_migration</span><span class="p">,</span>
+                                                <span class="n">end_time_migration</span><span class="p">)</span>
+
+        <span class="c"># do migration (all metadata on grid is added to grid_info)</span>
+        <span class="n">do_migration_loop_continuous</span><span class="p">(</span><span class="n">opdict</span><span class="p">,</span> <span class="n">grad_dict</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span>
+                                     <span class="n">start_time_migration</span><span class="p">,</span> <span class="n">grid_info</span><span class="p">,</span>
+                                     <span class="n">time_grids</span><span class="p">,</span> <span class="n">keep_grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># integrate to get the marginal probability density distributions</span>
+
+        <span class="c"># get required info</span>
+        <span class="n">grid_starttime</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;grid_shape&#39;</span><span class="p">]</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;grid_spacing&#39;</span><span class="p">]</span>
+        <span class="n">x_orig</span><span class="p">,</span> <span class="n">y_orig</span><span class="p">,</span> <span class="n">z_orig</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;grid_orig&#39;</span><span class="p">]</span>
+
+        <span class="c"># we are only interested in the time around the origin time of the</span>
+        <span class="c"># event</span>
+        <span class="n">it_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">grid_starttime</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+        <span class="n">it_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">grid_starttime</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+        <span class="n">it_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">o_time</span> <span class="o">-</span> <span class="n">grid_starttime</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="p">(</span><span class="n">it_right</span><span class="o">-</span><span class="n">it_left</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+
+        <span class="c"># set up integration axes (wrt reference)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span><span class="o">*</span><span class="n">dz</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span>
+
+        <span class="c"># open the grid file</span>
+        <span class="n">grid_filename</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dat_file&#39;</span><span class="p">]</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">grid_filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">stack_grid</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;stack_grid&#39;</span><span class="p">]</span>
+
+        <span class="c"># extract the portion of interest (copy data)</span>
+        <span class="k">if</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">stack_3D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))</span>
+            <span class="n">stack_3D</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">stack_grid</span><span class="p">[:,</span> <span class="n">it_true</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stack_4D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span><span class="p">))</span>
+            <span class="n">stack_4D</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">stack_grid</span><span class="p">[:,</span> <span class="n">it_left</span><span class="p">:</span><span class="n">it_right</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span>
+                                                                    <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span><span class="p">)</span>
+
+        <span class="c"># close the grid file</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># Get expected values (normalizes grid internally)</span>
+        <span class="k">if</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">exp_x</span><span class="p">,</span> <span class="n">exp_y</span><span class="p">,</span> <span class="n">exp_z</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="p">,</span> <span class="n">prob_dict</span> <span class="o">=</span> \
+                <span class="n">compute_expected_coordinates3D</span><span class="p">(</span><span class="n">stack_3D</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span>
+                                               <span class="n">return_2Dgrids</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exp_x</span><span class="p">,</span> <span class="n">exp_y</span><span class="p">,</span> <span class="n">exp_z</span><span class="p">,</span> <span class="n">exp_t</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="p">,</span> <span class="n">prob_dict</span> <span class="o">=</span> \
+                <span class="n">compute_expected_coordinates4D</span><span class="p">(</span><span class="n">stack_4D</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span>
+                                               <span class="n">return_2Dgrids</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># put reference location back</span>
+        <span class="n">exp_x</span> <span class="o">=</span> <span class="n">exp_x</span> <span class="o">+</span> <span class="n">x_orig</span>
+        <span class="n">exp_y</span> <span class="o">=</span> <span class="n">exp_y</span> <span class="o">+</span> <span class="n">y_orig</span>
+        <span class="n">exp_z</span> <span class="o">=</span> <span class="n">exp_z</span> <span class="o">+</span> <span class="n">z_orig</span>
+        <span class="k">if</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">exp_t</span> <span class="o">=</span> <span class="n">o_time</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">exp_t</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="n">exp_t</span>
+
+        <span class="c"># extract uncertainties from covariance matrix</span>
+        <span class="k">if</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">sig_x</span><span class="p">,</span> <span class="n">sig_y</span><span class="p">,</span> <span class="n">sig_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">))</span>
+            <span class="n">sig_t</span> <span class="o">=</span> <span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sig_x</span><span class="p">,</span> <span class="n">sig_y</span><span class="p">,</span> <span class="n">sig_z</span><span class="p">,</span> <span class="n">sig_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">))</span>
+
+        <span class="c"># save the marginals to a hdf5 file in loc subdirectory (f_marginals)</span>
+        <span class="c"># each event becomes a group in this one file</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="n">f_marginals</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">exp_t</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">x</span><span class="o">+</span><span class="n">x_orig</span><span class="p">)</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">y</span><span class="o">+</span><span class="n">y_orig</span><span class="p">)</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;z&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">z</span><span class="o">+</span><span class="n">z_orig</span><span class="p">)</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_x&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x0&#39;</span><span class="p">])</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_y&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x1&#39;</span><span class="p">])</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_z&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x2&#39;</span><span class="p">])</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_xy&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x1&#39;</span><span class="p">])</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_xz&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x2&#39;</span><span class="p">])</span>
+        <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_yz&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x1_x2&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">space_only</span><span class="p">:</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">t</span><span class="o">-</span><span class="p">(</span><span class="n">o_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">))</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_t&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x3&#39;</span><span class="p">])</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_xt&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x3&#39;</span><span class="p">])</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_yt&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x1_x3&#39;</span><span class="p">])</span>
+            <span class="n">grp</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;prob_zt&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prob_dict</span><span class="p">[</span><span class="s">&#39;prob_x2_x3&#39;</span><span class="p">])</span>
+
+        <span class="c"># write the expected values to a plain text locations file</span>
+        <span class="n">f_prob</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;PROB DENSITY : T = </span><span class="si">%s</span><span class="s"> s pm </span><span class="si">%.2f</span><span class="s"> s, x= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km, </span><span class="se">\</span>
+<span class="s">                     y= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km, z= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="n">exp_t</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">sig_t</span><span class="p">,</span> <span class="n">exp_x</span><span class="p">,</span> <span class="n">sig_x</span><span class="p">,</span> <span class="n">exp_y</span><span class="p">,</span> <span class="n">sig_y</span><span class="p">,</span>
+                      <span class="n">exp_z</span><span class="p">,</span> <span class="n">sig_z</span><span class="p">))</span>
+
+    <span class="c"># close location files</span>
+    <span class="n">f_prob</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">f_marginals</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_location_options</span><span class="p">()</span>
+
+    <span class="n">do_locations_prob_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 26, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,494 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>hdf5_grids &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for hdf5_grids</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_hdr_file</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Contains wrapper classes to easily manipulate hdf5 files.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="H5SingleGrid"><a class="viewcode-back" href="../api.html#hdf5_grids.H5SingleGrid">[docs]</a><span class="k">class</span> <span class="nc">H5SingleGrid</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that wraps several methods for regular grids in HDF5 format.</span>
+
+<span class="sd">    **Attributes**</span>
+
+<span class="sd">    .. attribute:: grid_data</span>
+
+<span class="sd">        An HDF5 dataset.</span>
+
+<span class="sd">    .. attribute:: grid_info</span>
+
+<span class="sd">        Attributes of an HDF5 dataset.</span>
+
+<span class="sd">    **Methods**</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid_data</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">grid_info</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_f</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">grid_data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">grid_info</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialises an instance of HDF5SingleGrid.</span>
+
+<span class="sd">        :param filename: If a file of this name exists, it is opened for</span>
+<span class="sd">            reading.  Attributes grid_data and grid_info will then refer  to</span>
+<span class="sd">            the HDF5 dataset named &#39;grid_data&#39; and to its HDF5  attributes.  If</span>
+<span class="sd">            the file does not already exist, then a new  HDF5 file is opened</span>
+<span class="sd">            for writing, the grid_data paramter is  used to initialise the</span>
+<span class="sd">            &#39;grid_data&#39; HDF5 dataset, and the  grid_info parameter is used to</span>
+<span class="sd">            initialise its attributes.</span>
+<span class="sd">        :param grid_data: An array containing the grid data to be written to</span>
+<span class="sd">            the file.</span>
+<span class="sd">        :param grid_info: Attributes to be used for the &#39;grid_data&#39; dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="p">[</span><span class="s">&#39;grid_data&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="o">.</span><span class="n">attrs</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">grid_data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;grid_data&#39;</span><span class="p">,</span>
+                                                        <span class="n">data</span><span class="o">=</span><span class="n">grid_data</span><span class="p">,</span>
+                                                        <span class="n">compression</span><span class="o">=</span><span class="s">&#39;lzf&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">grid_info</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="o">.</span><span class="n">attrs</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">grid_info</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="H5SingleGrid.value_at_point"><a class="viewcode-back" href="../api.html#hdf5_grids.H5SingleGrid.value_at_point">[docs]</a>    <span class="k">def</span> <span class="nf">value_at_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.001</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs n-linear interpolation on the regular grid.</span>
+
+<span class="sd">        :param x: x-coordinate of the point of interest</span>
+<span class="sd">        :param y: y-coordinate of the point of interest</span>
+<span class="sd">        :param z: z-coordinate of the point of interest</span>
+<span class="sd">        :param epsilon: tollerance to edges of the grid</span>
+
+<span class="sd">        :type x: float</span>
+<span class="sd">        :type y: float</span>
+<span class="sd">        :type z: float</span>
+<span class="sd">        :type epsilon: float, optional</span>
+
+<span class="sd">        :rtype: float</span>
+<span class="sd">        :returns: value at point</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;nx&#39;</span><span class="p">]</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;ny&#39;</span><span class="p">]</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;nz&#39;</span><span class="p">]</span>
+        <span class="n">x_orig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;x_orig&#39;</span><span class="p">]</span>
+        <span class="n">y_orig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;y_orig&#39;</span><span class="p">]</span>
+        <span class="n">z_orig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;z_orig&#39;</span><span class="p">]</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dx&#39;</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dy&#39;</span><span class="p">]</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dz&#39;</span><span class="p">]</span>
+
+        <span class="n">min_x</span> <span class="o">=</span> <span class="n">x_orig</span>
+        <span class="n">max_x</span> <span class="o">=</span> <span class="n">x_orig</span><span class="o">+</span><span class="n">nx</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">min_y</span> <span class="o">=</span> <span class="n">y_orig</span>
+        <span class="n">max_y</span> <span class="o">=</span> <span class="n">y_orig</span><span class="o">+</span><span class="n">ny</span><span class="o">*</span><span class="n">dy</span>
+        <span class="n">min_z</span> <span class="o">=</span> <span class="n">z_orig</span>
+        <span class="n">max_z</span> <span class="o">=</span> <span class="n">z_orig</span><span class="o">+</span><span class="n">nz</span><span class="o">*</span><span class="n">dz</span>
+
+        <span class="c"># sanity check for point being within grid</span>
+        <span class="c"># use a tollerance value to avoid problems with numerical errors</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">min_x</span><span class="o">-</span><span class="n">epsilon</span> <span class="ow">or</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">max_x</span><span class="o">+</span><span class="n">epsilon</span> \
+           <span class="ow">or</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">min_y</span><span class="o">-</span><span class="n">epsilon</span> <span class="ow">or</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">max_y</span><span class="o">+</span><span class="n">epsilon</span> \
+           <span class="ow">or</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="n">min_z</span><span class="o">-</span><span class="n">epsilon</span> <span class="ow">or</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="n">max_z</span><span class="o">+</span><span class="n">epsilon</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span>
+                <span class="s">&#39;Point (</span><span class="si">%f</span><span class="s">, </span><span class="si">%f</span><span class="s">, </span><span class="si">%f</span><span class="s">) is outside the grid (tollerance=</span><span class="si">%f</span><span class="s">).&#39;</span> <span class="o">%</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">))</span>
+
+        <span class="c"># fix up lower and upper bounds if they are still (just) outside the</span>
+        <span class="c"># grid</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">min_x</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">min_x</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">min_y</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">min_y</span>
+        <span class="k">if</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="n">min_z</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">min_z</span>
+
+        <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">max_x</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">max_x</span>
+        <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">max_y</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">max_y</span>
+        <span class="k">if</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="n">max_z</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">max_z</span>
+
+        <span class="c"># make arrays of X, Y and Z ranges</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="o">+</span><span class="n">x_orig</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span><span class="o">+</span><span class="n">y_orig</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span><span class="o">*</span><span class="n">dz</span><span class="o">+</span><span class="n">z_orig</span>
+
+        <span class="c"># get the position this point would have in the X,Y,Z arrays if they</span>
+        <span class="c"># were extended by 1</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">iy</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">iz</span> <span class="o">=</span> <span class="n">Z</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+        <span class="c"># set the interpolation &quot;box&quot; for extreme cases</span>
+        <span class="k">if</span> <span class="n">nx</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>         <span class="c"># special case of 2D grid in x</span>
+            <span class="n">ix1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">ix2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">ix</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>       <span class="c"># lower bound</span>
+            <span class="n">ix1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">ix2</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">ix</span> <span class="o">==</span> <span class="n">nx</span><span class="p">:</span>      <span class="c"># upper bound</span>
+            <span class="n">ix1</span> <span class="o">=</span> <span class="n">nx</span><span class="o">-</span><span class="mi">2</span>
+            <span class="n">ix2</span> <span class="o">=</span> <span class="n">nx</span><span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>	            <span class="c"># general case</span>
+            <span class="n">ix1</span> <span class="o">=</span> <span class="n">ix</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">ix2</span> <span class="o">=</span> <span class="n">ix</span>
+
+        <span class="k">if</span> <span class="n">ny</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>         <span class="c"># special case of 2D grid in y</span>
+            <span class="n">iy1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">iy2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">iy</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>	    <span class="c"># lower bound</span>
+            <span class="n">iy1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">iy2</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">iy</span> <span class="o">==</span> <span class="n">ny</span><span class="p">:</span>      <span class="c"># upper bound</span>
+            <span class="n">iy1</span> <span class="o">=</span> <span class="n">ny</span><span class="o">-</span><span class="mi">2</span>
+            <span class="n">iy2</span> <span class="o">=</span> <span class="n">ny</span><span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>	            <span class="c"># general case</span>
+            <span class="n">iy1</span> <span class="o">=</span> <span class="n">iy</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">iy2</span> <span class="o">=</span> <span class="n">iy</span>
+
+        <span class="k">if</span> <span class="n">nz</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>         <span class="c"># special case of 2D grid in y</span>
+            <span class="n">iz1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">iz2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">iz</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>	    <span class="c"># lower bound</span>
+            <span class="n">iz1</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">iz2</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">iz</span> <span class="o">==</span> <span class="n">nz</span><span class="p">:</span>      <span class="c"># upper bound</span>
+            <span class="n">iz1</span> <span class="o">=</span> <span class="n">nz</span><span class="o">-</span><span class="mi">2</span>
+            <span class="n">iz2</span> <span class="o">=</span> <span class="n">nz</span><span class="o">-</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>	            <span class="c"># general case</span>
+            <span class="n">iz1</span> <span class="o">=</span> <span class="n">iz</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">iz2</span> <span class="o">=</span> <span class="n">iz</span>
+
+        <span class="c"># set up the values</span>
+        <span class="c"># bottom four values counterclockwise from x1y1</span>
+        <span class="n">v_x1y1z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix1</span><span class="p">,</span> <span class="n">iy1</span><span class="p">,</span> <span class="n">iz1</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="n">v_x2y1z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix2</span><span class="p">,</span> <span class="n">iy1</span><span class="p">,</span> <span class="n">iz1</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="n">v_x2y2z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix2</span><span class="p">,</span> <span class="n">iy2</span><span class="p">,</span> <span class="n">iz1</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="n">v_x1y2z1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix1</span><span class="p">,</span> <span class="n">iy2</span><span class="p">,</span> <span class="n">iz1</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="c"># top four values counterclockwise from x1y1</span>
+        <span class="n">v_x1y1z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix1</span><span class="p">,</span> <span class="n">iy1</span><span class="p">,</span> <span class="n">iz2</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="n">v_x2y1z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix2</span><span class="p">,</span> <span class="n">iy1</span><span class="p">,</span> <span class="n">iz2</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="n">v_x2y2z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix2</span><span class="p">,</span> <span class="n">iy2</span><span class="p">,</span> <span class="n">iz2</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+        <span class="n">v_x1y2z2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix1</span><span class="p">,</span> <span class="n">iy2</span><span class="p">,</span> <span class="n">iz2</span><span class="p">),</span>
+                                                       <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span>
+
+        <span class="c"># set up interpolators</span>
+        <span class="c"># take extra care over the interpolators in case of 2D grids</span>
+        <span class="k">if</span> <span class="n">ix2</span> <span class="o">==</span> <span class="n">ix1</span><span class="p">:</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">X</span><span class="p">[</span><span class="n">ix1</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">ix2</span><span class="p">]</span><span class="o">-</span><span class="n">X</span><span class="p">[</span><span class="n">ix1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">iy2</span> <span class="o">==</span> <span class="n">iy1</span><span class="p">:</span>
+            <span class="n">ty</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ty</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span><span class="o">-</span><span class="n">Y</span><span class="p">[</span><span class="n">iy1</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="n">iy2</span><span class="p">]</span><span class="o">-</span><span class="n">Y</span><span class="p">[</span><span class="n">iy1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">iz2</span> <span class="o">==</span> <span class="n">iz1</span><span class="p">:</span>
+            <span class="n">tz</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tz</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span><span class="o">-</span><span class="n">Z</span><span class="p">[</span><span class="n">iz1</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">iz2</span><span class="p">]</span><span class="o">-</span><span class="n">Z</span><span class="p">[</span><span class="n">iz1</span><span class="p">])</span>
+
+        <span class="c"># do bilinear interpolation</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tx</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ty</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tz</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_x1y1z1</span> <span class="o">+</span> \
+            <span class="n">tx</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ty</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tz</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_x2y1z1</span> <span class="o">+</span> \
+            <span class="n">tx</span> <span class="o">*</span> <span class="n">ty</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tz</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_x2y2z1</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tx</span><span class="p">)</span> <span class="o">*</span> <span class="n">ty</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tz</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_x1y2z1</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tx</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ty</span><span class="p">)</span> <span class="o">*</span> <span class="n">tz</span> <span class="o">*</span> <span class="n">v_x1y1z2</span> <span class="o">+</span> \
+            <span class="n">tx</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ty</span><span class="p">)</span> <span class="o">*</span> <span class="n">tz</span> <span class="o">*</span> <span class="n">v_x2y1z2</span> <span class="o">+</span> \
+            <span class="n">tx</span> <span class="o">*</span> <span class="n">ty</span> <span class="o">*</span> <span class="n">tz</span> <span class="o">*</span> <span class="n">v_x2y2z2</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">tx</span><span class="p">)</span> <span class="o">*</span> <span class="n">ty</span> <span class="o">*</span> <span class="n">tz</span> <span class="o">*</span> <span class="n">v_x1y2z2</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+</div>
+<div class="viewcode-block" id="H5SingleGrid.interp_to_newgrid"><a class="viewcode-back" href="../api.html#hdf5_grids.H5SingleGrid.interp_to_newgrid">[docs]</a>    <span class="k">def</span> <span class="nf">interp_to_newgrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_filename</span><span class="p">,</span> <span class="n">new_grid_info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Intrepolates to a new grid.</span>
+
+<span class="sd">        :param new_filename: Filename for new grid</span>
+<span class="sd">        :param new_grid_info: Grid info dictionary for new grid</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">nx</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;nx&#39;</span><span class="p">]</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;ny&#39;</span><span class="p">]</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;nz&#39;</span><span class="p">]</span>
+
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;dx&#39;</span><span class="p">]</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;dy&#39;</span><span class="p">]</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;dz&#39;</span><span class="p">]</span>
+
+        <span class="n">x_orig</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;x_orig&#39;</span><span class="p">]</span>
+        <span class="n">y_orig</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;y_orig&#39;</span><span class="p">]</span>
+        <span class="n">z_orig</span> <span class="o">=</span> <span class="n">new_grid_info</span><span class="p">[</span><span class="s">&#39;z_orig&#39;</span><span class="p">]</span>
+
+        <span class="c"># if you&#39;re calling this function, you want any existing file</span>
+        <span class="c"># overwritten</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">new_filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;grid_data&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">nx</span><span class="o">*</span><span class="n">ny</span><span class="o">*</span><span class="n">nz</span><span class="p">,</span> <span class="p">),</span> <span class="s">&#39;f&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">new_grid_info</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="n">buf</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c">#initialize new buffer</span>
+        <span class="n">new_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="o">+</span><span class="n">x_orig</span>
+        <span class="n">new_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span><span class="o">+</span><span class="n">y_orig</span>
+        <span class="n">new_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span><span class="o">*</span><span class="n">dz</span><span class="o">+</span><span class="n">z_orig</span>
+
+        <span class="c"># loop doing interpolation</span>
+        <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">new_x</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">new_y</span><span class="p">[</span><span class="n">iy</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                    <span class="n">z</span> <span class="o">=</span> <span class="n">new_z</span><span class="p">[</span><span class="n">iz</span><span class="p">]</span>
+                    <span class="n">buf</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span><span class="p">),</span> <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))]</span> <span class="o">=</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">value_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># create the new Grid file and object</span>
+        <span class="n">new_grid</span> <span class="o">=</span> <span class="n">H5SingleGrid</span><span class="p">(</span><span class="n">new_filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_grid</span>
+
+</div></div>
+<div class="viewcode-block" id="H5NllSingleGrid"><a class="viewcode-back" href="../api.html#hdf5_grids.H5NllSingleGrid">[docs]</a><span class="k">class</span> <span class="nc">H5NllSingleGrid</span><span class="p">(</span><span class="n">H5SingleGrid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class derived from H5SingleGrid that upon initialization reads a NLL pair</span>
+<span class="sd">    of files (.hdr and .buf) and writes an equivalent hdf5 file.</span>
+
+<span class="sd">    :param nll_name: NLL filename without extension</span>
+<span class="sd">    :param h5_name: hdf5 filename</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">nll_filename</span><span class="p">):</span>
+
+        <span class="kn">from</span> <span class="nn">array</span> <span class="kn">import</span> <span class="n">array</span>
+
+        <span class="n">hdr</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.hdr&quot;</span> <span class="o">%</span> <span class="n">nll_filename</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.buf&quot;</span> <span class="o">%</span> <span class="n">nll_filename</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="n">read_hdr_file</span><span class="p">(</span><span class="n">hdr</span><span class="p">)</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;nx&#39;</span><span class="p">]</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;ny&#39;</span><span class="p">]</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;nz&#39;</span><span class="p">]</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="s">&#39;f&#39;</span><span class="p">)</span>
+        <span class="n">buf</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">nx</span><span class="o">*</span><span class="n">ny</span><span class="o">*</span><span class="n">nz</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">H5SingleGrid</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">info</span><span class="p">)</span>
+
+
+<span class="c">####</span>
+<span class="c"># HDF5 enabled functions</span>
+<span class="c">####</span>
+
+</div>
+<div class="viewcode-block" id="nll2hdf5"><a class="viewcode-back" href="../api.html#hdf5_grids.nll2hdf5">[docs]</a><span class="k">def</span> <span class="nf">nll2hdf5</span><span class="p">(</span><span class="n">nll_name</span><span class="p">,</span> <span class="n">h5_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Translates NLL files to hdf5 format.</span>
+
+<span class="sd">    :param nll_name: NLL filename without extension</span>
+<span class="sd">    :param h5_name: hdf5 filename</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">h5</span> <span class="o">=</span> <span class="n">H5NllSingleGrid</span><span class="p">(</span><span class="n">h5_name</span><span class="p">,</span> <span class="n">nll_name</span><span class="p">)</span>
+    <span class="k">del</span> <span class="n">h5</span>
+
+</div>
+<div class="viewcode-block" id="get_interpolated_time_grids"><a class="viewcode-back" href="../api.html#hdf5_grids.get_interpolated_time_grids">[docs]</a><span class="k">def</span> <span class="nf">get_interpolated_time_grids</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interpolates the NLL time grids onto the search grids. Uses options</span>
+<span class="sd">    contained in a WavelocOptions.opdict.</span>
+
+<span class="sd">    :param opdict: Dictionary of options in WavelocOptions.opdict format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">glob</span>
+    <span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_hdr_file</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">full_time_grids</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span>
+                                <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;time_grid&#39;</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;*.hdf5&#39;</span><span class="p">))</span>
+    <span class="n">full_time_grids</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_time_grids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No .hdf5 time grids found in directory </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">)))</span>
+
+    <span class="c"># read the search grid</span>
+    <span class="n">search_grid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;search_grid&#39;</span><span class="p">])</span>
+    <span class="n">tgrid_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;time_grids&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">tgrid_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">tgrid_dir</span><span class="p">)</span>
+    <span class="n">search_info</span> <span class="o">=</span> <span class="n">read_hdr_file</span><span class="p">(</span><span class="n">search_grid</span><span class="p">)</span>
+
+    <span class="n">time_grids</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># for each of the full-length time grids</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Loading time grids ... &#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">f_timegrid</span> <span class="ow">in</span> <span class="n">full_time_grids</span><span class="p">:</span>
+        <span class="n">f_basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f_timegrid</span><span class="p">)</span>
+        <span class="c"># get the filename of the corresponding short-length grid (the one for</span>
+        <span class="c"># the search grid in particular)</span>
+        <span class="n">tgrid_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tgrid_dir</span><span class="p">,</span> <span class="n">f_basename</span><span class="p">)</span>
+
+        <span class="c"># if file exists and we want to load it, then open the file and give it</span>
+        <span class="c"># to the dictionary</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">tgrid_filename</span><span class="p">)</span> <span class="ow">and</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;load_ttimes_buf&#39;</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Loading </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">tgrid_filename</span><span class="p">)</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="n">H5SingleGrid</span><span class="p">(</span><span class="n">tgrid_filename</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span>
+            <span class="n">time_grids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid</span>
+
+        <span class="c"># if the file does not exist, or want to force re-creation, then create</span>
+        <span class="c"># it</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">tgrid_filename</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;load_ttimes_buf&#39;</span><span class="p">]:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Creating </span><span class="si">%s</span><span class="s"> - Please be patient&#39;</span> <span class="o">%</span> <span class="n">tgrid_filename</span><span class="p">)</span>
+            <span class="n">full_grid</span> <span class="o">=</span> <span class="n">H5SingleGrid</span><span class="p">(</span><span class="n">f_timegrid</span><span class="p">)</span>
+            <span class="c"># copy the common part of the grid info</span>
+            <span class="n">new_info</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">full_grid</span><span class="o">.</span><span class="n">grid_info</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="n">new_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="c"># set the new part of the grid info to correspond to the search</span>
+            <span class="c"># grid</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;x_orig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;x_orig&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;y_orig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;y_orig&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;z_orig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;z_orig&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;nx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;nx&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;ny&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;ny&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;nz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;nz&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;dx&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;dx&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;dy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;dy&#39;</span><span class="p">]</span>
+            <span class="n">new_info</span><span class="p">[</span><span class="s">&#39;dz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">search_info</span><span class="p">[</span><span class="s">&#39;dz&#39;</span><span class="p">]</span>
+            <span class="c"># do interpolation</span>
+            <span class="n">grid</span> <span class="o">=</span> <span class="n">full_grid</span><span class="o">.</span><span class="n">interp_to_newgrid</span><span class="p">(</span><span class="n">tgrid_filename</span><span class="p">,</span> <span class="n">new_info</span><span class="p">)</span>
+            <span class="c"># add to dictionary</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span>
+            <span class="n">time_grids</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid</span>
+            <span class="c"># close full grid safely</span>
+            <span class="k">del</span> <span class="n">full_grid</span>
+
+    <span class="k">return</span> <span class="n">time_grids</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 26, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

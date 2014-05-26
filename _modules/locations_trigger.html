@@ -1,0 +1,543 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>locations_trigger &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for locations_trigger</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">utcdatetime</span><span class="p">,</span> <span class="n">read</span>
+<span class="kn">from</span> <span class="nn">obspy.signal</span> <span class="kn">import</span> <span class="n">trigger</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">Waveform</span>
+<span class="kn">from</span> <span class="nn">filters</span> <span class="kn">import</span> <span class="n">smooth</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">hdf5_grids</span> <span class="kn">import</span> <span class="n">get_interpolated_time_grids</span>
+
+
+<div class="viewcode-block" id="plot_location_triggers"><a class="viewcode-back" href="../api.html#locations_trigger.plot_location_triggers">[docs]</a><span class="k">def</span> <span class="nf">plot_location_triggers</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">trig_start</span><span class="p">,</span> <span class="n">trig_end</span><span class="p">,</span> <span class="n">trig_95_start</span><span class="p">,</span>
+                           <span class="n">trig_95_end</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the location (in time) of the triggers.</span>
+<span class="sd">    TODO : Flesh out this doc-string</span>
+
+<span class="sd">    :param trace:</span>
+<span class="sd">    :param trig_start:</span>
+<span class="sd">    :param trig_end:</span>
+<span class="sd">    :param trig_95_start:</span>
+<span class="sd">    :param trig_95_end:</span>
+<span class="sd">    :param show:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span>
+    <span class="n">npts</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">npts</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">npts</span><span class="p">)</span> <span class="o">/</span> <span class="n">df</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">trig_start</span><span class="o">-</span><span class="mi">100</span><span class="p">:</span><span class="n">trig_end</span><span class="o">+</span><span class="mi">100</span><span class="p">],</span>
+             <span class="n">trace</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">trig_start</span><span class="o">-</span><span class="mi">100</span><span class="p">:</span><span class="n">trig_end</span><span class="o">+</span><span class="mi">100</span><span class="p">],</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">trig_start</span> <span class="o">/</span> <span class="n">df</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&quot;Trigger On&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">trig_end</span> <span class="o">/</span> <span class="n">df</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&quot;Trigger Off&quot;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">trig_95_start</span> <span class="o">/</span> <span class="n">df</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">trig_95_end</span> <span class="o">/</span> <span class="n">df</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">trace</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="number_good_kurtosis_for_location"><a class="viewcode-back" href="../api.html#locations_trigger.number_good_kurtosis_for_location">[docs]</a><span class="k">def</span> <span class="nf">number_good_kurtosis_for_location</span><span class="p">(</span><span class="n">kurt_files</span><span class="p">,</span> <span class="n">data_files</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">time_dict</span><span class="p">,</span>
+                                      <span class="n">snr_limit</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">snr_tr_limit</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                                      <span class="n">sn_time</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Analyses the filtered data and the kurtosis time-series to determine the</span>
+<span class="sd">    number of stations whose traces have sufficiently high signal-to-noise</span>
+<span class="sd">    ratio (SNR) to be useful for the location. Both time-series need to satisfy</span>
+<span class="sd">    the conditions for a station to be counted as contributing to the location.</span>
+
+<span class="sd">    :param kurt_files: Filenames for kurtosis files. Depending on the filenames</span>
+<span class="sd">        given in this list, the function will analyse kurtosis,</span>
+<span class="sd">        kurtosis-gradient or gaussian waveforms.</span>
+<span class="sd">    :param data_files: Filenames for filtered data.</span>
+<span class="sd">    :param loc: Location dictionary for the event to be analysed</span>
+<span class="sd">    :param time_dict: Dictionary of travel-times for the location to be</span>
+<span class="sd">        analysed</span>
+<span class="sd">    :param snr_limit: SNR limit for kurtosis-type data</span>
+<span class="sd">    :param snr_limit_tr: SNR limit for filtered data</span>
+<span class="sd">    :param snr_time: Length of time in seconds before the event for computation</span>
+<span class="sd">        of SNR.</span>
+
+<span class="sd">    :rtype: integer</span>
+<span class="sd">    :returns: Numer of stations that have contributed to the location.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">o_time</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+    <span class="n">stack_x</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span>
+    <span class="n">stack_y</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span>
+    <span class="n">stack_z</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span>
+
+    <span class="n">n_good_kurt</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">ifile</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">kurt_files</span><span class="p">)):</span>
+        <span class="n">kfilename</span> <span class="o">=</span> <span class="n">kurt_files</span><span class="p">[</span><span class="n">ifile</span><span class="p">]</span>
+        <span class="n">dfilename</span> <span class="o">=</span> <span class="n">data_files</span><span class="p">[</span><span class="n">ifile</span><span class="p">]</span>
+
+        <span class="n">st</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">kfilename</span><span class="p">,</span> <span class="n">headonly</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">staname</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">traces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">station</span>
+
+        <span class="k">if</span> <span class="n">staname</span> <span class="ow">in</span> <span class="n">time_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">traveltime</span> <span class="o">=</span> <span class="n">time_dict</span><span class="p">[</span><span class="n">staname</span><span class="p">]</span><span class="o">.</span><span class="n">value_at_point</span><span class="p">(</span><span class="n">stack_x</span><span class="p">,</span> <span class="n">stack_y</span><span class="p">,</span>
+                                                           <span class="n">stack_z</span><span class="p">)</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">o_time</span><span class="o">+</span><span class="n">traveltime</span><span class="o">-</span><span class="n">sn_time</span>
+            <span class="n">end_time</span> <span class="o">=</span> <span class="n">o_time</span><span class="o">+</span><span class="n">traveltime</span><span class="o">+</span><span class="n">sn_time</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">kfilename</span><span class="p">,</span> <span class="n">starttime</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+                                  <span class="n">endtime</span><span class="o">=</span><span class="n">end_time</span><span class="p">)</span>
+                <span class="n">snr</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">get_snr</span><span class="p">(</span><span class="n">o_time</span><span class="o">+</span><span class="n">traveltime</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+
+                <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">dfilename</span><span class="p">,</span> <span class="n">starttime</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+                                  <span class="n">endtime</span><span class="o">=</span><span class="n">end_time</span><span class="p">)</span>
+                <span class="n">snr_tr</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">get_snr</span><span class="p">(</span><span class="n">o_time</span><span class="o">+</span><span class="n">traveltime</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">snr</span> <span class="o">&gt;</span> <span class="n">snr_limit</span> <span class="ow">and</span> <span class="n">snr_tr</span> <span class="o">&gt;</span> <span class="n">snr_tr_limit</span><span class="p">:</span>
+                    <span class="n">n_good_kurt</span> <span class="o">=</span> <span class="n">n_good_kurt</span> <span class="o">+</span> <span class="mi">1</span>
+
+            <span class="k">except</span> <span class="ne">UserWarning</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;No data around </span><span class="si">%s</span><span class="s"> for file </span><span class="si">%s</span><span class="s">.&#39;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="n">o_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">kfilename</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">n_good_kurt</span>
+
+</div>
+<div class="viewcode-block" id="trigger_locations_inner"><a class="viewcode-back" href="../api.html#locations_trigger.trigger_locations_inner">[docs]</a><span class="k">def</span> <span class="nf">trigger_locations_inner</span><span class="p">(</span><span class="n">max_val</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">max_y</span><span class="p">,</span> <span class="n">max_z</span><span class="p">,</span> <span class="n">left_trig</span><span class="p">,</span>
+                            <span class="n">right_trig</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inner loop of the location process.</span>
+
+<span class="sd">    :param max_val: Time-series of stack-max.</span>
+<span class="sd">    :param max_x: Time-series of the x-positions corresponding to stack-max.</span>
+<span class="sd">    :param max_y: Time-series of the y-positions corresponding to stack-max.</span>
+<span class="sd">    :param max_z: Time-series of the z-positions corresponding to stack-max.</span>
+<span class="sd">    :param left_trig: Amplitude for trigger-on.</span>
+<span class="sd">    :param right_trig: Amplitude for trigger-off.</span>
+<span class="sd">    :param start_time: UTCDateTime of the first point in the time-series.</span>
+<span class="sd">    :param delta: Sampling interval of the time-series</span>
+
+<span class="sd">    :returns: List of locations. Each location is a dictionary containing all</span>
+<span class="sd">        the relevant information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">locs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">trigs</span> <span class="o">=</span> <span class="n">trigger</span><span class="o">.</span><span class="n">triggerOnset</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">max_val</span><span class="p">),</span> <span class="n">left_trig</span><span class="p">,</span> <span class="n">right_trig</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Found </span><span class="si">%d</span><span class="s"> triggers.&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">trig</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">:</span>
+
+        <span class="n">i_start</span> <span class="o">=</span> <span class="n">trig</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">i_end</span> <span class="o">=</span> <span class="n">trig</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span>
+        <span class="n">i_max_trig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">max_val</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span><span class="n">i_end</span><span class="p">])</span><span class="o">+</span><span class="n">i_start</span>
+        <span class="n">max_trig</span> <span class="o">=</span> <span class="n">max_val</span><span class="p">[</span><span class="n">i_max_trig</span><span class="p">]</span>
+        <span class="n">max_trig_95</span> <span class="o">=</span> <span class="mf">0.95</span><span class="o">*</span><span class="n">max_trig</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Max_trig = </span><span class="si">%.3f</span><span class="s">, max_trig_95 = </span><span class="si">%.3f</span><span class="s">&#39;</span> <span class="o">%</span>
+                      <span class="p">(</span><span class="n">max_trig</span><span class="p">,</span> <span class="n">max_trig_95</span><span class="p">))</span>
+        <span class="n">trigs_95</span> <span class="o">=</span> <span class="n">trigger</span><span class="o">.</span><span class="n">triggerOnset</span><span class="p">(</span><span class="n">max_val</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span><span class="n">i_end</span><span class="p">],</span> <span class="n">max_trig_95</span><span class="p">,</span>
+                                        <span class="n">max_trig_95</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">trig_95</span> <span class="ow">in</span> <span class="n">trigs_95</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i_max_trig</span> <span class="o">&gt;=</span> <span class="n">trig_95</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">i_start</span> <span class="ow">and</span> \
+               <span class="n">i_max_trig</span> <span class="o">&lt;=</span> <span class="n">trig_95</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">i_start</span><span class="p">:</span>
+                <span class="n">loc_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;max_trig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_trig</span>
+                <span class="n">i_start_95</span> <span class="o">=</span> <span class="n">trig_95</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">i_start</span>
+                <span class="n">i_end_95</span> <span class="o">=</span> <span class="n">trig_95</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="n">i_start</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">max_x</span><span class="p">[</span><span class="n">i_start_95</span><span class="p">:</span><span class="n">i_end_95</span><span class="p">])</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">max_x</span><span class="p">[</span><span class="n">i_start_95</span><span class="p">:</span><span class="n">i_end_95</span><span class="p">])</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">max_y</span><span class="p">[</span><span class="n">i_start_95</span><span class="p">:</span><span class="n">i_end_95</span><span class="p">])</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">max_y</span><span class="p">[</span><span class="n">i_start_95</span><span class="p">:</span><span class="n">i_end_95</span><span class="p">])</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">max_z</span><span class="p">[</span><span class="n">i_start_95</span><span class="p">:</span><span class="n">i_end_95</span><span class="p">])</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">max_z</span><span class="p">[</span><span class="n">i_start_95</span><span class="p">:</span><span class="n">i_end_95</span><span class="p">])</span>
+
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="n">i_max_trig</span><span class="o">*</span><span class="n">delta</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i_max_trig</span><span class="o">-</span><span class="n">i_start_95</span><span class="p">)</span><span class="o">*</span><span class="n">delta</span>
+                <span class="n">loc_dict</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i_end_95</span><span class="o">-</span><span class="n">i_max_trig</span><span class="p">)</span><span class="o">*</span><span class="n">delta</span>
+
+                <span class="n">locs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc_dict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">locs</span>
+
+</div>
+<div class="viewcode-block" id="do_locations_trigger_setup_and_run"><a class="viewcode-back" href="../api.html#locations_trigger.do_locations_trigger_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_locations_trigger_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run locations trigger. Takes all options and paramters from</span>
+<span class="sd">        WavelocOptions.opdict dictionary.</span>
+
+<span class="sd">    :param opdict: Dictionary of waveloc options / parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="c"># parse command line</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+    <span class="n">kurt_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]))</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]))</span>
+    <span class="n">kurt_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="n">time_grids</span> <span class="o">=</span> <span class="n">get_interpolated_time_grids</span><span class="p">(</span><span class="n">opdict</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Starting log for combine_stacks.&quot;</span><span class="p">)</span>
+
+    <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">])</span>
+    <span class="n">stack_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s">&#39;stack&#39;</span><span class="p">)</span>
+
+    <span class="n">reloc</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">reloc</span><span class="p">:</span>
+        <span class="n">loc_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s">&#39;reloc&#39;</span><span class="p">)</span>
+        <span class="n">stack_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">stack_path</span><span class="p">,</span>
+                                             <span class="s">&#39;reloc_stack_all*.hdf5&#39;</span><span class="p">))</span>
+        <span class="n">stack_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">loc_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+        <span class="n">stack_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">stack_path</span><span class="p">,</span> <span class="s">&#39;stack_all*.hdf5&#39;</span><span class="p">))</span>
+        <span class="n">stack_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="n">n_stacks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stack_files</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n_stacks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Empty list of stacks in </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">stack_path</span><span class="p">))</span>
+
+    <span class="n">loc_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">loc_path</span><span class="p">,</span> <span class="s">&quot;locations.dat&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Path for stack files : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">stack_path</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Path for loc files : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">loc_path</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Location file : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">loc_filename</span><span class="p">)</span>
+
+    <span class="c"># DO DATA PREP ACCORDING TO RELOC OR NOT</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Dealing with continuous location, so merging stack files</span><span class="se">\</span>
+<span class="s">                 directly ...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+    <span class="c"># get basic info from first file</span>
+    <span class="n">f_stack</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">stack_files</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_val&#39;</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">max_val</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span>
+    <span class="n">f_stack</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># get start times  (get first and last times)</span>
+    <span class="n">start_times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">end_times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">stack_files</span><span class="p">:</span>
+        <span class="n">f_stack</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_val&#39;</span><span class="p">]</span>
+        <span class="n">start_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span>
+                           <span class="n">max_val</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]))</span>
+        <span class="n">end_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span>
+                         <span class="n">max_val</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">])</span><span class="o">+</span><span class="n">dt</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">max_val</span><span class="p">))</span>
+        <span class="n">f_stack</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">first_start_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_times</span><span class="p">)</span>
+    <span class="n">last_end_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">end_times</span><span class="p">)</span>
+
+    <span class="n">nt_full</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">last_end_time</span><span class="o">-</span><span class="n">first_start_time</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+
+    <span class="c"># create - assume all stacks are of the same length and will be</span>
+    <span class="c"># concatenated end to end (this will give more than enough space)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">stack_path</span><span class="p">,</span> <span class="s">&#39;combined_stack_all.hdf5&#39;</span><span class="p">),</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">cmax_val</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;max_val&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">nt_full</span><span class="p">,),</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="n">nt_full</span><span class="p">,))</span>
+    <span class="n">cmax_x</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;max_x&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">nt_full</span><span class="p">,),</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="n">nt_full</span><span class="p">,))</span>
+    <span class="n">cmax_y</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;max_y&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">nt_full</span><span class="p">,),</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="n">nt_full</span><span class="p">,))</span>
+    <span class="n">cmax_z</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;max_z&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">nt_full</span><span class="p">,),</span> <span class="s">&#39;f&#39;</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="n">nt_full</span><span class="p">,))</span>
+
+    <span class="c"># concatenate unsmoothed versions of max_val to avoid</span>
+    <span class="c"># problems at file starts and ends</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_stacks</span><span class="p">):</span>
+        <span class="n">f_stack</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">stack_files</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_val&#39;</span><span class="p">]</span>
+        <span class="n">max_x</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_x&#39;</span><span class="p">]</span>
+        <span class="n">max_y</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_y&#39;</span><span class="p">]</span>
+        <span class="n">max_z</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_z&#39;</span><span class="p">]</span>
+
+        <span class="c"># get time info for this stack</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">max_val</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">max_val</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">])</span>
+        <span class="n">ibegin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">((</span><span class="n">start_time</span><span class="o">-</span><span class="n">first_start_time</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+
+        <span class="c"># copy data over into the right place</span>
+        <span class="n">cmax_val</span><span class="p">[</span><span class="n">ibegin</span><span class="p">:</span><span class="n">ibegin</span><span class="o">+</span><span class="n">nt</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_val</span><span class="p">[:]</span>
+        <span class="n">cmax_x</span><span class="p">[</span><span class="n">ibegin</span><span class="p">:</span><span class="n">ibegin</span><span class="o">+</span><span class="n">nt</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_x</span><span class="p">[:]</span>
+        <span class="n">cmax_y</span><span class="p">[</span><span class="n">ibegin</span><span class="p">:</span><span class="n">ibegin</span><span class="o">+</span><span class="n">nt</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_y</span><span class="p">[:]</span>
+        <span class="n">cmax_z</span><span class="p">[</span><span class="n">ibegin</span><span class="p">:</span><span class="n">ibegin</span><span class="o">+</span><span class="n">nt</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_z</span><span class="p">[:]</span>
+
+        <span class="c"># close the stack</span>
+        <span class="n">f_stack</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># create the smoothed version of the max stack</span>
+    <span class="n">cmax_val_smooth</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;max_val_smooth&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">nt_full</span><span class="p">,),</span> <span class="s">&#39;f&#39;</span><span class="p">,</span>
+                                       <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="n">nt_full</span><span class="p">,))</span>
+    <span class="n">cmax_val_smooth</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">smooth</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cmax_val</span><span class="p">),</span> <span class="mi">51</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">dset</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dt</span>
+        <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">first_start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="c"># DO TRIGGERING AND LOCATION</span>
+    <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;auto_loclevel&#39;</span><span class="p">]:</span>
+        <span class="n">loclevel</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_loclevel&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">cmax_val_smooth</span><span class="p">)</span>
+        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loclevel</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">loclevel</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;loclevel&#39;</span><span class="p">]</span>
+    <span class="n">left_trig</span> <span class="o">=</span> <span class="n">loclevel</span>
+    <span class="n">right_trig</span> <span class="o">=</span> <span class="n">loclevel</span>
+
+    <span class="n">loc_list</span> <span class="o">=</span> <span class="n">trigger_locations_inner</span><span class="p">(</span><span class="n">cmax_val_smooth</span><span class="p">[:],</span> <span class="n">cmax_x</span><span class="p">,</span> <span class="n">cmax_y</span><span class="p">,</span>
+                                       <span class="n">cmax_z</span><span class="p">,</span> <span class="n">left_trig</span><span class="p">,</span> <span class="n">right_trig</span><span class="p">,</span>
+                                       <span class="n">first_start_time</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Found </span><span class="si">%d</span><span class="s"> initial.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">loc_list</span><span class="p">)))</span>
+
+    <span class="c"># close the stack file</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">loc_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">loc_filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">write_header_options</span><span class="p">(</span><span class="n">loc_file</span><span class="p">,</span> <span class="n">opdict</span><span class="p">)</span>
+
+    <span class="n">snr_limit</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_limit&#39;</span><span class="p">]</span>
+    <span class="n">snr_tr_limit</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_tr_limit&#39;</span><span class="p">]</span>
+    <span class="n">sn_time</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sn_time&#39;</span><span class="p">]</span>
+    <span class="n">n_kurt_min</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;n_kurt_min&#39;</span><span class="p">]</span>
+
+    <span class="n">n_ok</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">loc_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">number_good_kurtosis_for_location</span><span class="p">(</span><span class="n">kurt_files</span><span class="p">,</span> <span class="n">data_files</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span>
+                                             <span class="n">time_grids</span><span class="p">,</span> <span class="n">snr_limit</span><span class="p">,</span>
+                                             <span class="n">snr_tr_limit</span><span class="p">,</span> <span class="n">sn_time</span><span class="p">)</span> <span class="o">&gt;</span> \
+                <span class="n">n_kurt_min</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Max = </span><span class="si">%.2f</span><span class="s">, </span><span class="si">%s</span><span class="s"> - </span><span class="si">%.2f</span><span class="s">s + </span><span class="si">%.2f</span><span class="s"> s, x=</span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km,</span><span class="se">\</span>
+<span class="s">                         y=</span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km, z=</span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km&quot;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;max_trig&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                          <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">],</span>
+                          <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">],</span>
+                          <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]))</span>
+            <span class="n">loc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">u&quot;Max = </span><span class="si">%.2f</span><span class="s">, </span><span class="si">%s</span><span class="s"> - </span><span class="si">%.2f</span><span class="s"> s + </span><span class="si">%.2f</span><span class="s"> s, x= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="se">\</span>
+<span class="s">                           km, y= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km, z= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span>
+                           <span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;max_trig&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">],</span>
+                            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">],</span>
+                            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]))</span>
+            <span class="n">n_ok</span> <span class="o">=</span> <span class="n">n_ok</span><span class="o">+</span><span class="mi">1</span>
+            <span class="n">locs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Not enough kurtosis picks for : Max = </span><span class="si">%.2f</span><span class="s">,</span><span class="se">\</span>
+<span class="s">                         </span><span class="si">%s</span><span class="s"> - </span><span class="si">%.2f</span><span class="s">s + </span><span class="si">%.2f</span><span class="s">s, x=</span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s">, y=</span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s">,</span><span class="se">\</span>
+<span class="s">                         z=</span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;max_trig&#39;</span><span class="p">],</span>
+                         <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">],</span>
+                         <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">],</span>
+                         <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">],</span>
+                         <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]))</span>
+    <span class="n">loc_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Wrote </span><span class="si">%d</span><span class="s"> locations to file </span><span class="si">%s</span><span class="s">.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n_ok</span><span class="p">,</span> <span class="n">loc_filename</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">locs</span>
+
+</div>
+<div class="viewcode-block" id="read_locs_from_file"><a class="viewcode-back" href="../api.html#locations_trigger.read_locs_from_file">[docs]</a><span class="k">def</span> <span class="nf">read_locs_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read locations from file.</span>
+
+<span class="sd">    :param filename: File to read.</span>
+
+<span class="sd">    :returns: List of locations (each location is a dictionary)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">utcdatetime</span>
+
+    <span class="n">locs</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">isspace</span><span class="p">()</span> <span class="ow">and</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;#&#39;</span><span class="p">:</span>
+
+            <span class="n">loc</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;max_trig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">5</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">8</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">11</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">13</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">16</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">18</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">21</span><span class="p">])</span>
+            <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">23</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">:</span>
+                <span class="n">loc</span><span class="p">[</span><span class="s">&#39;ml&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">26</span><span class="p">])</span>
+                <span class="n">loc</span><span class="p">[</span><span class="s">&#39;ml_sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">28</span><span class="p">])</span>
+
+            <span class="n">locs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">locs</span>
+
+</div>
+<div class="viewcode-block" id="write_header_options"><a class="viewcode-back" href="../api.html#locations_trigger.write_header_options">[docs]</a><span class="k">def</span> <span class="nf">write_header_options</span><span class="p">(</span><span class="n">loc_file</span><span class="p">,</span> <span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write the information regarding how the locations were generated to an</span>
+<span class="sd">    already opened location file. This information becomes a location &quot;header&quot;.</span>
+
+<span class="sd">    :param loc_file: File object to which the information will be written.</span>
+<span class="sd">    :param opdict: Waveloc options dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Header of locations.dat</span>
+    <span class="n">loc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">u&#39;#FILTER : </span><span class="si">%.1f</span><span class="s"> - </span><span class="si">%.1f</span><span class="s"> Hz</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c1&#39;</span><span class="p">],</span>
+                                                    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c2&#39;</span><span class="p">]))</span>
+    <span class="n">loc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">u&#39;#KURTOSIS = window: </span><span class="si">%.2f</span><span class="s"> s, recurs: </span><span class="si">%s</span><span class="s">, grad: </span><span class="si">%s</span><span class="s">, </span><span class="se">\</span>
+<span class="s">                   gauss: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kwin&#39;</span><span class="p">],</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">],</span>
+                                   <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">],</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]))</span>
+    <span class="n">loc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">u&#39;#OPTIONS = reloc: </span><span class="si">%s</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">])</span>
+    <span class="n">loc_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">u&#39;#LOCATION = level: </span><span class="si">%d</span><span class="s">, window of analysis: </span><span class="si">%.2f</span><span class="s"> s, </span><span class="se">\</span>
+<span class="s">                   kurtosis snr: </span><span class="si">%.2f</span><span class="s">, waveform snr: </span><span class="si">%.2f</span><span class="s">, number of </span><span class="se">\</span>
+<span class="s">                   stations: </span><span class="si">%d</span><span class="se">\n\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;loclevel&#39;</span><span class="p">],</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sn_time&#39;</span><span class="p">],</span>
+                                        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_limit&#39;</span><span class="p">],</span>
+                                        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_tr_limit&#39;</span><span class="p">],</span>
+                                        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;n_kurt_min&#39;</span><span class="p">]))</span>
+
+</div>
+<div class="viewcode-block" id="read_header_from_file"><a class="viewcode-back" href="../api.html#locations_trigger.read_header_from_file">[docs]</a><span class="k">def</span> <span class="nf">read_header_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read header information from a location file into a WavelocOptions.opdict.</span>
+
+<span class="sd">    :param filename: File to read.</span>
+<span class="sd">    :param opdict: Waveloc options dictionary to write into.</span>
+
+<span class="sd">    :returns: opdict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kwin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">6</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">8</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">10</span><span class="p">]</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">3</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_tr_limit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">14</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">opdict</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_location_options</span><span class="p">()</span>
+
+    <span class="n">do_locations_trigger_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 26, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

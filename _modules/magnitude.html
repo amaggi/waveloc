@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>magnitude &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for magnitude</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">obspy.xseed</span> <span class="kn">import</span> <span class="n">Parser</span>
+<span class="kn">from</span> <span class="nn">obspy.signal</span> <span class="kn">import</span> <span class="n">estimateMagnitude</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">Waveform</span>
+<span class="kn">from</span> <span class="nn">locations_trigger</span> <span class="kn">import</span> <span class="n">read_locs_from_file</span><span class="p">,</span> <span class="n">read_header_from_file</span><span class="p">,</span> \
+    <span class="n">write_header_options</span>
+<span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_stations_file</span>
+
+
+<div class="viewcode-block" id="read_paz"><a class="viewcode-back" href="../api.html#magnitude.read_paz">[docs]</a><span class="k">def</span> <span class="nf">read_paz</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read dataless and extract poles and zeros from dataless SEED files. Based</span>
+<span class="sd">    on obspy.</span>
+
+<span class="sd">    :param files: Files to read.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">paz</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="nb">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Parser</span><span class="p">(</span><span class="nb">file</span><span class="p">)</span>
+        <span class="n">blk</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">blockettes</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">50</span><span class="p">])):</span>
+
+            <span class="n">mult</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">58</span><span class="p">])</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">52</span><span class="p">])</span>
+
+            <span class="n">sta</span> <span class="o">=</span> <span class="n">blk</span><span class="p">[</span><span class="mi">50</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">station_call_letters</span>
+            <span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">j</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">52</span><span class="p">])):</span>
+                <span class="n">channel</span> <span class="o">=</span> <span class="n">blk</span><span class="p">[</span><span class="mi">52</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">channel_identifier</span>
+                <span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">channel</span><span class="p">][</span><span class="s">&#39;poles&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">53</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">real_pole</span><span class="p">)</span><span class="o">+</span><span class="mi">1j</span>\
+                    <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">53</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">imaginary_pole</span><span class="p">)</span>
+                <span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">channel</span><span class="p">][</span><span class="s">&#39;zeros&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">53</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">real_zero</span><span class="p">)</span><span class="o">+</span><span class="mi">1j</span>\
+                    <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="mi">53</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">imaginary_zero</span><span class="p">)</span>
+                <span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">channel</span><span class="p">][</span><span class="s">&#39;gain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">blk</span><span class="p">[</span><span class="mi">53</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">A0_normalization_factor</span>
+                <span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">channel</span><span class="p">][</span><span class="s">&#39;sensitivity&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">blk</span><span class="p">[</span><span class="mi">58</span><span class="p">][(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">mult</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sensitivity_gain</span>
+
+    <span class="k">return</span> <span class="n">paz</span>
+
+</div>
+<div class="viewcode-block" id="fill_values"><a class="viewcode-back" href="../api.html#magnitude.fill_values">[docs]</a><span class="k">def</span> <span class="nf">fill_values</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">comp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a dictionnary with all values for each channel of each station.</span>
+<span class="sd">    TODO : Flesh out this doc-string.</span>
+
+<span class="sd">    :param vals:</span>
+<span class="sd">    :param tdeb:</span>
+<span class="sd">    :param data_glob:</span>
+<span class="sd">    :param data_dir:</span>
+<span class="sd">    :param comp:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">comp</span><span class="p">)</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">datafile</span> <span class="ow">in</span> <span class="n">data_files</span><span class="p">:</span>
+        <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+        <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">datafile</span><span class="p">)</span>
+        <span class="n">vals</span><span class="p">[</span><span class="n">wf</span><span class="o">.</span><span class="n">station</span><span class="p">][</span><span class="n">comp</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">tdeb</span><span class="p">[</span><span class="n">wf</span><span class="o">.</span><span class="n">station</span><span class="p">][</span><span class="n">comp</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">starttime</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">delta</span>
+
+    <span class="k">return</span> <span class="n">vals</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">,</span> <span class="n">dt</span>
+
+</div>
+<div class="viewcode-block" id="bvalue"><a class="viewcode-back" href="../api.html#magnitude.bvalue">[docs]</a><span class="k">def</span> <span class="nf">bvalue</span><span class="p">(</span><span class="n">mag</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the b-value by a simple linear fitting</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+        <span class="n">N</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mag</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="n">i1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N</span><span class="p">))</span><span class="o">-</span><span class="mf">0.01</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">i2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N</span><span class="p">))</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">i1</span><span class="p">:</span><span class="n">i2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N</span><span class="p">)[</span><span class="n">i1</span><span class="p">:</span><span class="n">i2</span><span class="p">],</span> <span class="n">deg</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">p</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">N</span><span class="p">),</span> <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span>
+
+</div>
+<div class="viewcode-block" id="do_comp_mag"><a class="viewcode-back" href="../api.html#magnitude.do_comp_mag">[docs]</a><span class="k">def</span> <span class="nf">do_comp_mag</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Do the magnitude computation, using options in WavelocOptions.opdict.</span>
+
+<span class="sd">    :param opdict: Dictionary containing waveloc options and parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+
+    <span class="c"># dataless</span>
+    <span class="n">dataless_glob</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span>
+                                           <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataless&#39;</span><span class="p">]))</span>
+    <span class="n">dataless_glob</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="c"># data</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+    <span class="n">data_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+
+    <span class="c"># location file</span>
+    <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+    <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">)</span>
+    <span class="n">opdict</span> <span class="o">=</span> <span class="n">read_header_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">,</span> <span class="n">opdict</span><span class="p">)</span>
+    <span class="n">snr_wf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_tr_limit&#39;</span><span class="p">])</span>
+
+    <span class="c"># Stations</span>
+    <span class="n">stations_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;stations&#39;</span><span class="p">])</span>
+    <span class="n">stations</span> <span class="o">=</span> <span class="n">read_stations_file</span><span class="p">(</span><span class="n">stations_filename</span><span class="p">)</span>
+
+    <span class="n">paz</span> <span class="o">=</span> <span class="n">read_paz</span><span class="p">(</span><span class="n">dataless_glob</span><span class="p">)</span>
+
+    <span class="n">vals</span><span class="p">,</span> <span class="n">tdeb</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">stations</span><span class="p">):</span>
+        <span class="n">vals</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">tdeb</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">cha_list</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;comp_list&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">cha</span> <span class="ow">in</span> <span class="n">cha_list</span><span class="p">:</span>
+        <span class="n">vals</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">fill_values</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">,</span> <span class="n">data_dir</span><span class="p">,</span> <span class="n">cha</span><span class="p">)</span>
+
+    <span class="n">new_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">locfile</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">write_header_options</span><span class="p">(</span><span class="n">new_file</span><span class="p">,</span> <span class="n">opdict</span><span class="p">)</span>
+
+    <span class="n">mags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="n">stack_time</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+        <span class="n">loc_x</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span>
+        <span class="n">loc_y</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span>
+        <span class="n">loc_z</span> <span class="o">=</span> <span class="o">-</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span>
+
+        <span class="n">ml</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">stations</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">vals</span><span class="p">[</span><span class="n">sta</span><span class="p">]:</span>
+                <span class="n">paz_list</span><span class="p">,</span> <span class="n">p2p_amp</span><span class="p">,</span> <span class="n">tspan</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+                <span class="n">h_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">loc_x</span><span class="o">-</span><span class="n">stations</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="s">&#39;x&#39;</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+                                 <span class="p">(</span><span class="n">loc_y</span><span class="o">-</span><span class="n">stations</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="s">&#39;y&#39;</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+                                 <span class="p">(</span><span class="n">loc_z</span><span class="o">-</span><span class="n">stations</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="s">&#39;elev&#39;</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">cha</span> <span class="ow">in</span> <span class="n">cha_list</span><span class="p">:</span>
+                    <span class="n">istart</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">stack_time</span><span class="o">-</span><span class="mf">0.5</span><span class="o">-</span><span class="n">tdeb</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">cha</span><span class="p">])</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+                    <span class="n">iend</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">stack_time</span><span class="o">+</span><span class="mf">5.5</span><span class="o">-</span><span class="n">tdeb</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">cha</span><span class="p">])</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">cha</span><span class="p">][</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">snr_wf</span><span class="p">:</span>
+                <span class="n">max_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">i_max_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">min_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+                <span class="n">i_min_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+                <span class="n">paz_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">paz</span><span class="p">[</span><span class="n">sta</span><span class="p">][</span><span class="n">cha</span><span class="p">])</span>
+                <span class="n">tspan</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">i_max_amp</span><span class="o">-</span><span class="n">i_min_amp</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="p">)</span>
+                <span class="n">p2p_amp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_amp</span><span class="o">+</span><span class="n">min_amp</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]:</span>
+                    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+                    <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">i_min_amp</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="n">i_min_amp</span><span class="p">],</span> <span class="s">&#39;ro&#39;</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">i_max_amp</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="n">i_max_amp</span><span class="p">],</span> <span class="s">&#39;ro&#39;</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">,</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sta</span><span class="p">,</span> <span class="n">cha</span><span class="p">))</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">paz_list</span><span class="p">:</span>
+                <span class="n">mag</span> <span class="o">=</span> <span class="n">estimateMagnitude</span><span class="p">(</span><span class="n">paz_list</span><span class="p">,</span> <span class="n">p2p_amp</span><span class="p">,</span> <span class="n">tspan</span><span class="p">,</span> <span class="n">h_dist</span><span class="p">)</span>
+                <span class="n">ml</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span>
+
+        <span class="n">new_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;Max = </span><span class="si">%.2f</span><span class="s">, </span><span class="si">%s</span><span class="s"> - </span><span class="si">%.2f</span><span class="s"> s + </span><span class="si">%.2f</span><span class="s"> s, x= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km,</span><span class="se">\</span>
+<span class="s">                       y= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km, z= </span><span class="si">%.4f</span><span class="s"> pm </span><span class="si">%.4f</span><span class="s"> km, ml= </span><span class="si">%.2f</span><span class="s"> pm </span><span class="se">\</span>
+<span class="s">                       </span><span class="si">%.2f</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;max_trig&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+                                  <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">],</span>
+                                  <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">],</span>
+                                  <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">],</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">],</span>
+                                  <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ml</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ml</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">ml</span><span class="p">:</span>
+            <span class="n">mags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ml</span><span class="p">))</span>
+
+    <span class="n">new_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">,</span> <span class="n">logN</span><span class="p">,</span> <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">bvalue</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;b-value:&quot;</span><span class="p">,</span> <span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+        <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">mags</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;Magnitude&#39;</span><span class="p">)</span>
+
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Gutenberg Richter law&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">logN</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">i1</span><span class="p">:</span><span class="n">i2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="n">i1</span><span class="p">:</span><span class="n">i2</span><span class="p">]),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;Magnitude&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;log N&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_magnitude_options</span><span class="p">()</span>
+
+    <span class="n">do_comp_mag</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 26, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

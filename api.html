@@ -220,6 +220,134 @@ positive East)</p>
 </dd></dl>
 
 </div>
+<div class="section" id="hdf5-grids">
+<h3>hdf5_grids<a class="headerlink" href="#hdf5-grids" title="Permalink to this headline">¶</a></h3>
+<p>Waveloc manipulates many large arrays, some of which are written / read from
+disk. On some machines, these arrays are larger than the available RAM. In
+order to avoid the drammatic slow-downs when swapping to disc occurs in these
+cases, we use hdf (hierarchical data formats) that provide memory-like access
+to files on disc.</p>
+<p>All large arrays that are infrequently accessed (e.g. travel-time arrays) are
+written and used in this manner. When there is sufficient RAM available, large
+arrays that are frequently accessed (search-point travel-times, 4D-migration
+grids) are kept in memory.</p>
+<span class="target" id="module-hdf5_grids"></span><dl class="class">
+<dt id="hdf5_grids.H5NllSingleGrid">
+<em class="property">class </em><tt class="descclassname">hdf5_grids.</tt><tt class="descname">H5NllSingleGrid</tt><big>(</big><em>filename</em>, <em>nll_filename</em><big>)</big><a class="reference internal" href="_modules/hdf5_grids.html#H5NllSingleGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hdf5_grids.H5NllSingleGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class derived from H5SingleGrid that upon initialization reads a NLL pair
+of files (.hdr and .buf) and writes an equivalent hdf5 file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nll_name</strong> &#8211; NLL filename without extension</li>
+<li><strong>h5_name</strong> &#8211; hdf5 filename</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="hdf5_grids.H5SingleGrid">
+<em class="property">class </em><tt class="descclassname">hdf5_grids.</tt><tt class="descname">H5SingleGrid</tt><big>(</big><em>filename=None</em>, <em>grid_data=None</em>, <em>grid_info=None</em><big>)</big><a class="reference internal" href="_modules/hdf5_grids.html#H5SingleGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hdf5_grids.H5SingleGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that wraps several methods for regular grids in HDF5 format.</p>
+<p><strong>Attributes</strong></p>
+<dl class="attribute">
+<dt id="hdf5_grids.H5SingleGrid.grid_data">
+<tt class="descname">grid_data</tt><a class="headerlink" href="#hdf5_grids.H5SingleGrid.grid_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>An HDF5 dataset.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="hdf5_grids.H5SingleGrid.grid_info">
+<tt class="descname">grid_info</tt><a class="headerlink" href="#hdf5_grids.H5SingleGrid.grid_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attributes of an HDF5 dataset.</p>
+</dd></dl>
+
+<p><strong>Methods</strong></p>
+<dl class="method">
+<dt id="hdf5_grids.H5SingleGrid.interp_to_newgrid">
+<tt class="descname">interp_to_newgrid</tt><big>(</big><em>new_filename</em>, <em>new_grid_info</em><big>)</big><a class="reference internal" href="_modules/hdf5_grids.html#H5SingleGrid.interp_to_newgrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hdf5_grids.H5SingleGrid.interp_to_newgrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intrepolates to a new grid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>new_filename</strong> &#8211; Filename for new grid</li>
+<li><strong>new_grid_info</strong> &#8211; Grid info dictionary for new grid</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="hdf5_grids.H5SingleGrid.value_at_point">
+<tt class="descname">value_at_point</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>epsilon=0.001</em><big>)</big><a class="reference internal" href="_modules/hdf5_grids.html#H5SingleGrid.value_at_point"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hdf5_grids.H5SingleGrid.value_at_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs n-linear interpolation on the regular grid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>float</em>) &#8211; x-coordinate of the point of interest</li>
+<li><strong>y</strong> (<em>float</em>) &#8211; y-coordinate of the point of interest</li>
+<li><strong>z</strong> (<em>float</em>) &#8211; z-coordinate of the point of interest</li>
+<li><strong>epsilon</strong> (<em>float, optional</em>) &#8211; tollerance to edges of the grid</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">value at point</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="hdf5_grids.get_interpolated_time_grids">
+<tt class="descclassname">hdf5_grids.</tt><tt class="descname">get_interpolated_time_grids</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/hdf5_grids.html#get_interpolated_time_grids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hdf5_grids.get_interpolated_time_grids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolates the NLL time grids onto the search grids. Uses options
+contained in a WavelocOptions.opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Dictionary of options in WavelocOptions.opdict format</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="hdf5_grids.nll2hdf5">
+<tt class="descclassname">hdf5_grids.</tt><tt class="descname">nll2hdf5</tt><big>(</big><em>nll_name</em>, <em>h5_name</em><big>)</big><a class="reference internal" href="_modules/hdf5_grids.html#nll2hdf5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#hdf5_grids.nll2hdf5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translates NLL files to hdf5 format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nll_name</strong> &#8211; NLL filename without extension</li>
+<li><strong>h5_name</strong> &#8211; hdf5 filename</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="waveforms">
 <h2>WAVEFORMS<a class="headerlink" href="#waveforms" title="Permalink to this headline">¶</a></h2>
@@ -808,6 +936,1018 @@ traces) and keep only positive values (set negative values to zero).</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-filters">
+<span id="filters"></span><h3>filters<a class="headerlink" href="#module-filters" title="Permalink to this headline">¶</a></h3>
+<p>Functions for timeseries filtering.</p>
+<p>Created by Alessia Maggi and Alberto Michelini.</p>
+<dl class="function">
+<dt id="filters.allens_stalta">
+<tt class="descclassname">filters.</tt><tt class="descname">allens_stalta</tt><big>(</big><em>x</em>, <em>dt</em>, <em>STAwin</em>, <em>LTAwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#allens_stalta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.allens_stalta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the short to long time average ratio of a timeseries.
+using Allen (1978) caracteristic function (see report)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+<li><strong>STAwin</strong> &#8211; short time average window in seconds.</li>
+<li><strong>LTAwin</strong> &#8211; long time average in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">processed signal</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.envelope">
+<tt class="descclassname">filters.</tt><tt class="descname">envelope</tt><big>(</big><em>x</em>, <em>N</em><big>)</big><a class="reference internal" href="_modules/filters.html#envelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.envelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the envelope of a signal using the Hilbert transform.
+Uses scipy.signal.hilbert() to do the Hilbert transform.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>N</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">envelope as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.filtfilt">
+<tt class="descclassname">filters.</tt><tt class="descname">filtfilt</tt><big>(</big><em>b</em>, <em>a</em>, <em>x</em><big>)</big><a class="reference internal" href="_modules/filters.html#filtfilt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.filtfilt" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO What does this function do?  Alberto??</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>b</strong> &#8211; </li>
+<li><strong>a</strong> &#8211; </li>
+<li><strong>x</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.gradient">
+<tt class="descclassname">filters.</tt><tt class="descname">gradient</tt><big>(</big><em>x</em>, <em>dt</em>, <em>LENwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#gradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the gradient of a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">LENwin:</th><td class="field-body"><p class="first last">time window (in secs) over which the gradient is determined</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.kurto">
+<tt class="descclassname">filters.</tt><tt class="descname">kurto</tt><big>(</big><em>x</em>, <em>dt</em>, <em>LENwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#kurto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.kurto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the kurtosis of a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">LENwin:</th><td class="field-body"><p class="first last">time window (in secs) over which the kurtosis is determined</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.kurto_improved">
+<tt class="descclassname">filters.</tt><tt class="descname">kurto_improved</tt><big>(</big><em>x</em>, <em>dt</em>, <em>LENwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#kurto_improved"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.kurto_improved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the kurtosis of a timeseries as described by kuperkoch et al.
+2010: calculate the kurtosis recursively.
+Results are not satisfying, but one may want to improve this... it might
+save some time!</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">LENwin:</th><td class="field-body"><p class="first last">time window (in secs) over which the kurtosis is determined</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.lfilter_zi">
+<tt class="descclassname">filters.</tt><tt class="descname">lfilter_zi</tt><big>(</big><em>b</em>, <em>a</em><big>)</big><a class="reference internal" href="_modules/filters.html#lfilter_zi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.lfilter_zi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the zi state from the filter parameters. See [Gust96].</p>
+<p>Based on:
+[Gust96] Fredrik Gustafsson, Determining the initial states in
+forward-backward filtering, IEEE Transactions on Signal Processing, pp.
+988&#8211;992, April 1996, Volume 44, Issue 4</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>b</strong> &#8211; </li>
+<li><strong>a</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">zi state as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.projection">
+<tt class="descclassname">filters.</tt><tt class="descname">projection</tt><big>(</big><em>x</em>, <em>y</em>, <em>theta</em><big>)</big><a class="reference internal" href="_modules/filters.html#projection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.projection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Project x and y onto a line of angle theta.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.rec_dx2">
+<tt class="descclassname">filters.</tt><tt class="descname">rec_dx2</tt><big>(</big><em>x</em>, <em>C1</em><big>)</big><a class="reference internal" href="_modules/filters.html#rec_dx2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.rec_dx2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursive dx2 (from Chassande-Mottin, 2002)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>C</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">processed signal as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.rec_kurtosis">
+<tt class="descclassname">filters.</tt><tt class="descname">rec_kurtosis</tt><big>(</big><em>x</em>, <em>C1</em><big>)</big><a class="reference internal" href="_modules/filters.html#rec_kurtosis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.rec_kurtosis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursive Kurtosis calculated using Chassande-Mottin (2002). Beware, this
+function is unstable for strongly non-stationary signals.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>C</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">processed signal as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.rec_kurtosis_old">
+<tt class="descclassname">filters.</tt><tt class="descname">rec_kurtosis_old</tt><big>(</big><em>x</em>, <em>C</em><big>)</big><a class="reference internal" href="_modules/filters.html#rec_kurtosis_old"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.rec_kurtosis_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recursive pseudo-kurtosis calculation as used by Langet et al. (2014)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>C</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">procesed signal as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.skewness">
+<tt class="descclassname">filters.</tt><tt class="descname">skewness</tt><big>(</big><em>x</em>, <em>dt</em>, <em>LENwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#skewness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.skewness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the absolute value of the skewness of a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+<li><strong>LENwin</strong> &#8211; time window (in secs) over which the skewness is determined</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.smooth">
+<tt class="descclassname">filters.</tt><tt class="descname">smooth</tt><big>(</big><em>x</em>, <em>window_len=11</em>, <em>window='hanning'</em><big>)</big><a class="reference internal" href="_modules/filters.html#smooth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.smooth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Smooth the data using a window with requested size.</p>
+<p>This method is based on the convolution of a scaled window with the signal.
+The signal is prepared by introducing reflected copies of the signal
+(with the window size) in both ends so that transient parts are minimized
+in the begining and end part of the output signal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; the input signal</li>
+<li><strong>window_len</strong> &#8211; the dimension of the smoothing window; should be an odd
+integer</li>
+<li><strong>window</strong> &#8211; the type of window from &#8216;flat&#8217;, &#8216;hanning&#8217;, &#8216;hamming&#8217;,
+&#8216;bartlett&#8217;, &#8216;blackman&#8217;. Flat window will produce a moving average
+smoothing.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the smoothed signal</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>example:</p>
+<p>t=linspace(-2,2,0.1)
+x=sin(t)+randn(len(t))*0.1
+y=smooth(x)</p>
+<dl class="docutils">
+<dt>see also: numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman,</dt>
+<dd>numpy.convolve scipy.signal.lfilter</dd>
+<dt>TODO: the window parameter could be the window itself if an array instead</dt>
+<dd>of a string</dd>
+<dt>NOTE: length(output) != length(input), to correct this: return</dt>
+<dd>y[(window_len/2-1):-(window_len/2)] instead of just y.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.stalta">
+<tt class="descclassname">filters.</tt><tt class="descname">stalta</tt><big>(</big><em>x</em>, <em>dt</em>, <em>STAwin</em>, <em>LTAwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#stalta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.stalta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the short to long time average ratio of a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+<li><strong>STAwin</strong> &#8211; short time average window in seconds.</li>
+<li><strong>LTAwin</strong> &#8211; long time average in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">processed signal</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.sw_kurtosis1">
+<tt class="descclassname">filters.</tt><tt class="descname">sw_kurtosis1</tt><big>(</big><em>x</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/filters.html#sw_kurtosis1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.sw_kurtosis1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns kurtosis calculated over data set x using sliding windows of length
+n points.  Length of returned array is len(x)-n+1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>n</strong> &#8211; length of sliding window in points</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">procesed signal as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.sw_kurtosis2">
+<tt class="descclassname">filters.</tt><tt class="descname">sw_kurtosis2</tt><big>(</big><em>x</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/filters.html#sw_kurtosis2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.sw_kurtosis2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns kurtosis calculated over data set x using sliding windows of length
+n points.  Length of returned array is len(x)-n+1.
+This version uses filter.window() to slice the data array and is faster
+than sw_kurtosis1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>n</strong> &#8211; length of sliding window in points</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">procesed signal as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.variance">
+<tt class="descclassname">filters.</tt><tt class="descname">variance</tt><big>(</big><em>x</em>, <em>dt</em>, <em>LENwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#variance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the variance of a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">LENwin:</th><td class="field-body"><p class="first">time window (in secs) over which the variance is determined</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">processed signal as numpy array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.variance_under_rotation">
+<tt class="descclassname">filters.</tt><tt class="descname">variance_under_rotation</tt><big>(</big><em>x</em>, <em>y</em>, <em>dt</em>, <em>LENwin</em><big>)</big><a class="reference internal" href="_modules/filters.html#variance_under_rotation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.variance_under_rotation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the variance under rotation of a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>dt</strong> &#8211; sampling interval in seconds.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">LENwin:</th><td class="field-body"><p class="first last">time window (in secs) over which the variance under rotation is
+determined</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.varrot">
+<tt class="descclassname">filters.</tt><tt class="descname">varrot</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/filters.html#varrot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.varrot" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : figure out what this function actually does !!</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="filters.window">
+<tt class="descclassname">filters.</tt><tt class="descname">window</tt><big>(</big><em>seq</em>, <em>n=2</em><big>)</big><a class="reference internal" href="_modules/filters.html#window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#filters.window" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Returns a sliding window (of width n) over data from the iterable</dt>
+<dd>s -&gt; (s0,s1,...s[n-1]), (s1,s2,...,sn), ...</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>seq</strong> &#8211; an iterable sequence</li>
+<li><strong>n</strong> &#8211; length of window (number of elements)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-kurtogram">
+<span id="kurtogram"></span><h3>kurtogram<a class="headerlink" href="#module-kurtogram" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="kurtogram.DBFB">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">DBFB</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#DBFB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.DBFB" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Double-band filter-bank.</dt>
+<dd>[a,d] = DBFB(x,h,g) computes the approximation
+coefficients vector a and detail coefficients vector d,
+obtained by passing signal x though a two-band analysis filter-bank.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h</strong> &#8211; The decomposition low-pass filter and</li>
+<li><strong>g</strong> &#8211; The decomposition high-pass filter.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a, d</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.Fast_Kurtogram">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">Fast_Kurtogram</tt><big>(</big><em>x</em>, <em>nlevel</em>, <em>verbose=False</em>, <em>Fs=1</em>, <em>NFIR=16</em>, <em>fcut=0.4</em>, <em>opt1=1</em>, <em>opt2=1</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#Fast_Kurtogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.Fast_Kurtogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the fast kurtogram of signal x up to level &#8216;nlevel&#8217;
+Maximum number of decomposition levels is log2(length(x)), but it is
+recommended to stay by a factor 1/8 below this.</p>
+<p>J. Antoni : 02/2005
+Translation to Python: T. Lecocq 02/2012</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal to analyse</li>
+<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
+<li><strong>Fs</strong> &#8211; Sampling frequency of signal x</li>
+<li><strong>NFIR</strong> &#8211; Length of FIR filter</li>
+<li><strong>fcut</strong> &#8211; Fraction of Nyquist for filter</li>
+<li><strong>opt1</strong> &#8211; [1 | 2]:
+* opt1=1: classical kurtosis based on 4th order statistics
+* opt1 = 2: robust kurtosis based on 2nd order statistics of the
+envelope (if there is any difference in the kurtogram between the
+two measures, this is  due to the presence of impulsive additive
+noise)</li>
+<li><strong>opt2</strong> &#8211; [1 | 2]:
+* opt2=1: the kurtogram is computed via a fast decimated filterbank
+* opt2=2: the kurtogram is computed via the short-time Fourier
+transform (option 1 is faster and has more flexibility than option
+2 in the design of the analysis filter: a short filter in option 1
+gives virtually the same results as option 2)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Kwav, Level_w, freq_w, c, f_lower, f_upper</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.Find_wav_kurt">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">Find_wav_kurt</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>nlevel</em>, <em>Sc</em>, <em>Fr</em>, <em>Fs=1</em>, <em>verbose=False</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#Find_wav_kurt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.Find_wav_kurt" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO flesh out this doc-string</p>
+<p>J. Antoni : 12/2004
+Translation to Python: T. Lecocq 02/2012</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h</strong> &#8211; lowpass filter</li>
+<li><strong>g</strong> &#8211; higpass filter</li>
+<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>Sc</strong> &#8211; Sc = -log2(Bw)-1 with Bw the bandwidth of the filter</li>
+<li><strong>Fr</strong> &#8211; in the range [0, 0.5]</li>
+<li><strong>Fs</strong> &#8211; Sampling frequency of signal x</li>
+<li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.K_wpQ">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>nlevel</em>, <em>verbose</em>, <em>opt</em>, <em>level=0</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the kurtosis K of the complete quinte wavelet packet transform w
+of signal x, up to nlevel, using the lowpass and highpass filters h and g,
+respectively.  The WP coefficients are sorted according to the frequency
+decomposition.  This version handles both real and analytical filters, but
+does not yield WP coefficients suitable for signal synthesis.</p>
+<p>J. Antoni : 12/2004
+Translation to Python: T. Lecocq 02/2012</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h</strong> &#8211; lowpass filter</li>
+<li><strong>g</strong> &#8211; higpass filter</li>
+<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
+<li><strong>opt</strong> &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
+* &#8216;kurt1&#8217; = variance of the envelope magnitude
+* &#8216;kurt2&#8217; = kurtosis of the complex envelope</li>
+<li><strong>level</strong> &#8211; decomposition level for this call</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">kurtosis</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.K_wpQ_filt">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ_filt</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>acoeff</em>, <em>bcoeff</em>, <em>level=0</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ_filt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ_filt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the kurtosis K of the complete quinte wavelet packet transform w
+of signal x, up to nlevel, using the lowpass and highpass filters h and g,
+respectively.  The WP coefficients are sorted according to the frequency
+decomposition.
+This version handles both real and analytical filters, but does not yield
+WP coefficients suitable for signal synthesis.</p>
+<p>J. Antoni : 12/2004
+Translation to Python: T. Lecocq 02/2012</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h</strong> &#8211; lowpass filter</li>
+<li><strong>g</strong> &#8211; higpass filter</li>
+<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>acoeff</strong> &#8211; </li>
+<li><strong>acoeff</strong> &#8211; </li>
+<li><strong>level</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.K_wpQ_filt_local">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ_filt_local</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>acoeff</em>, <em>bcoeff</em>, <em>level</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ_filt_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ_filt_local" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs one analysis level into the analysis tree
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h</strong> &#8211; lowpass filter</li>
+<li><strong>g</strong> &#8211; higpass filter</li>
+<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>acoeff</strong> &#8211; </li>
+<li><strong>acoeff</strong> &#8211; </li>
+<li><strong>level</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.K_wpQ_local">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ_local</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>nlevel</em>, <em>verbose</em>, <em>opt</em>, <em>level</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ_local" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string. Is a recursive funtion.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h</strong> &#8211; lowpass filter</li>
+<li><strong>g</strong> &#8211; higpass filter</li>
+<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
+<li><strong>opt</strong> &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
+* &#8216;kurt1&#8217; = variance of the envelope magnitude
+* &#8216;kurt2&#8217; = kurtosis of the complex envelope</li>
+<li><strong>level</strong> &#8211; decomposition level for this call</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">K, KQ</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.TBFB">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">TBFB</tt><big>(</big><em>x</em>, <em>h1</em>, <em>h2</em>, <em>h3</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#TBFB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.TBFB" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Trible-band filter-bank.</dt>
+<dd>[a1,a2,a3] = TBFB(x,h1,h2,h3)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>h1</strong> &#8211; filter parameter</li>
+<li><strong>h2</strong> &#8211; filter parameter</li>
+<li><strong>h3</strong> &#8211; filter parameter</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a1, a2, a3</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.binary">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">binary</tt><big>(</big><em>i</em>, <em>k</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.binary" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Computes the coefficients of the binary expansion of i:</dt>
+<dd>i = a(1)*2^(k-1) + a(2)*2^(k-2) + ... + a(k)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>i</strong> &#8211; integer to expand</li>
+<li><strong>k</strong> &#8211; nummber of coefficients</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">coefficients a</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.do_kurtogram_setup_and_run">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">do_kurtogram_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#do_kurtogram_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.do_kurtogram_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the kurtogram analysis using the parameters contained in the
+WavelocOptions.opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Dictionary containing the waveloc parameters and options.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="kurtogram.eps">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">eps</tt><em class="property"> = 2.2204460492503131e-16</em><a class="headerlink" href="#kurtogram.eps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the kurtogram routine of Antoni (2005).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.getBandwidthAndFrequency">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">getBandwidthAndFrequency</tt><big>(</big><em>nlevel</em>, <em>Fs</em>, <em>level_w</em>, <em>freq_w</em>, <em>level_index</em>, <em>freq_index</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#getBandwidthAndFrequency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.getBandwidthAndFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets bandwidth and frequency parameters.
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nlevel</strong> &#8211; </li>
+<li><strong>Fs</strong> &#8211; </li>
+<li><strong>level_w</strong> &#8211; </li>
+<li><strong>freq_w</strong> &#8211; </li>
+<li><strong>level_index</strong> &#8211; </li>
+<li><strong>freq_index</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.getFTSquaredEnvelope">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">getFTSquaredEnvelope</tt><big>(</big><em>c</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#getFTSquaredEnvelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.getFTSquaredEnvelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Fourier transform of the squared envelope</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>c</strong> &#8211; signal</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns S:</th><td class="field-body">FT of squared envelope</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.get_GridMax">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">get_GridMax</tt><big>(</big><em>grid</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#get_GridMax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.get_GridMax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets maximum of a nD grid and its unraveled index</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grid</strong> &#8211; an nD-grid</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li>M : grid maximum</li>
+<li>index : index of maximum in unraveled grid</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.get_h_parameters">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">get_h_parameters</tt><big>(</big><em>NFIR</em>, <em>fcut</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#get_h_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.get_h_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates h-parameters used in Antoni (2005)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>NFIR</strong> (<em>integer</em>) &#8211; length of FIR filter</li>
+<li><strong>fcut</strong> (<em>float</em>) &#8211; fraction of Nyquist for filter</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">h-parameters: h, g, h1, h2, h3</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.kurt">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">kurt</tt><big>(</big><em>x</em>, <em>opt</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#kurt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.kurt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates kurtosis of a signal according to the option chosen</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>opt</strong> &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
+* &#8216;kurt1&#8217; = variance of the envelope magnitude
+* &#8216;kurt2&#8217; = kurtosis of the complex envelope</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Kurtosis</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.kurto">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">kurto</tt><big>(</big><em>origin_time</em>, <em>info</em>, <em>opdict</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#kurto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.kurto" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>origin_time</strong> &#8211; </li>
+<li><strong>info</strong> &#8211; </li>
+<li><strong>opdict</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.nextpow2">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">nextpow2</tt><big>(</big><em>n</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#nextpow2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.nextpow2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates next power of 2.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<em>integer</em>) &#8211; a number</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">integer</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The next power of 2</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.plot_envelope">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">plot_envelope</tt><big>(</big><em>x</em>, <em>Fs</em>, <em>c</em>, <em>fc</em>, <em>level</em>, <em>spec=False</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_envelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_envelope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots envelope (with or without its spectrum)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> &#8211; signal</li>
+<li><strong>Fs</strong> &#8211; sampling frequency of signal</li>
+<li><strong>c</strong> &#8211; </li>
+<li><strong>fc</strong> &#8211; </li>
+<li><strong>level</strong> &#8211; </li>
+<li><strong>spec</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> also plots the envelope spectrum</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.plot_kurtogram">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">plot_kurtogram</tt><big>(</big><em>Kwav</em>, <em>freq_w</em>, <em>nlevel</em>, <em>Level_w</em>, <em>Fs</em>, <em>fi</em>, <em>index</em>, <em>opt1=None</em>, <em>opt2=None</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_kurtogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_kurtogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the kurtogram. TODO : flesh out this doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Kwav</strong> &#8211; </li>
+<li><strong>freq_w</strong> &#8211; </li>
+<li><strong>nlevel</strong> &#8211; </li>
+<li><strong>level_w</strong> &#8211; </li>
+<li><strong>Fs</strong> &#8211; </li>
+<li><strong>fi</strong> &#8211; </li>
+<li><strong>index</strong> &#8211; </li>
+<li><strong>opt1</strong> &#8211; </li>
+<li><strong>opt2</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.plot_trace">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">plot_trace</tt><big>(</big><em>G</em>, <em>fig</em>, <em>x</em>, <em>xfilt</em>, <em>kurtx</em>, <em>tr</em>, <em>c</em>, <em>info</em>, <em>f_lower</em>, <em>f_upper</em>, <em>snr</em>, <em>snr_ref</em>, <em>snr_kurt</em>, <em>kmax</em>, <em>kmax_ref</em>, <em>tstack</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot signal and kurtosis for comparison. TODO : flesh out this doc-string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.raylinv">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">raylinv</tt><big>(</big><em>p</em>, <em>b</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#raylinv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.raylinv" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Inverse of the Rayleigh cumulative distribution function (cdf).</dt>
+<dd>X = RAYLINV(P,B) returns the Rayleigh cumulative distribution function
+with parameter B at the probabilities in P.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>p</strong> &#8211; probabilities</li>
+<li><strong>b</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.read_kurtogram_frequencies">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">read_kurtogram_frequencies</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#read_kurtogram_frequencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.read_kurtogram_frequencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and plots binary file of kurtogram frequencies.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> &#8211; File to read</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.waveval">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">waveval</tt><big>(</big><em>xall</em>, <em>tstart</em>, <em>tend</em>, <em>dt</em>, <em>tdeb</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#waveval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.waveval" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>xall</strong> &#8211; </li>
+<li><strong>tstart</strong> &#8211; </li>
+<li><strong>tend</strong> &#8211; </li>
+<li><strong>dt</strong> &#8211; </li>
+<li><strong>tdeb</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="kurtogram.write_file">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">write_file</tt><big>(</big><em>info</em>, <em>tstart</em>, <em>tend</em>, <em>tr</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#write_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.write_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes kurtosis file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>info</strong> &#8211; dictionary of parameters</li>
+<li><strong>tstart</strong> &#8211; start-time</li>
+<li><strong>tend</strong> &#8211; end-time</li>
+<li><strong>tr</strong> &#8211; trace to write</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-SDS_processing">
 <span id="sds-processing"></span><h3>SDS_processing<a class="headerlink" href="#module-SDS_processing" title="Permalink to this headline">¶</a></h3>
 <p>The module SDS_processing contains functions to apply Waveloc specific
@@ -857,8 +1997,451 @@ channel-name as strings.</td>
 
 </div>
 </div>
-<div class="section" id="clustering-and-double-difference-relocation">
-<h2>CLUSTERING AND DOUBLE DIFFERENCE RELOCATION<a class="headerlink" href="#clustering-and-double-difference-relocation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="migration">
+<h2>MIGRATION<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-integrate4D">
+<span id="integrate4d"></span><h3>integrate4D<a class="headerlink" href="#module-integrate4D" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="integrate4D.compute_expected_coordinates1D">
+<tt class="descclassname">integrate4D.</tt><tt class="descname">compute_expected_coordinates1D</tt><big>(</big><em>grid</em>, <em>x0</em><big>)</big><a class="reference internal" href="_modules/integrate4D.html#compute_expected_coordinates1D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#integrate4D.compute_expected_coordinates1D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes expected value and variance of a 1D grid along its (only) axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> (<em>numpy array</em>) &#8211; 1D grid to integrate</li>
+<li><strong>x0</strong> (<em>numpy array</em>) &#8211; coordinates of all points along the integration axis</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>exp_x0 : expected value</li>
+<li>var_x0 : variance</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="integrate4D.compute_expected_coordinates3D">
+<tt class="descclassname">integrate4D.</tt><tt class="descname">compute_expected_coordinates3D</tt><big>(</big><em>grid</em>, <em>x0</em>, <em>x1</em>, <em>x2</em>, <em>return_2Dgrids=False</em><big>)</big><a class="reference internal" href="_modules/integrate4D.html#compute_expected_coordinates3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#integrate4D.compute_expected_coordinates3D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes expected coordinates of a 3D grid</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> (<em>numpy array</em>) &#8211; 3D grid to integrate</li>
+<li><strong>x0</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=0</li>
+<li><strong>x1</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=1</li>
+<li><strong>x2</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=2</li>
+<li><strong>return_2Dgrids</strong> (<em>boolean</em>) &#8211; if <tt class="docutils literal"><span class="pre">True</span></tt> returns the 1D and 2D marginals in a
+dictionary.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>exp_x0 : expected value along axis=0</li>
+<li>exp_x1 : expected value along axis=1</li>
+<li>exp_x2 : expected value along axis=2</li>
+<li>cov_matrix : covariance matrix</li>
+<li>grid_dict : dictionary containing 1D and 2D marginals (optional)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="integrate4D.compute_expected_coordinates4D">
+<tt class="descclassname">integrate4D.</tt><tt class="descname">compute_expected_coordinates4D</tt><big>(</big><em>grid</em>, <em>x0</em>, <em>x1</em>, <em>x2</em>, <em>x3</em>, <em>return_2Dgrids=False</em><big>)</big><a class="reference internal" href="_modules/integrate4D.html#compute_expected_coordinates4D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#integrate4D.compute_expected_coordinates4D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes expected coordinates of a 4D grid</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> (<em>numpy array</em>) &#8211; 4D grid to integrate</li>
+<li><strong>x0</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=0</li>
+<li><strong>x1</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=1</li>
+<li><strong>x2</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=2</li>
+<li><strong>x3</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=3</li>
+<li><strong>return_2Dgrids</strong> (<em>boolean</em>) &#8211; if <tt class="docutils literal"><span class="pre">True</span></tt> returns the 1D and 2D marginals in a
+dictionary.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li>exp_x0 : expected value along axis=0</li>
+<li>exp_x1 : expected value along axis=1</li>
+<li>exp_x2 : expected value along axis=2</li>
+<li>exp_x3 : expected value along axis=2</li>
+<li>cov_matrix : covariance matrix</li>
+<li>grid_dict : dictionary containing 1D and 2D marginals (optional)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="integrate4D.compute_integral1D">
+<tt class="descclassname">integrate4D.</tt><tt class="descname">compute_integral1D</tt><big>(</big><em>grid</em>, <em>x0</em><big>)</big><a class="reference internal" href="_modules/integrate4D.html#compute_integral1D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#integrate4D.compute_integral1D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes norm of a 1D grid</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> (<em>numpy array</em>) &#8211; 1D grid to integrate</li>
+<li><strong>x0</strong> (<em>numpy array</em>) &#8211; coordinates of all points along the integration axis</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">grid norm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="integrate4D.compute_integral3D">
+<tt class="descclassname">integrate4D.</tt><tt class="descname">compute_integral3D</tt><big>(</big><em>grid</em>, <em>x0</em>, <em>x1</em>, <em>x2</em><big>)</big><a class="reference internal" href="_modules/integrate4D.html#compute_integral3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#integrate4D.compute_integral3D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes norm of a 3D grid</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> (<em>numpy array</em>) &#8211; 3D grid to integrate</li>
+<li><strong>x0</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=0</li>
+<li><strong>x1</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=1</li>
+<li><strong>x2</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">grid norm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="integrate4D.compute_integral4D">
+<tt class="descclassname">integrate4D.</tt><tt class="descname">compute_integral4D</tt><big>(</big><em>grid</em>, <em>x0</em>, <em>x1</em>, <em>x2</em>, <em>x3</em><big>)</big><a class="reference internal" href="_modules/integrate4D.html#compute_integral4D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#integrate4D.compute_integral4D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes norm of a 4D grid</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grid</strong> (<em>numpy array</em>) &#8211; 4D grid to integrate</li>
+<li><strong>x0</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=0</li>
+<li><strong>x1</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=1</li>
+<li><strong>x2</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=2</li>
+<li><strong>x3</strong> (<em>numpy array</em>) &#8211; coordinates of all points along axis=3</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">float</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">grid norm</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="location">
+<h2>LOCATION<a class="headerlink" href="#location" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-locations_trigger">
+<span id="locations-trigger"></span><h3>locations_trigger<a class="headerlink" href="#module-locations_trigger" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="locations_trigger.do_locations_trigger_setup_and_run">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">do_locations_trigger_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#do_locations_trigger_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.do_locations_trigger_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Run locations trigger. Takes all options and paramters from</dt>
+<dd>WavelocOptions.opdict dictionary.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Dictionary of waveloc options / parameters.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_trigger.number_good_kurtosis_for_location">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">number_good_kurtosis_for_location</tt><big>(</big><em>kurt_files</em>, <em>data_files</em>, <em>loc</em>, <em>time_dict</em>, <em>snr_limit=10.0</em>, <em>snr_tr_limit=10.0</em>, <em>sn_time=10.0</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#number_good_kurtosis_for_location"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.number_good_kurtosis_for_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyses the filtered data and the kurtosis time-series to determine the
+number of stations whose traces have sufficiently high signal-to-noise
+ratio (SNR) to be useful for the location. Both time-series need to satisfy
+the conditions for a station to be counted as contributing to the location.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>kurt_files</strong> &#8211; Filenames for kurtosis files. Depending on the filenames
+given in this list, the function will analyse kurtosis,
+kurtosis-gradient or gaussian waveforms.</li>
+<li><strong>data_files</strong> &#8211; Filenames for filtered data.</li>
+<li><strong>loc</strong> &#8211; Location dictionary for the event to be analysed</li>
+<li><strong>time_dict</strong> &#8211; Dictionary of travel-times for the location to be
+analysed</li>
+<li><strong>snr_limit</strong> &#8211; SNR limit for kurtosis-type data</li>
+<li><strong>snr_limit_tr</strong> &#8211; SNR limit for filtered data</li>
+<li><strong>snr_time</strong> &#8211; Length of time in seconds before the event for computation
+of SNR.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">integer</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Numer of stations that have contributed to the location.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_trigger.plot_location_triggers">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">plot_location_triggers</tt><big>(</big><em>trace</em>, <em>trig_start</em>, <em>trig_end</em>, <em>trig_95_start</em>, <em>trig_95_end</em>, <em>show=True</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#plot_location_triggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.plot_location_triggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the location (in time) of the triggers.
+TODO : Flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>trace</strong> &#8211; </li>
+<li><strong>trig_start</strong> &#8211; </li>
+<li><strong>trig_end</strong> &#8211; </li>
+<li><strong>trig_95_start</strong> &#8211; </li>
+<li><strong>trig_95_end</strong> &#8211; </li>
+<li><strong>show</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_trigger.read_header_from_file">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">read_header_from_file</tt><big>(</big><em>filename</em>, <em>opdict</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#read_header_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.read_header_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read header information from a location file into a WavelocOptions.opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> &#8211; File to read.</li>
+<li><strong>opdict</strong> &#8211; Waveloc options dictionary to write into.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">opdict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_trigger.read_locs_from_file">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">read_locs_from_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#read_locs_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.read_locs_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read locations from file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> &#8211; File to read.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of locations (each location is a dictionary)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_trigger.trigger_locations_inner">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">trigger_locations_inner</tt><big>(</big><em>max_val</em>, <em>max_x</em>, <em>max_y</em>, <em>max_z</em>, <em>left_trig</em>, <em>right_trig</em>, <em>start_time</em>, <em>delta</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#trigger_locations_inner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.trigger_locations_inner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inner loop of the location process.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>max_val</strong> &#8211; Time-series of stack-max.</li>
+<li><strong>max_x</strong> &#8211; Time-series of the x-positions corresponding to stack-max.</li>
+<li><strong>max_y</strong> &#8211; Time-series of the y-positions corresponding to stack-max.</li>
+<li><strong>max_z</strong> &#8211; Time-series of the z-positions corresponding to stack-max.</li>
+<li><strong>left_trig</strong> &#8211; Amplitude for trigger-on.</li>
+<li><strong>right_trig</strong> &#8211; Amplitude for trigger-off.</li>
+<li><strong>start_time</strong> &#8211; UTCDateTime of the first point in the time-series.</li>
+<li><strong>delta</strong> &#8211; Sampling interval of the time-series</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of locations. Each location is a dictionary containing all
+the relevant information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_trigger.write_header_options">
+<tt class="descclassname">locations_trigger.</tt><tt class="descname">write_header_options</tt><big>(</big><em>loc_file</em>, <em>opdict</em><big>)</big><a class="reference internal" href="_modules/locations_trigger.html#write_header_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_trigger.write_header_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the information regarding how the locations were generated to an
+already opened location file. This information becomes a location &#8220;header&#8221;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loc_file</strong> &#8211; File object to which the information will be written.</li>
+<li><strong>opdict</strong> &#8211; Waveloc options dictionary</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-locations_prob">
+<span id="locations-prob"></span><h3>locations_prob<a class="headerlink" href="#module-locations_prob" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="locations_prob.do_locations_prob_setup_and_run">
+<tt class="descclassname">locations_prob.</tt><tt class="descname">do_locations_prob_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/locations_prob.html#do_locations_prob_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_prob.do_locations_prob_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup and run probability-based locations on migration grids. Takes all
+parameters from WavelocOptions.opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Parameters and options for Waveloc.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="locations_prob.read_prob_locs_from_file">
+<tt class="descclassname">locations_prob.</tt><tt class="descname">read_prob_locs_from_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/locations_prob.html#read_prob_locs_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#locations_prob.read_prob_locs_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read file containing probability determined locations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> &#8211; File to be read.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of locations</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-magnitude">
+<span id="magnitude"></span><h3>magnitude<a class="headerlink" href="#module-magnitude" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="magnitude.bvalue">
+<tt class="descclassname">magnitude.</tt><tt class="descname">bvalue</tt><big>(</big><em>mag</em>, <em>r</em><big>)</big><a class="reference internal" href="_modules/magnitude.html#bvalue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#magnitude.bvalue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the b-value by a simple linear fitting</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="magnitude.do_comp_mag">
+<tt class="descclassname">magnitude.</tt><tt class="descname">do_comp_mag</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/magnitude.html#do_comp_mag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#magnitude.do_comp_mag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do the magnitude computation, using options in WavelocOptions.opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; Dictionary containing waveloc options and parameters.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="magnitude.fill_values">
+<tt class="descclassname">magnitude.</tt><tt class="descname">fill_values</tt><big>(</big><em>vals</em>, <em>tdeb</em>, <em>data_glob</em>, <em>data_dir</em>, <em>comp</em><big>)</big><a class="reference internal" href="_modules/magnitude.html#fill_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#magnitude.fill_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a dictionnary with all values for each channel of each station.
+TODO : Flesh out this doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>vals</strong> &#8211; </li>
+<li><strong>tdeb</strong> &#8211; </li>
+<li><strong>data_glob</strong> &#8211; </li>
+<li><strong>data_dir</strong> &#8211; </li>
+<li><strong>comp</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="magnitude.read_paz">
+<tt class="descclassname">magnitude.</tt><tt class="descname">read_paz</tt><big>(</big><em>files</em><big>)</big><a class="reference internal" href="_modules/magnitude.html#read_paz"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#magnitude.read_paz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read dataless and extract poles and zeros from dataless SEED files. Based
+on obspy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>files</strong> &#8211; Files to read.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="clustering">
+<h2>CLUSTERING<a class="headerlink" href="#clustering" title="Permalink to this headline">¶</a></h2>
 <p>This part of the waveloc code was contributed by Nadège Langet during her PhD
 thesis.</p>
 <div class="section" id="module-correlation">
@@ -1105,9 +2688,9 @@ station name and start-time</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-clustering">
-<span id="clustering"></span><h3>clustering<a class="headerlink" href="#module-clustering" title="Permalink to this headline">¶</a></h3>
-<p>Provides classes and functions for clustering of earthquakes based on the
+<div class="section" id="id1">
+<h3>clustering<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="module-clustering"></span><p>Provides classes and functions for clustering of earthquakes based on the
 depth-first algorithm.</p>
 <dl class="function">
 <dt id="clustering.CZ_DFS">
@@ -1593,16 +3176,29 @@ stations using pre-calculated time-grids</p>
 <li><a class="reference internal" href="#">WaveLoc API</a><ul>
 <li><a class="reference internal" href="#travel-times">TRAVEL-TIMES</a><ul>
 <li><a class="reference internal" href="#module-NllGridLib">NllGridLib</a></li>
+<li><a class="reference internal" href="#hdf5-grids">hdf5_grids</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#waveforms">WAVEFORMS</a><ul>
 <li><a class="reference internal" href="#module-OP_waveforms">OP_waveform</a></li>
+<li><a class="reference internal" href="#module-filters">filters</a></li>
+<li><a class="reference internal" href="#module-kurtogram">kurtogram</a></li>
 <li><a class="reference internal" href="#module-SDS_processing">SDS_processing</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#clustering-and-double-difference-relocation">CLUSTERING AND DOUBLE DIFFERENCE RELOCATION</a><ul>
+<li><a class="reference internal" href="#migration">MIGRATION</a><ul>
+<li><a class="reference internal" href="#module-integrate4D">integrate4D</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#location">LOCATION</a><ul>
+<li><a class="reference internal" href="#module-locations_trigger">locations_trigger</a></li>
+<li><a class="reference internal" href="#module-locations_prob">locations_prob</a></li>
+<li><a class="reference internal" href="#module-magnitude">magnitude</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#clustering">CLUSTERING</a><ul>
 <li><a class="reference internal" href="#module-correlation">correlation</a></li>
-<li><a class="reference internal" href="#module-clustering">clustering</a></li>
+<li><a class="reference internal" href="#id1">clustering</a></li>
 <li><a class="reference internal" href="#module-double_diff">double_diff</a></li>
 <li><a class="reference internal" href="#module-CZ_color">CZ_color</a></li>
 </ul>
@@ -1653,7 +3249,7 @@ stations using pre-calculated time-grids</p>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Alessia Maggi.
-      Last updated on May 25, 2014.
+      Last updated on May 26, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

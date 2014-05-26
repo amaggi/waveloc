@@ -1,0 +1,1196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>kurtogram &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for kurtogram</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.signal</span> <span class="kn">as</span> <span class="nn">si</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">utcdatetime</span>
+<span class="kn">from</span> <span class="nn">locations_trigger</span> <span class="kn">import</span> <span class="n">read_locs_from_file</span>
+<span class="kn">from</span> <span class="nn">correlation</span> <span class="kn">import</span> <span class="n">BinaryFile</span>
+<span class="kn">from</span> <span class="nn">filters</span> <span class="kn">import</span> <span class="n">smooth</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">Waveform</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                    <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+
+<span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Implements the kurtogram routine of Antoni (2005).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="nextpow2"><a class="viewcode-back" href="../api.html#kurtogram.nextpow2">[docs]</a><span class="k">def</span> <span class="nf">nextpow2</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates next power of 2.</span>
+
+<span class="sd">    :param n: a number</span>
+<span class="sd">    :type n: integer</span>
+
+<span class="sd">    :rtype: integer</span>
+<span class="sd">    :returns: The next power of 2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">m_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">m_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">m_f</span><span class="p">))</span>
+    <span class="k">return</span> <span class="mi">2</span><span class="o">**</span><span class="n">m_i</span>
+
+</div>
+<div class="viewcode-block" id="get_h_parameters"><a class="viewcode-back" href="../api.html#kurtogram.get_h_parameters">[docs]</a><span class="k">def</span> <span class="nf">get_h_parameters</span><span class="p">(</span><span class="n">NFIR</span><span class="p">,</span> <span class="n">fcut</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates h-parameters used in Antoni (2005)</span>
+
+<span class="sd">    :param NFIR: length of FIR filter</span>
+<span class="sd">    :param fcut: fraction of Nyquist for filter</span>
+
+<span class="sd">    :type NFIR: integer</span>
+<span class="sd">    :type fcut: float</span>
+
+<span class="sd">    :returns: h-parameters: h, g, h1, h2, h3</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">h</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">firwin</span><span class="p">(</span><span class="n">NFIR</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">fcut</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="mi">1j</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NFIR</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.125</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">NFIR</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">h</span><span class="p">[(</span><span class="mi">1</span><span class="o">-</span><span class="n">n</span><span class="p">)</span> <span class="o">%</span> <span class="n">NFIR</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">NFIR</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="mf">3.</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">NFIR</span><span class="p">)))</span>
+    <span class="n">h1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">firwin</span><span class="p">(</span><span class="n">NFIR</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mf">2.</span><span class="o">/</span><span class="mi">3</span><span class="o">*</span><span class="n">fcut</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2j</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NFIR</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span>
+                                             <span class="mf">0.25</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+    <span class="n">h2</span> <span class="o">=</span> <span class="n">h1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2j</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NFIR</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mf">6.</span><span class="p">)</span>
+    <span class="n">h3</span> <span class="o">=</span> <span class="n">h1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2j</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NFIR</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="plot_kurtogram"><a class="viewcode-back" href="../api.html#kurtogram.plot_kurtogram">[docs]</a><span class="k">def</span> <span class="nf">plot_kurtogram</span><span class="p">(</span><span class="n">Kwav</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">Level_w</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span>
+                   <span class="n">opt1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">opt2</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots the kurtogram. TODO : flesh out this doc-string.</span>
+
+<span class="sd">    :param Kwav:</span>
+<span class="sd">    :param freq_w:</span>
+<span class="sd">    :param nlevel:</span>
+<span class="sd">    :param level_w:</span>
+<span class="sd">    :param Fs:</span>
+<span class="sd">    :param fi:</span>
+<span class="sd">    :param index:</span>
+<span class="sd">    :param opt1:</span>
+<span class="sd">    :param opt2:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">I</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">Kwav</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="s">&#39;auto&#39;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">nlevel</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                            <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">nlevel</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
+               <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">hot_r</span><span class="p">)</span>
+    <span class="c">#imgplot.set_cmap(&#39;gray&#39;)</span>
+    <span class="n">xx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">freq_w</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">freq_w</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">step</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">xx</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">nlevel</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">Level_w</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span>
+    <span class="c">#plt.plot(Fs*fi,I,&#39;yo&#39;)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;Frequency (Hz)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&quot;Level k&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.075</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">,</span> <span class="s">&quot;(a)&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">opt2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Level </span><span class="si">%.1f</span><span class="s">, Bw=</span><span class="si">%.2f</span><span class="s"> Hz, fc=</span><span class="si">%.2f</span><span class="s"> Hz&quot;</span> <span class="o">%</span>
+                  <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">Level_w</span><span class="p">[</span><span class="n">I</span><span class="p">])</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">Fs</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">Level_w</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span> <span class="n">Fs</span><span class="o">*</span><span class="n">fi</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Level </span><span class="si">%.1f</span><span class="s">, Bw=</span><span class="si">%.2f</span><span class="s"> Hz, fc=</span><span class="si">%.2f</span><span class="s"> Hz&quot;</span> <span class="o">%</span>
+                  <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">Level_w</span><span class="p">[</span><span class="n">I</span><span class="p">])</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">Fs</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">Level_w</span><span class="p">[</span><span class="n">I</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)),</span> <span class="n">Fs</span><span class="o">*</span><span class="n">fi</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="getBandwidthAndFrequency"><a class="viewcode-back" href="../api.html#kurtogram.getBandwidthAndFrequency">[docs]</a><span class="k">def</span> <span class="nf">getBandwidthAndFrequency</span><span class="p">(</span><span class="n">nlevel</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">level_w</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">,</span> <span class="n">level_index</span><span class="p">,</span>
+                             <span class="n">freq_index</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets bandwidth and frequency parameters.</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param nlevel:</span>
+<span class="sd">    :param Fs:</span>
+<span class="sd">    :param level_w:</span>
+<span class="sd">    :param freq_w:</span>
+<span class="sd">    :param level_index:</span>
+<span class="sd">    :param freq_index:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#f1 = freq_w[freq_index]</span>
+    <span class="n">l1</span> <span class="o">=</span> <span class="n">level_w</span><span class="p">[</span><span class="n">level_index</span><span class="p">]</span>
+    <span class="n">fi</span> <span class="o">=</span> <span class="p">(</span><span class="n">freq_index</span><span class="p">)</span><span class="o">/</span><span class="mf">3.</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">nlevel</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">fi</span> <span class="o">+=</span> <span class="mf">2.</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="o">-</span><span class="n">l1</span><span class="p">)</span>
+    <span class="n">bw</span> <span class="o">=</span> <span class="n">Fs</span><span class="o">*</span><span class="mi">2</span><span class="o">**-</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+    <span class="n">fc</span> <span class="o">=</span> <span class="n">Fs</span> <span class="o">*</span> <span class="n">fi</span>
+
+    <span class="k">return</span> <span class="n">bw</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">l1</span>
+
+</div>
+<div class="viewcode-block" id="get_GridMax"><a class="viewcode-back" href="../api.html#kurtogram.get_GridMax">[docs]</a><span class="k">def</span> <span class="nf">get_GridMax</span><span class="p">(</span><span class="n">grid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets maximum of a nD grid and its unraveled index</span>
+
+<span class="sd">    :param grid: an nD-grid</span>
+<span class="sd">    :type param: numpy array</span>
+
+<span class="sd">    :returns:</span>
+<span class="sd">        * M : grid maximum</span>
+<span class="sd">        * index : index of maximum in unraveled grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">M</span><span class="p">,</span> <span class="n">index</span>
+
+</div>
+<div class="viewcode-block" id="Fast_Kurtogram"><a class="viewcode-back" href="../api.html#kurtogram.Fast_Kurtogram">[docs]</a><span class="k">def</span> <span class="nf">Fast_Kurtogram</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">Fs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">NFIR</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">fcut</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+                   <span class="n">opt1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">opt2</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the fast kurtogram of signal x up to level &#39;nlevel&#39;</span>
+<span class="sd">    Maximum number of decomposition levels is log2(length(x)), but it is</span>
+<span class="sd">    recommended to stay by a factor 1/8 below this.</span>
+
+<span class="sd">    J. Antoni : 02/2005</span>
+<span class="sd">    Translation to Python: T. Lecocq 02/2012</span>
+
+<span class="sd">    :param x: signal to analyse</span>
+<span class="sd">    :param nlevel: number of decomposition levels</span>
+<span class="sd">    :param verbose: If ``True`` outputs debugging information</span>
+<span class="sd">    :param Fs: Sampling frequency of signal x</span>
+<span class="sd">    :param NFIR: Length of FIR filter</span>
+<span class="sd">    :param fcut: Fraction of Nyquist for filter</span>
+<span class="sd">    :param opt1: [1 | 2]:</span>
+<span class="sd">        * opt1=1: classical kurtosis based on 4th order statistics</span>
+<span class="sd">        * opt1 = 2: robust kurtosis based on 2nd order statistics of the</span>
+<span class="sd">        envelope (if there is any difference in the kurtogram between the</span>
+<span class="sd">        two measures, this is  due to the presence of impulsive additive</span>
+<span class="sd">        noise)</span>
+<span class="sd">    :param opt2: [1 | 2]:</span>
+<span class="sd">        * opt2=1: the kurtogram is computed via a fast decimated filterbank</span>
+<span class="sd">        * opt2=2: the kurtogram is computed via the short-time Fourier</span>
+<span class="sd">        transform (option 1 is faster and has more flexibility than option</span>
+<span class="sd">        2 in the design of the analysis filter: a short filter in option 1</span>
+<span class="sd">        gives virtually the same results as option 2)</span>
+
+<span class="sd">    :returns: Kwav, Level_w, freq_w, c, f_lower, f_upper</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">N</span><span class="p">)</span> <span class="o">-</span> <span class="mi">7</span>
+    <span class="k">if</span> <span class="n">nlevel</span> <span class="o">&gt;</span> <span class="n">N2</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;Please enter a smaller number of decomposition levels&#39;</span><span class="p">)</span>
+
+    <span class="c"># Fast computation of the kurtogram</span>
+    <span class="c">####################################</span>
+
+    <span class="k">if</span> <span class="n">opt1</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c"># 1) Filterbank-based kurtogram</span>
+        <span class="c">############################</span>
+        <span class="c"># Analytic generating filters</span>
+
+        <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span> <span class="o">=</span> <span class="n">get_h_parameters</span><span class="p">(</span><span class="n">NFIR</span><span class="p">,</span> <span class="n">fcut</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">opt2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>   <span class="c"># kurtosis of the complex envelope</span>
+            <span class="n">Kwav</span> <span class="o">=</span> <span class="n">K_wpQ</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="s">&#39;kurt2&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>           <span class="c"># variance of the envelope magnitude</span>
+            <span class="n">Kwav</span> <span class="o">=</span> <span class="n">K_wpQ</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="s">&#39;kurt1&#39;</span><span class="p">)</span>
+
+        <span class="c"># keep positive values only!</span>
+        <span class="n">Kwav</span><span class="p">[</span><span class="n">Kwav</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Level_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nlevel</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Level_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Level_w</span><span class="p">,</span> <span class="n">Level_w</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="mf">3.</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">Level_w</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Level_w</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+        <span class="n">Level_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Level_w</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="o">*</span><span class="n">nlevel</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">freq_w</span> <span class="o">=</span> <span class="n">Fs</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="mf">2.0</span><span class="o">**</span><span class="n">nlevel</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">nlevel</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="o">+</span>
+                     <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="mf">3.</span><span class="o">*</span><span class="mf">2.</span><span class="o">**</span><span class="p">(</span><span class="mi">2</span><span class="o">+</span><span class="n">nlevel</span><span class="p">)))</span>
+
+        <span class="n">M</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">get_GridMax</span><span class="p">(</span><span class="n">Kwav</span><span class="p">)</span>
+        <span class="n">level_index</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">freq_index</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">bw</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">l1</span> <span class="o">=</span> <span class="n">getBandwidthAndFrequency</span><span class="p">(</span><span class="n">nlevel</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">Level_w</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">,</span>
+                                                  <span class="n">level_index</span><span class="p">,</span> <span class="n">freq_index</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="n">plot_kurtogram</span><span class="p">(</span><span class="n">Kwav</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">Level_w</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span>
+                           <span class="n">opt1</span><span class="p">,</span> <span class="n">opt2</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;stft-based is not implemented&#39;</span><span class="p">)</span>
+
+    <span class="c"># Signal filtering !</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">lev</span> <span class="o">=</span> <span class="n">l1</span>
+    <span class="k">while</span> <span class="n">test</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">test</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">opt2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">Bw</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">Find_wav_kurt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span>
+                                                    <span class="n">nlevel</span><span class="p">,</span> <span class="n">lev</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">Fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span>
+                                                    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">Bw</span><span class="p">,</span> <span class="n">fc</span> <span class="o">=</span> <span class="n">Find_wav_kurt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span>
+                                                    <span class="n">nlevel</span><span class="p">,</span> <span class="n">lev</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">Fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span>
+                                                    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c"># Apply appropriate filter and compare with previous results</span>
+    <span class="c"># (i.e. 4-10 Hz filter)</span>
+    <span class="n">f_lower</span> <span class="o">=</span> <span class="n">Fs</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">fc</span><span class="o">-</span><span class="n">Bw</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="mi">3</span>
+    <span class="n">f_upper</span> <span class="o">=</span> <span class="n">Fs</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">fc</span><span class="o">+</span><span class="n">Bw</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="mi">3</span>
+
+    <span class="k">return</span> <span class="n">Kwav</span><span class="p">,</span> <span class="n">Level_w</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">f_upper</span>
+
+</div>
+<div class="viewcode-block" id="K_wpQ"><a class="viewcode-back" href="../api.html#kurtogram.K_wpQ">[docs]</a><span class="k">def</span> <span class="nf">K_wpQ</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the kurtosis K of the complete quinte wavelet packet transform w</span>
+<span class="sd">    of signal x, up to nlevel, using the lowpass and highpass filters h and g,</span>
+<span class="sd">    respectively.  The WP coefficients are sorted according to the frequency</span>
+<span class="sd">    decomposition.  This version handles both real and analytical filters, but</span>
+<span class="sd">    does not yield WP coefficients suitable for signal synthesis.</span>
+
+<span class="sd">    J. Antoni : 12/2004</span>
+<span class="sd">    Translation to Python: T. Lecocq 02/2012</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h: lowpass filter</span>
+<span class="sd">    :param g: higpass filter</span>
+<span class="sd">    :param h1: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h2: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h3: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param nlevel: number of decomposition levels</span>
+<span class="sd">    :param verbose: If ``True`` outputs debugging information</span>
+<span class="sd">    :param opt: [&#39;kurt1&#39; | &#39;kurt2&#39;]</span>
+<span class="sd">        * &#39;kurt1&#39; = variance of the envelope magnitude</span>
+<span class="sd">        * &#39;kurt2&#39; = kurtosis of the complex envelope</span>
+<span class="sd">    :param level: decomposition level for this call</span>
+
+<span class="sd">    :returns: kurtosis</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">nlevel</span> <span class="o">&gt;=</span> <span class="n">L</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;nlevel must be smaller&#39;</span><span class="p">)</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">nlevel</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">KD</span><span class="p">,</span> <span class="n">KQ</span> <span class="o">=</span> <span class="n">K_wpQ_local</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="o">*</span><span class="n">nlevel</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="n">nlevel</span><span class="p">))</span>
+
+    <span class="n">K</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">KD</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">):</span>
+        <span class="n">K</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">KD</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">K</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">KQ</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">K</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">nlevel</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">KD</span><span class="p">[</span><span class="n">nlevel</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">return</span> <span class="n">K</span>
+
+</div>
+<div class="viewcode-block" id="K_wpQ_local"><a class="viewcode-back" href="../api.html#kurtogram.K_wpQ_local">[docs]</a><span class="k">def</span> <span class="nf">K_wpQ_local</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string. Is a recursive funtion.</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h: lowpass filter</span>
+<span class="sd">    :param g: higpass filter</span>
+<span class="sd">    :param h1: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h2: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h3: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param nlevel: number of decomposition levels</span>
+<span class="sd">    :param verbose: If ``True`` outputs debugging information</span>
+<span class="sd">    :param opt: [&#39;kurt1&#39; | &#39;kurt2&#39;]</span>
+<span class="sd">        * &#39;kurt1&#39; = variance of the envelope magnitude</span>
+<span class="sd">        * &#39;kurt2&#39; = kurtosis of the complex envelope</span>
+<span class="sd">    :param level: decomposition level for this call</span>
+
+<span class="sd">    :returns: K, KQ</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">a</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">DBFB</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>  <span class="c"># indices pairs multipliés par -1</span>
+    <span class="n">K1</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+    <span class="n">K2</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span> <span class="o">=</span> <span class="n">TBFB</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+        <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d3</span> <span class="o">=</span> <span class="n">TBFB</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+        <span class="n">Ka1</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a1</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Ka2</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a2</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Ka3</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a3</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Kd1</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">d1</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Kd2</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">d2</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Kd3</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">d3</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Ka1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Ka2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Ka3</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Kd1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Kd2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">Kd3</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">K1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">K2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">KQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Ka1</span><span class="p">,</span> <span class="n">Ka2</span><span class="p">,</span> <span class="n">Ka3</span><span class="p">,</span> <span class="n">Kd1</span><span class="p">,</span> <span class="n">Kd2</span><span class="p">,</span> <span class="n">Kd3</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">Ka</span><span class="p">,</span> <span class="n">KaQ</span> <span class="o">=</span> <span class="n">K_wpQ_local</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span>
+                              <span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">Kd</span><span class="p">,</span> <span class="n">KdQ</span> <span class="o">=</span> <span class="n">K_wpQ_local</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">opt</span><span class="p">,</span>
+                              <span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">K1</span> <span class="o">=</span> <span class="n">K1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Ka</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">K2</span> <span class="o">=</span> <span class="n">K2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Kd</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">K12</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">K1</span><span class="p">,</span> <span class="n">K2</span><span class="p">)</span>
+        <span class="n">Kad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">Ka</span><span class="p">,</span> <span class="n">Kd</span><span class="p">))</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">K12</span><span class="p">,</span> <span class="n">Kad</span><span class="p">))</span>
+
+        <span class="n">Long</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">2.</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">KaQ</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">Ka1</span> <span class="o">=</span> <span class="n">Ka1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Ka2</span> <span class="o">=</span> <span class="n">Ka2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Ka3</span> <span class="o">=</span> <span class="n">Ka3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Kd1</span> <span class="o">=</span> <span class="n">Kd1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Kd2</span> <span class="o">=</span> <span class="n">Kd2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Kd3</span> <span class="o">=</span> <span class="n">Kd3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">KaQ</span><span class="p">,</span> <span class="n">KdQ</span><span class="p">))</span>
+
+        <span class="n">KQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Ka1</span><span class="p">,</span> <span class="n">Ka2</span><span class="p">,</span> <span class="n">Ka3</span><span class="p">,</span> <span class="n">Kd1</span><span class="p">,</span> <span class="n">Kd2</span><span class="p">,</span> <span class="n">Kd3</span><span class="p">))</span>
+        <span class="n">KQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">KQ</span><span class="p">,</span> <span class="n">tmp</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="n">nlevel</span><span class="p">:</span>
+        <span class="n">K1</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">K1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">shape</span><span class="p">)),</span> <span class="n">K</span><span class="p">))</span>
+
+        <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span> <span class="o">=</span> <span class="n">TBFB</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+        <span class="n">Ka1</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a1</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Ka2</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a2</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Ka3</span> <span class="o">=</span> <span class="n">kurt</span><span class="p">(</span><span class="n">a3</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:],</span> <span class="n">opt</span><span class="p">)</span>
+        <span class="n">Long</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">KQ</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">Ka1</span> <span class="o">=</span> <span class="n">Ka1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Ka2</span> <span class="o">=</span> <span class="n">Ka2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">Ka3</span> <span class="o">=</span> <span class="n">Ka3</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Long</span><span class="p">)</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">KQ</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">KQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Ka1</span><span class="p">,</span> <span class="n">Ka2</span><span class="p">,</span> <span class="n">Ka3</span><span class="p">))</span>
+        <span class="n">KQ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">KQ</span><span class="p">,</span> <span class="n">tmp</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">K</span><span class="p">,</span> <span class="n">KQ</span>
+
+</div>
+<div class="viewcode-block" id="kurt"><a class="viewcode-back" href="../api.html#kurtogram.kurt">[docs]</a><span class="k">def</span> <span class="nf">kurt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">opt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates kurtosis of a signal according to the option chosen</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param opt: [&#39;kurt1&#39; | &#39;kurt2&#39;]</span>
+<span class="sd">        * &#39;kurt1&#39; = variance of the envelope magnitude</span>
+<span class="sd">        * &#39;kurt2&#39; = kurtosis of the complex envelope</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: Kurtosis</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">opt</span> <span class="o">==</span> <span class="s">&#39;kurt2&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">K</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">E</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">K</span>
+
+        <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="n">E</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isreal</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">K</span> <span class="o">-</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">opt</span> <span class="o">==</span> <span class="s">&#39;kurt1&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">E</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">K</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">E</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">:</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span> <span class="n">K</span>
+
+        <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">E</span><span class="o">**</span><span class="mi">2</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isreal</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">-</span><span class="mf">1.57</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">K</span> <span class="o">=</span> <span class="n">K</span><span class="o">-</span><span class="mf">1.27</span>
+
+    <span class="k">return</span> <span class="n">K</span>
+
+</div>
+<div class="viewcode-block" id="DBFB"><a class="viewcode-back" href="../api.html#kurtogram.DBFB">[docs]</a><span class="k">def</span> <span class="nf">DBFB</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Double-band filter-bank.</span>
+<span class="sd">        [a,d] = DBFB(x,h,g) computes the approximation</span>
+<span class="sd">        coefficients vector a and detail coefficients vector d,</span>
+<span class="sd">        obtained by passing signal x though a two-band analysis filter-bank.</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h: The decomposition low-pass filter and</span>
+<span class="sd">    :param g: The decomposition high-pass filter.</span>
+
+<span class="sd">    :returns: a, d</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># lowpass filter</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="c"># highpass filter</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="TBFB"><a class="viewcode-back" href="../api.html#kurtogram.TBFB">[docs]</a><span class="k">def</span> <span class="nf">TBFB</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Trible-band filter-bank.</span>
+<span class="sd">        [a1,a2,a3] = TBFB(x,h1,h2,h3)</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h1: filter parameter</span>
+<span class="sd">    :param h2: filter parameter</span>
+<span class="sd">    :param h3: filter parameter</span>
+
+<span class="sd">    :returns: a1, a2, a3</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># lowpass filter</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span><span class="n">h1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">a1</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">a1</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="c"># passband filter</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span><span class="n">h2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">a2</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">a2</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="c"># highpass filter</span>
+    <span class="n">a3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span><span class="n">h3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">a3</span> <span class="o">=</span> <span class="n">a3</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">a3</span> <span class="o">=</span> <span class="n">a3</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Find_wav_kurt"><a class="viewcode-back" href="../api.html#kurtogram.Find_wav_kurt">[docs]</a><span class="k">def</span> <span class="nf">Find_wav_kurt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">Sc</span><span class="p">,</span> <span class="n">Fr</span><span class="p">,</span> <span class="n">Fs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO flesh out this doc-string</span>
+
+<span class="sd">    J. Antoni : 12/2004</span>
+<span class="sd">    Translation to Python: T. Lecocq 02/2012</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h: lowpass filter</span>
+<span class="sd">    :param g: higpass filter</span>
+<span class="sd">    :param h1: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h2: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h3: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param nlevel: number of decomposition levels</span>
+<span class="sd">    :param Sc: Sc = -log2(Bw)-1 with Bw the bandwidth of the filter</span>
+<span class="sd">    :param Fr: in the range [0, 0.5]</span>
+<span class="sd">    :param Fs: Sampling frequency of signal x</span>
+<span class="sd">    :param verbose: If ``True`` outputs debugging information</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">Sc</span><span class="p">))</span><span class="o">+</span><span class="p">((</span><span class="n">Sc</span> <span class="o">%</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">Bw</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">freq_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="n">level</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Bw</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freq_w</span><span class="o">-</span><span class="n">Fr</span><span class="p">))</span>
+    <span class="n">fc</span> <span class="o">=</span> <span class="n">freq_w</span><span class="p">[</span><span class="n">J</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">fc</span><span class="o">/</span><span class="n">Bw</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">acoeff</span> <span class="o">=</span> <span class="n">binary</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">level</span><span class="p">))</span>
+        <span class="n">bcoeff</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">temp_level</span> <span class="o">=</span> <span class="n">level</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">i2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">i</span><span class="o">/</span><span class="mf">3.</span><span class="p">)))</span>
+        <span class="n">temp_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">((</span><span class="n">level</span><span class="p">))</span><span class="o">-</span><span class="mi">1</span>
+        <span class="n">acoeff</span> <span class="o">=</span> <span class="n">binary</span><span class="p">(</span><span class="n">i2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">temp_level</span><span class="p">))</span>
+        <span class="n">bcoeff</span> <span class="o">=</span> <span class="n">i</span><span class="o">-</span><span class="n">i2</span><span class="o">*</span><span class="mi">3</span>
+    <span class="n">acoeff</span> <span class="o">=</span> <span class="n">acoeff</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">K_wpQ_filt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">acoeff</span><span class="p">,</span> <span class="n">bcoeff</span><span class="p">,</span> <span class="n">temp_level</span><span class="p">)</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">Fs</span><span class="p">)</span>
+    <span class="n">tc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">c</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2j</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">fc</span><span class="o">*</span><span class="n">Fs</span><span class="o">*</span><span class="n">tc</span><span class="p">))</span>
+
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">sig</span><span class="o">*</span><span class="n">raylinv</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">.</span><span class="mi">999</span><span class="p">,</span> <span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="p">]))</span>
+
+    <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">Bw</span><span class="p">,</span> <span class="n">fc</span>
+
+</div>
+<div class="viewcode-block" id="getFTSquaredEnvelope"><a class="viewcode-back" href="../api.html#kurtogram.getFTSquaredEnvelope">[docs]</a><span class="k">def</span> <span class="nf">getFTSquaredEnvelope</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the Fourier transform of the squared envelope</span>
+
+<span class="sd">    :param c: signal</span>
+
+<span class="sd">    :returns S: FT of squared envelope</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nfft</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nextpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)))</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">((</span><span class="n">env</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">env</span><span class="p">))</span> <span class="o">*</span>
+               <span class="n">np</span><span class="o">.</span><span class="n">hanning</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">env</span><span class="p">))</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">env</span><span class="p">),</span> <span class="n">nfft</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">S</span>
+
+</div>
+<div class="viewcode-block" id="plot_envelope"><a class="viewcode-back" href="../api.html#kurtogram.plot_envelope">[docs]</a><span class="k">def</span> <span class="nf">plot_envelope</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">fc</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots envelope (with or without its spectrum)</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param Fs: sampling frequency of signal</span>
+<span class="sd">    :param c:</span>
+<span class="sd">    :param fc:</span>
+<span class="sd">    :param level:</span>
+<span class="sd">    :param spec: If ``True`` also plots the envelope spectrum</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">Fs</span>
+    <span class="n">tc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="o">+</span><span class="n">spec</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Original Signal (4-10 Hz)&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">spec</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">),</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&quot;Envelope of the filtered signal,  Bw=Fs/2^</span><span class="si">%.1f</span><span class="s">,  fc=</span><span class="si">%.2f</span><span class="s"> Hz&quot;</span> <span class="o">%</span>
+              <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">level</span><span class="o">*</span><span class="mi">10</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">Fs</span><span class="o">*</span><span class="n">fc</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;time [s]&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">spec</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">nfft</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nextpow2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)))</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">env</span><span class="p">)</span> <span class="o">*</span>
+                   <span class="n">np</span><span class="o">.</span><span class="n">hanning</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">env</span><span class="p">))</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">env</span><span class="p">),</span> <span class="n">nfft</span><span class="p">))</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">Fs</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="n">level</span><span class="p">,</span> <span class="n">nfft</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">313</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">S</span><span class="p">[:</span><span class="n">nfft</span><span class="o">/</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Fourier transform magnitude of the squared envelope&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;frequency [Hz]&#39;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="binary"><a class="viewcode-back" href="../api.html#kurtogram.binary">[docs]</a><span class="k">def</span> <span class="nf">binary</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the coefficients of the binary expansion of i:</span>
+<span class="sd">        i = a(1)*2^(k-1) + a(2)*2^(k-2) + ... + a(k)</span>
+
+<span class="sd">    :param i: integer to expand</span>
+<span class="sd">    :param k: nummber of coefficients</span>
+
+<span class="sd">    :returns: coefficients a</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">**</span><span class="n">k</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;i must be such that i &lt; 2^k !!&#39;</span><span class="p">)</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">i</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">(</span><span class="n">temp</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="n">l</span><span class="p">))</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">temp</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="n">l</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">a</span>
+
+</div>
+<div class="viewcode-block" id="K_wpQ_filt"><a class="viewcode-back" href="../api.html#kurtogram.K_wpQ_filt">[docs]</a><span class="k">def</span> <span class="nf">K_wpQ_filt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">acoeff</span><span class="p">,</span> <span class="n">bcoeff</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the kurtosis K of the complete quinte wavelet packet transform w</span>
+<span class="sd">    of signal x, up to nlevel, using the lowpass and highpass filters h and g,</span>
+<span class="sd">    respectively.  The WP coefficients are sorted according to the frequency</span>
+<span class="sd">    decomposition.</span>
+<span class="sd">    This version handles both real and analytical filters, but does not yield</span>
+<span class="sd">    WP coefficients suitable for signal synthesis.</span>
+
+<span class="sd">    J. Antoni : 12/2004</span>
+<span class="sd">    Translation to Python: T. Lecocq 02/2012</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h: lowpass filter</span>
+<span class="sd">    :param g: higpass filter</span>
+<span class="sd">    :param h1: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h2: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h3: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param acoeff:</span>
+<span class="sd">    :param acoeff:</span>
+<span class="sd">    :param level:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nlevel</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">acoeff</span><span class="p">)</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">nlevel</span> <span class="o">&gt;=</span> <span class="n">L</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;nlevel must be smaller !!&#39;</span><span class="p">)</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">nlevel</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">nlevel</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c3</span> <span class="o">=</span> <span class="n">TBFB</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">elif</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c2</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h2</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">elif</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c3</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">K_wpQ_filt_local</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">acoeff</span><span class="p">,</span> <span class="n">bcoeff</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">c</span>
+
+</div>
+<div class="viewcode-block" id="K_wpQ_filt_local"><a class="viewcode-back" href="../api.html#kurtogram.K_wpQ_filt_local">[docs]</a><span class="k">def</span> <span class="nf">K_wpQ_filt_local</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">acoeff</span><span class="p">,</span> <span class="n">bcoeff</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs one analysis level into the analysis tree</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param x: signal</span>
+<span class="sd">    :param h: lowpass filter</span>
+<span class="sd">    :param g: higpass filter</span>
+<span class="sd">    :param h1: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h2: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param h3: filter parameter returned by get_h_parameters</span>
+<span class="sd">    :param acoeff:</span>
+<span class="sd">    :param acoeff:</span>
+<span class="sd">    :param level:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">a</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">DBFB</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">)</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">if</span> <span class="n">acoeff</span><span class="p">[</span><span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">acoeff</span><span class="p">[</span><span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c3</span> <span class="o">=</span> <span class="n">TBFB</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c3</span> <span class="o">=</span> <span class="n">TBFB</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c1</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">elif</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c2</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h2</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">elif</span> <span class="n">bcoeff</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="n">c3</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">h3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="n">level</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">acoeff</span><span class="p">[</span><span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">K_wpQ_filt_local</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">acoeff</span><span class="p">,</span> <span class="n">bcoeff</span><span class="p">,</span> <span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">K_wpQ_filt_local</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">,</span> <span class="n">h3</span><span class="p">,</span> <span class="n">acoeff</span><span class="p">,</span> <span class="n">bcoeff</span><span class="p">,</span> <span class="n">level</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">c</span>
+
+</div>
+<div class="viewcode-block" id="raylinv"><a class="viewcode-back" href="../api.html#kurtogram.raylinv">[docs]</a><span class="k">def</span> <span class="nf">raylinv</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inverse of the Rayleigh cumulative distribution function (cdf).</span>
+<span class="sd">        X = RAYLINV(P,B) returns the Rayleigh cumulative distribution function</span>
+<span class="sd">        with parameter B at the probabilities in P.</span>
+
+<span class="sd">    :param p: probabilities</span>
+<span class="sd">    :param b:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Initialize x to zero.</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+    <span class="c"># Return NaN if the arguments are outside their respective limits.</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(((</span><span class="n">b</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">k1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+    <span class="c"># Put in the correct values when P is 1.</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(((</span><span class="n">b</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">p</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pk</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">bk</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">bk</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pk</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">x</span>
+
+</div>
+<div class="viewcode-block" id="plot_trace"><a class="viewcode-back" href="../api.html#kurtogram.plot_trace">[docs]</a><span class="k">def</span> <span class="nf">plot_trace</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">xfilt</span><span class="p">,</span> <span class="n">kurtx</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span>
+               <span class="n">snr_ref</span><span class="p">,</span> <span class="n">snr_kurt</span><span class="p">,</span> <span class="n">kmax</span><span class="p">,</span> <span class="n">kmax_ref</span><span class="p">,</span> <span class="n">tstack</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot signal and kurtosis for comparison. TODO : flesh out this doc-string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sta</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span>
+
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;Signal filtered between 4 - 10 Hz&quot;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kurtx</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">kurtx</span><span class="p">)),</span> <span class="s">&#39;y--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s">&quot;SNR: </span><span class="si">%.1f</span><span class="s"> </span><span class="se">\n</span><span class="s">Kmax: </span><span class="si">%.2f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">snr_ref</span><span class="p">,</span> <span class="n">kmax_ref</span><span class="p">),</span>
+             <span class="n">transform</span><span class="o">=</span><span class="n">ax1</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="s">&quot;(b)&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax1</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+    <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                          <span class="n">title</span><span class="o">=</span><span class="s">&quot;Signal filtered between </span><span class="si">%.1f</span><span class="s"> - </span><span class="si">%.1f</span><span class="s"> Hz&quot;</span> <span class="o">%</span>
+                          <span class="p">(</span><span class="n">f_lower</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">))</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xfilt</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">xfilt</span><span class="p">)),</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tr</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tr</span><span class="p">)),</span> <span class="s">&#39;r--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s">&quot;SNR: </span><span class="si">%.1f</span><span class="s"> </span><span class="se">\n</span><span class="s">Kmax: </span><span class="si">%.2f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">kmax</span><span class="p">),</span>
+             <span class="n">transform</span><span class="o">=</span><span class="n">ax2</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="s">&quot;(c)&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax2</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+
+    <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">G</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s">&quot;Kurtosis comparison&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="s">&#39;r--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&quot;new&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kurtx</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&quot;initial&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">handles</span><span class="p">,</span>  <span class="n">labels</span> <span class="o">=</span> <span class="n">ax3</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span>  <span class="n">labels</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="s">&quot;(d)&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax3</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&quot;Time sample&quot;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">ax1</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">visible</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">ax2</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">visible</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">sta</span><span class="p">,</span> <span class="n">tstack</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../api.html#kurtogram.write_file">[docs]</a><span class="k">def</span> <span class="nf">write_file</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">tstart</span><span class="p">,</span> <span class="n">tend</span><span class="p">,</span> <span class="n">tr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Writes kurtosis file.</span>
+
+<span class="sd">    :param info: dictionary of parameters</span>
+<span class="sd">    :param tstart: start-time</span>
+<span class="sd">    :param tend: end-time</span>
+<span class="sd">    :param tr: trace to write</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">print</span> <span class="s">&quot;Writing a new kurtosis file...&quot;</span>
+    <span class="n">t_orig</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;tdeb&#39;</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span>
+    <span class="n">ind1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">tstart</span><span class="o">-</span><span class="n">t_orig</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">ind2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">tend</span><span class="o">-</span><span class="n">t_orig</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ind1</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">tr</span><span class="p">[</span><span class="o">-</span><span class="n">ind1</span><span class="p">:]</span>
+        <span class="n">ind1</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">ind2</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt&#39;</span><span class="p">]):</span>
+        <span class="n">ind2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt&#39;</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">:</span><span class="n">ind2</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">tr</span><span class="p">):</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">:</span><span class="n">ind2</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tr</span>
+
+    <span class="k">return</span> <span class="n">info</span>
+
+</div>
+<div class="viewcode-block" id="waveval"><a class="viewcode-back" href="../api.html#kurtogram.waveval">[docs]</a><span class="k">def</span> <span class="nf">waveval</span><span class="p">(</span><span class="n">xall</span><span class="p">,</span> <span class="n">tstart</span><span class="p">,</span> <span class="n">tend</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tdeb</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param xall:</span>
+<span class="sd">    :param tstart:</span>
+<span class="sd">    :param tend:</span>
+<span class="sd">    :param dt:</span>
+<span class="sd">    :param tdeb:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tstart</span> <span class="o">=</span> <span class="n">tstart</span><span class="o">-</span><span class="n">tdeb</span>
+    <span class="n">tend</span> <span class="o">=</span> <span class="n">tend</span><span class="o">-</span><span class="n">tdeb</span>
+    <span class="n">istart</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tstart</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="n">iend</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">tend</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="n">xall</span><span class="p">[</span><span class="n">istart</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">val</span>
+
+</div>
+<div class="viewcode-block" id="kurto"><a class="viewcode-back" href="../api.html#kurtogram.kurto">[docs]</a><span class="k">def</span> <span class="nf">kurto</span><span class="p">(</span><span class="n">origin_time</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param origin_time:</span>
+<span class="sd">    :param info:</span>
+<span class="sd">    :param opdict:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]</span>
+    <span class="n">kwin</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kwin&#39;</span><span class="p">]</span>
+
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">origin_time</span><span class="o">-</span><span class="mf">5.0</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="n">origin_time</span><span class="o">+</span><span class="mf">20.0</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span>
+
+    <span class="c"># Trace</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">waveval</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;data_ini&#39;</span><span class="p">],</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;tdeb_data&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">info</span>
+
+    <span class="c"># Initial kurtosis (trace filtered between 4-10Hz)</span>
+    <span class="n">kurtx</span> <span class="o">=</span> <span class="n">waveval</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;kurt_ini&#39;</span><span class="p">],</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span>
+                    <span class="n">info</span><span class="p">[</span><span class="s">&#39;tdeb_kurt&#39;</span><span class="p">])</span>
+    <span class="n">kurtx</span> <span class="o">=</span> <span class="n">smooth</span><span class="p">(</span><span class="n">kurtx</span><span class="p">)</span>
+
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="o">-</span><span class="mi">7</span>
+    <span class="n">nlevel</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fix</span><span class="p">(</span><span class="n">N2</span><span class="p">))</span>
+
+    <span class="n">snr_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">snr_kurt_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">kurtx</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">kurtx</span><span class="p">))</span>
+    <span class="n">kmax_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">kurtx</span><span class="p">)</span>  <span class="c"># maximum of the kurtosis</span>
+
+    <span class="c"># Compute the kurtogram and keep best frequencies</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.gridspec</span> <span class="kn">as</span> <span class="nn">gridspec</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">gridspec</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">G</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">Kwav</span><span class="p">,</span> <span class="n">Level_w</span><span class="p">,</span> <span class="n">freq_w</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="n">f_upper</span> <span class="o">=</span> \
+        <span class="n">Fast_Kurtogram</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="n">nlevel</span><span class="p">,</span> <span class="n">verbose</span><span class="p">,</span> <span class="n">Fs</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="n">dt</span><span class="p">,</span>
+                       <span class="n">opt2</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c"># Comparison of the kurtosis computed in the new frequency band and the old</span>
+    <span class="c"># one (criterion : snr, kmax)</span>
+    <span class="c"># 1. Read the initial data</span>
+    <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+    <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;data_file&#39;</span><span class="p">],</span> <span class="n">starttime</span><span class="o">=</span><span class="n">start_time</span><span class="o">-</span><span class="n">kwin</span><span class="p">,</span>
+                      <span class="n">endtime</span><span class="o">=</span><span class="n">end_time</span><span class="o">+</span><span class="n">kwin</span><span class="p">)</span>
+
+    <span class="n">nbpts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwin</span><span class="o">*</span><span class="mf">1.</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+
+    <span class="c"># 2. Filter the trace with kurtogram frequencies</span>
+    <span class="n">wf</span><span class="o">.</span><span class="n">bp_filter</span><span class="p">(</span><span class="n">f_lower</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">)</span>
+    <span class="n">x_filt</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">x_filt</span> <span class="o">=</span> <span class="n">x_filt</span><span class="p">[</span><span class="n">nbpts</span><span class="p">:</span><span class="o">-</span><span class="n">nbpts</span><span class="p">]</span>
+
+    <span class="c"># 3. Compute the kurtosis</span>
+    <span class="n">wf</span><span class="o">.</span><span class="n">process_kurtosis</span><span class="p">(</span><span class="n">kwin</span><span class="p">,</span> <span class="n">recursive</span><span class="o">=</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">])</span>
+    <span class="n">new_kurtx</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">]:</span>
+        <span class="n">new_kurtx</span> <span class="o">=</span> <span class="n">new_kurtx</span><span class="p">[</span><span class="n">nbpts</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="n">nbpts</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_kurtx</span> <span class="o">=</span> <span class="n">new_kurtx</span><span class="p">[:</span><span class="o">-</span><span class="n">nbpts</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">snr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x_filt</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x_filt</span><span class="p">))</span>
+    <span class="n">snr_kurt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">new_kurtx</span><span class="p">))</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">new_kurtx</span><span class="p">))</span>
+    <span class="n">kmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">new_kurtx</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">snr</span> <span class="o">&gt;</span> <span class="n">snr_ref</span> <span class="ow">and</span> <span class="n">kmax</span> <span class="o">&gt;=</span> <span class="n">kmax_ref</span><span class="p">:</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">round</span><span class="p">(</span><span class="n">f_lower</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">f_upper</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span><span class="o">/</span><span class="mi">100</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s">&#39;new_kurt_file&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">write_file</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">new_kurtx</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="ow">and</span> <span class="n">snr</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;snr:&quot;</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="s">&quot; ; snr_ref:&quot;</span><span class="p">,</span> <span class="n">snr_ref</span>
+        <span class="k">print</span> <span class="s">&quot;snr new kurtosis:&quot;</span><span class="p">,</span> <span class="n">snr_kurt</span><span class="p">,</span> <span class="s">&quot; ; snr kurtosis reference:&quot;</span><span class="p">,</span>\
+            <span class="n">snr_kurt_ref</span>
+        <span class="k">print</span> <span class="s">&quot;kurtosis max, kurt_ref :&quot;</span><span class="p">,</span> <span class="n">kmax</span><span class="p">,</span> <span class="n">kmax_ref</span>
+        <span class="n">plot_trace</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">x_filt</span><span class="p">,</span> <span class="n">kurtx</span><span class="p">,</span> <span class="n">new_kurtx</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span>
+                   <span class="n">f_upper</span><span class="p">,</span> <span class="n">snr</span><span class="p">,</span> <span class="n">snr_ref</span><span class="p">,</span> <span class="n">snr_kurt</span><span class="p">,</span> <span class="n">kmax</span><span class="p">,</span> <span class="n">kmax_ref</span><span class="p">,</span>
+                   <span class="n">origin_time</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">info</span>
+
+</div>
+<div class="viewcode-block" id="read_kurtogram_frequencies"><a class="viewcode-back" href="../api.html#kurtogram.read_kurtogram_frequencies">[docs]</a><span class="k">def</span> <span class="nf">read_kurtogram_frequencies</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads and plots binary file of kurtogram frequencies.</span>
+
+<span class="sd">    :param filename: File to read</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">read_binary_file</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">staname</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">freqs</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s"> </span><span class="si">%.1f</span><span class="s"> </span><span class="si">%.1f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">staname</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">staname</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]),</span>
+                                <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">staname</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s">&#39;white&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">([</span><span class="n">freqs</span><span class="p">[</span><span class="n">staname</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">freqs</span><span class="p">[</span><span class="n">staname</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]],</span> <span class="mi">35</span><span class="p">,</span>
+                 <span class="n">histtype</span><span class="o">=</span><span class="s">&#39;stepfilled&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=.</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="s">&#39;g&#39;</span><span class="p">),</span>
+                 <span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;f_low&#39;</span><span class="p">,</span> <span class="s">&#39;f_up&#39;</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">staname</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Frequency (Hz)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="s">&quot;Lower f = </span><span class="si">%.1f</span><span class="s"> Hz&quot;</span> <span class="o">%</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">staname</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="s">&quot;Upper f = </span><span class="si">%.1f</span><span class="s"> Hz&quot;</span> <span class="o">%</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">staname</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="do_kurtogram_setup_and_run"><a class="viewcode-back" href="../api.html#kurtogram.do_kurtogram_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_kurtogram_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the kurtogram analysis using the parameters contained in the</span>
+<span class="sd">    WavelocOptions.opdict.</span>
+
+<span class="sd">    :param opdict: Dictionary containing the waveloc parameters and options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+
+    <span class="c"># data</span>
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+    <span class="n">data_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="n">kurt_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]</span>
+    <span class="n">kurt_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">kurt_glob</span><span class="p">))</span>
+    <span class="n">kurt_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="c"># output directory</span>
+    <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">])</span>
+
+    <span class="c"># location file</span>
+    <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+    <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+    <span class="c"># Read locations</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">)</span>
+
+    <span class="c"># create a file containing the best filtering parameters for each event and</span>
+    <span class="c"># each station</span>
+    <span class="n">kurto_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="s">&#39;kurto&#39;</span><span class="p">)</span>
+
+    <span class="n">tdeb</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;starttime&#39;</span><span class="p">])</span>
+    <span class="n">tfin</span> <span class="o">=</span> <span class="n">utcdatetime</span><span class="o">.</span><span class="n">UTCDateTime</span><span class="p">(</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;endtime&#39;</span><span class="p">])</span>
+
+    <span class="c"># write filenames in a dictionary</span>
+    <span class="n">kurtdata</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">kurt_files</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">sta</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">station</span>
+            <span class="n">kurtdata</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="k">except</span> <span class="ne">UserWarning</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;No data around </span><span class="si">%s</span><span class="s"> for file </span><span class="si">%s</span><span class="s">.&#39;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">tdeb</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">filename</span><span class="p">))</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">data_files</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">wf</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+            <span class="n">wf</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">sta</span> <span class="o">=</span> <span class="n">wf</span><span class="o">.</span><span class="n">station</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="k">except</span> <span class="ne">UserWarning</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;No data around </span><span class="si">%s</span><span class="s"> for file </span><span class="si">%s</span><span class="s">.&#39;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">tdeb</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">filename</span><span class="p">))</span>
+
+    <span class="c"># ------------------------------------------------------------------------</span>
+    <span class="c"># Create an empty dictionnary that will contain the filtering parameters</span>
+    <span class="n">param</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+
+        <span class="n">wf1</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+        <span class="n">wf1</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">station</span><span class="p">],</span> <span class="n">starttime</span><span class="o">=</span><span class="n">tdeb</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">tfin</span><span class="p">)</span>
+
+        <span class="n">wf2</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+        <span class="n">wf2</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">kurtdata</span><span class="p">[</span><span class="n">station</span><span class="p">],</span> <span class="n">starttime</span><span class="o">=</span><span class="n">tdeb</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="n">tfin</span><span class="p">)</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;data_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">station</span><span class="p">]</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">station</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;tdeb_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf1</span><span class="o">.</span><span class="n">starttime</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;tdeb_kurt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf2</span><span class="o">.</span><span class="n">starttime</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;kurt_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kurtdata</span><span class="p">[</span><span class="n">station</span><span class="p">]</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;data_ini&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf1</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;kurt_ini&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf2</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wf1</span><span class="o">.</span><span class="n">dt</span>
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;filter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Processing station </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;new_kurtfile&#39;</span><span class="p">]:</span>
+            <span class="n">new_filename</span> <span class="o">=</span> <span class="s">&#39;filt_kurtogram.sac&#39;</span>
+            <span class="n">new_kurt_filename</span> <span class="o">=</span> \
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">station</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">data_glob</span><span class="p">[</span><span class="mi">1</span><span class="p">:])[</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="n">new_filename</span><span class="p">))</span>
+            <span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_kurt_filename</span>
+            <span class="n">trace_kurt_fin</span> <span class="o">=</span> <span class="n">Waveform</span><span class="p">()</span>
+            <span class="n">trace_kurt_fin</span><span class="o">.</span><span class="n">read_from_file</span><span class="p">(</span><span class="n">new_kurt_filename</span><span class="p">)</span>
+            <span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trace_kurt_fin</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">:</span>
+            <span class="n">origin_time</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]:</span>
+                <span class="k">print</span> <span class="s">&quot;******************************************************&quot;</span>
+                <span class="k">print</span> <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">origin_time</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">origin_time</span> <span class="o">&gt;</span> <span class="n">tdeb</span> <span class="ow">and</span> <span class="n">origin_time</span> <span class="o">&lt;</span> <span class="n">tfin</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">kurto</span><span class="p">(</span><span class="n">origin_time</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">opdict</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+        <span class="n">info</span><span class="p">[</span><span class="s">&#39;filter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;filter&#39;</span><span class="p">])</span>
+        <span class="n">sta</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;station&#39;</span><span class="p">]</span>
+        <span class="n">param</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;filter&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="s">&#39;new_kurt_file&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="p">:</span>
+            <span class="n">trace_kurt_fin</span><span class="o">.</span><span class="n">values</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt&#39;</span><span class="p">]</span>
+            <span class="n">trace_kurt_fin</span><span class="o">.</span><span class="n">write_to_file_filled</span><span class="p">(</span><span class="n">info</span><span class="p">[</span><span class="s">&#39;new_kurt_file&#39;</span><span class="p">],</span>
+                                                <span class="n">format</span><span class="o">=</span><span class="s">&#39;MSEED&#39;</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c"># Write the dictionnary &#39;param&#39; in a binary file</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">kurto_file</span><span class="p">):</span>
+        <span class="n">ans</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> file already exists. Do you really want to replace</span><span class="se">\</span>
+<span class="s">            it ? (y or n):</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">kurto_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ans</span> <span class="o">!=</span> <span class="s">&#39;y&#39;</span><span class="p">:</span>
+            <span class="n">kurto_file</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">_1&quot;</span> <span class="o">%</span> <span class="n">kurto_file</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">kurto_file</span><span class="p">)</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+
+    <span class="c"># read and plot the file you have just written</span>
+    <span class="n">read_kurtogram_frequencies</span><span class="p">(</span><span class="n">kurto_file</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&quot;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&quot;</span><span class="p">)</span>
+
+    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">wo</span><span class="o">.</span><span class="n">verify_kurtogram_options</span><span class="p">()</span>
+
+    <span class="n">do_kurtogram_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 26, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

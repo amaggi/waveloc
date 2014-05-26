@@ -1,0 +1,403 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>integrate4D &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for integrate4D</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">scipy.integrate</span> <span class="kn">as</span> <span class="nn">si</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Contains wrapper functions for operations on 1D to 4D grids involving</span>
+<span class="sd">integration (e.g. computing expected values etc)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="compute_integral1D"><a class="viewcode-back" href="../api.html#integrate4D.compute_integral1D">[docs]</a><span class="k">def</span> <span class="nf">compute_integral1D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes norm of a 1D grid</span>
+
+<span class="sd">    :param grid: 1D grid to integrate</span>
+<span class="sd">    :param x0: coordinates of all points along the integration axis</span>
+
+<span class="sd">    :type grid: numpy array</span>
+<span class="sd">    :type x0: numpy array</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: grid norm</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid_norm</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grid_norm</span>
+
+</div>
+<div class="viewcode-block" id="compute_expected_coordinates1D"><a class="viewcode-back" href="../api.html#integrate4D.compute_expected_coordinates1D">[docs]</a><span class="k">def</span> <span class="nf">compute_expected_coordinates1D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes expected value and variance of a 1D grid along its (only) axis.</span>
+
+<span class="sd">    :param grid: 1D grid to integrate</span>
+<span class="sd">    :param x0: coordinates of all points along the integration axis</span>
+
+<span class="sd">    :type grid: numpy array</span>
+<span class="sd">    :type x0: numpy array</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns:</span>
+<span class="sd">        * exp_x0 : expected value</span>
+<span class="sd">        * var_x0 : variance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># normalize 1D grid</span>
+    <span class="n">grid_integral</span> <span class="o">=</span> <span class="n">compute_integral1D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">)</span>
+    <span class="n">prob_x0</span> <span class="o">=</span> <span class="n">grid</span> <span class="o">/</span> <span class="n">grid_integral</span>
+
+    <span class="c"># get 1D marginals, expected values and variances</span>
+    <span class="n">exp_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x0</span><span class="o">*</span><span class="n">prob_x0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">)</span>
+    <span class="n">var_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">exp_x0</span><span class="p">,</span> <span class="n">var_x0</span>
+
+</div>
+<div class="viewcode-block" id="compute_integral4D"><a class="viewcode-back" href="../api.html#integrate4D.compute_integral4D">[docs]</a><span class="k">def</span> <span class="nf">compute_integral4D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes norm of a 4D grid</span>
+
+<span class="sd">    :param grid: 4D grid to integrate</span>
+<span class="sd">    :param x0: coordinates of all points along axis=0</span>
+<span class="sd">    :param x1: coordinates of all points along axis=1</span>
+<span class="sd">    :param x2: coordinates of all points along axis=2</span>
+<span class="sd">    :param x3: coordinates of all points along axis=3</span>
+
+<span class="sd">    :type grid: numpy array</span>
+<span class="sd">    :type x0: numpy array</span>
+<span class="sd">    :type x1: numpy array</span>
+<span class="sd">    :type x2: numpy array</span>
+<span class="sd">    :type x3: numpy array</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: grid norm</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid_norm</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                           <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                         <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grid_norm</span>
+
+</div>
+<div class="viewcode-block" id="compute_integral3D"><a class="viewcode-back" href="../api.html#integrate4D.compute_integral3D">[docs]</a><span class="k">def</span> <span class="nf">compute_integral3D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes norm of a 3D grid</span>
+
+<span class="sd">    :param grid: 3D grid to integrate</span>
+<span class="sd">    :param x0: coordinates of all points along axis=0</span>
+<span class="sd">    :param x1: coordinates of all points along axis=1</span>
+<span class="sd">    :param x2: coordinates of all points along axis=2</span>
+
+<span class="sd">    :type grid: numpy array</span>
+<span class="sd">    :type x0: numpy array</span>
+<span class="sd">    :type x1: numpy array</span>
+<span class="sd">    :type x2: numpy array</span>
+
+<span class="sd">    :rtype: float</span>
+<span class="sd">    :returns: grid norm</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid_norm</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                         <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grid_norm</span>
+
+</div>
+<div class="viewcode-block" id="compute_expected_coordinates3D"><a class="viewcode-back" href="../api.html#integrate4D.compute_expected_coordinates3D">[docs]</a><span class="k">def</span> <span class="nf">compute_expected_coordinates3D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">return_2Dgrids</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes expected coordinates of a 3D grid</span>
+
+<span class="sd">    :param grid: 3D grid to integrate</span>
+<span class="sd">    :param x0: coordinates of all points along axis=0</span>
+<span class="sd">    :param x1: coordinates of all points along axis=1</span>
+<span class="sd">    :param x2: coordinates of all points along axis=2</span>
+<span class="sd">    :param return_2Dgrids: if ``True`` returns the 1D and 2D marginals in a</span>
+<span class="sd">        dictionary.</span>
+
+<span class="sd">    :type grid: numpy array</span>
+<span class="sd">    :type x0: numpy array</span>
+<span class="sd">    :type x1: numpy array</span>
+<span class="sd">    :type x2: numpy array</span>
+<span class="sd">    :type return_2Dgrids: boolean</span>
+
+<span class="sd">    :rtype: numpy array</span>
+<span class="sd">    :returns:</span>
+<span class="sd">        * exp_x0 : expected value along axis=0</span>
+<span class="sd">        * exp_x1 : expected value along axis=1</span>
+<span class="sd">        * exp_x2 : expected value along axis=2</span>
+<span class="sd">        * cov_matrix : covariance matrix</span>
+<span class="sd">        * grid_dict : dictionary containing 1D and 2D marginals (optional)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># normalize grid</span>
+    <span class="n">grid_integral</span> <span class="o">=</span> <span class="n">compute_integral3D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span> <span class="o">/</span> <span class="n">grid_integral</span>
+
+    <span class="c"># get 1D marginals, expected values and variances</span>
+    <span class="n">prob_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">exp_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x0</span><span class="o">*</span><span class="n">prob_x0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">)</span>
+    <span class="n">var_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">)</span>
+
+    <span class="n">prob_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">exp_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x1</span><span class="o">*</span><span class="n">prob_x1</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">var_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x1</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">)</span>
+
+    <span class="n">prob_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">exp_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x2</span><span class="o">*</span><span class="n">prob_x2</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">)</span>
+    <span class="n">var_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x2</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">)</span>
+
+    <span class="c"># get 2D marginals and covariances</span>
+    <span class="n">prob_x0_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">cov_x0_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0_x1</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x0_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">cov_x0_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0_x2</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x1_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cov_x1_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x1_x2</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c"># set up covariance matrix</span>
+    <span class="n">cov_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x0</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x1</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x2</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x1</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x1</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x2</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x2</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x1_x2</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x1_x2</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Type prob_x0 = </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">prob_x0</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_2Dgrids</span><span class="p">:</span>
+        <span class="n">grid_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x1</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x2</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0_x1</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0_x2</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x1_x2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x1_x2</span>
+
+        <span class="k">return</span> <span class="n">exp_x0</span><span class="p">,</span> <span class="n">exp_x1</span><span class="p">,</span> <span class="n">exp_x2</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="p">,</span> <span class="n">grid_dict</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">exp_x0</span><span class="p">,</span> <span class="n">exp_x1</span><span class="p">,</span> <span class="n">exp_x2</span><span class="p">,</span> <span class="n">cov_matrix</span>
+
+</div>
+<div class="viewcode-block" id="compute_expected_coordinates4D"><a class="viewcode-back" href="../api.html#integrate4D.compute_expected_coordinates4D">[docs]</a><span class="k">def</span> <span class="nf">compute_expected_coordinates4D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">,</span> <span class="n">return_2Dgrids</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes expected coordinates of a 4D grid</span>
+
+<span class="sd">    :param grid: 4D grid to integrate</span>
+<span class="sd">    :param x0: coordinates of all points along axis=0</span>
+<span class="sd">    :param x1: coordinates of all points along axis=1</span>
+<span class="sd">    :param x2: coordinates of all points along axis=2</span>
+<span class="sd">    :param x3: coordinates of all points along axis=3</span>
+<span class="sd">    :param return_2Dgrids: if ``True`` returns the 1D and 2D marginals in a</span>
+<span class="sd">        dictionary.</span>
+
+<span class="sd">    :type grid: numpy array</span>
+<span class="sd">    :type x0: numpy array</span>
+<span class="sd">    :type x1: numpy array</span>
+<span class="sd">    :type x2: numpy array</span>
+<span class="sd">    :type x3: numpy array</span>
+<span class="sd">    :type return_2Dgrids: boolean</span>
+
+<span class="sd">    :rtype: numpy array</span>
+<span class="sd">    :returns:</span>
+<span class="sd">        * exp_x0 : expected value along axis=0</span>
+<span class="sd">        * exp_x1 : expected value along axis=1</span>
+<span class="sd">        * exp_x2 : expected value along axis=2</span>
+<span class="sd">        * exp_x3 : expected value along axis=2</span>
+<span class="sd">        * cov_matrix : covariance matrix</span>
+<span class="sd">        * grid_dict : dictionary containing 1D and 2D marginals (optional)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># normalize grid</span>
+    <span class="n">grid_integral</span> <span class="o">=</span> <span class="n">compute_integral4D</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">)</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span> <span class="o">/</span> <span class="n">grid_integral</span>
+
+    <span class="c"># get 1D marginals, expected values and variances</span>
+    <span class="n">prob_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">exp_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x0</span><span class="o">*</span><span class="n">prob_x0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">)</span>
+    <span class="n">var_x0</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">)</span>
+
+    <span class="n">prob_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">exp_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x1</span><span class="o">*</span><span class="n">prob_x1</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">var_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x1</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">)</span>
+
+    <span class="n">prob_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                       <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">exp_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x2</span><span class="o">*</span><span class="n">prob_x2</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">)</span>
+    <span class="n">var_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x2</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">)</span>
+
+    <span class="n">prob_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                       <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">exp_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">x3</span><span class="o">*</span><span class="n">prob_x3</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">)</span>
+    <span class="n">var_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x3</span><span class="o">-</span><span class="n">exp_x3</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x3</span><span class="o">-</span><span class="n">exp_x3</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x3</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">)</span>
+
+    <span class="c"># get 2D marginals and covariances</span>
+    <span class="n">prob_x0_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">cov_x0_x1</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0_x1</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x0_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">cov_x0_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0_x2</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x0_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">cov_x0_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x0</span><span class="o">-</span><span class="n">exp_x0</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x3</span><span class="o">-</span><span class="n">exp_x3</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x0_x3</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x1_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">cov_x1_x2</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x1_x2</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x1_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">cov_x1_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x1</span><span class="o">-</span><span class="n">exp_x1</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x3</span><span class="o">-</span><span class="n">exp_x3</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x1_x3</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prob_x2_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cov_x2_x3</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x2</span><span class="o">-</span><span class="n">exp_x2</span><span class="p">)</span><span class="o">*</span><span class="n">si</span><span class="o">.</span><span class="n">trapz</span><span class="p">((</span><span class="n">x3</span><span class="o">-</span><span class="n">exp_x3</span><span class="p">)</span><span class="o">*</span><span class="n">prob_x2_x3</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x3</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c"># construct covariance matrix</span>
+    <span class="n">cov_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x0</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x1</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x2</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">var_x3</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x1</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x1</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x2</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x2</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x3</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x0_x3</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x1_x2</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x1_x2</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x1_x3</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x1_x3</span>
+
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x2_x3</span>
+    <span class="n">cov_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">cov_x2_x3</span>
+
+    <span class="k">if</span> <span class="n">return_2Dgrids</span><span class="p">:</span>
+        <span class="n">grid_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x1</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x2</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x3</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0_x1</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0_x2</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x0_x3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x0_x3</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x1_x2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x1_x2</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x1_x3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x1_x3</span>
+        <span class="n">grid_dict</span><span class="p">[</span><span class="s">&#39;prob_x2_x3&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prob_x2_x3</span>
+
+        <span class="k">return</span> <span class="n">exp_x0</span><span class="p">,</span> <span class="n">exp_x1</span><span class="p">,</span> <span class="n">exp_x2</span><span class="p">,</span> <span class="n">exp_x3</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="p">,</span> <span class="n">grid_dict</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">exp_x0</span><span class="p">,</span> <span class="n">exp_x1</span><span class="p">,</span> <span class="n">exp_x2</span><span class="p">,</span> <span class="n">exp_x3</span><span class="p">,</span> <span class="n">cov_matrix</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 26, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
