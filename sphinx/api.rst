@@ -84,6 +84,15 @@ integrate4D
 .. automodule:: integrate4D
     :members:
 
+LOCATION
+--------
+
+locations_prob
+==============
+
+.. automodule:: locations_prob
+    :members:
+
 CLUSTERING
 ----------
 This part of the waveloc code was contributed by Nadège Langet during her PhD

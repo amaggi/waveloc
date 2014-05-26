@@ -174,9 +174,9 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
     :param opt2: [1 | 2]:
         * opt2=1: the kurtogram is computed via a fast decimated filterbank
         * opt2=2: the kurtogram is computed via the short-time Fourier
-            transform (option 1 is faster and has more flexibility than option
-            2 in the design of the analysis filter: a short filter in option 1
-            gives virtually the same results as option 2)
+        transform (option 1 is faster and has more flexibility than option
+        2 in the design of the analysis filter: a short filter in option 1
+        gives virtually the same results as option 2)
 
     :returns: Kwav, Level_w, freq_w, c, f_lower, f_upper
     """
