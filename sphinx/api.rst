@@ -72,6 +72,9 @@ kurtogram
 SDS_processing
 ==============
 
+.. automodule:: make_SDS_data_links
+    :members:
+
 .. automodule:: SDS_processing
     :members:
 
