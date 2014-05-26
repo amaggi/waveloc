@@ -99,6 +99,12 @@ locations_prob
 .. automodule:: locations_prob
     :members:
 
+magnitude
+=========
+
+.. automodule:: magnitude
+    :members:
+
 CLUSTERING
 ----------
 This part of the waveloc code was contributed by Nadège Langet during her PhD
