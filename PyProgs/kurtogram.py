@@ -1,114 +1,195 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys, optparse, glob
+import os
+import sys
+import optparse
+import glob
+import logging
+import cPickle
+import logging
 import numpy as np
 import scipy.signal as si
-import logging
 import matplotlib.pyplot as plt
 from obspy.core import read, utcdatetime, trace
 from OP_waveforms import *
 from obspy.signal import *
-import logging
-import cPickle
 from locations_trigger import read_locs_from_file
 from correlation import BinaryFile
-logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
 
-# ***************************************************************************************
-# FUNCTIONS
+logging.basicConfig(level=logging.INFO,
+                    format='%(levelname)s : %(asctime)s : %(message)s')
+
+
 eps = np.finfo(float).eps
 
+"""
+Implements the kurtogram routine of Antoni (2005).
+"""
+
+
 def nextpow2(n):
+    """
+    Calculates next power of 2.
+
+    :param n: a number
+    :type n: integer
+
+    :rtype: integer
+    :returns: The next power of 2
+    """
+
     m_f = np.log2(n)
-    m_i = np.ceil(m_f)
+    m_i = int(np.ceil(m_f))
     return 2**m_i
 
 
 def get_h_parameters(NFIR, fcut):
-    """NFIR : length of FIR filter
-    fcut: fraction of Nyquist for filter"""
-    h = si.firwin(NFIR+1,fcut) * np.exp(2*1j*np.pi*np.arange(NFIR+1)*0.125)
-    n = np.arange(2,NFIR+2)
+    """
+    Calculates h-parameters used in Antoni (2005)
+
+    :param NFIR: length of FIR filter
+    :param fcut: fraction of Nyquist for filter
+
+    :type NFIR: integer
+    :type fcut: float
+
+    :returns: h-parameters: h, g, h1, h2, h3
+
+    """
+
+    h = si.firwin(NFIR+1, fcut) * np.exp(2*1j*np.pi*np.arange(NFIR+1) * 0.125)
+    n = np.arange(2, NFIR+2)
     g = h[(1-n)%NFIR]*(-1)**(1-n)
     NFIR = int(np.fix((3./2.*NFIR)))
-    h1 = si.firwin(NFIR+1,2./3*fcut)*np.exp(2j*np.pi*np.arange(NFIR+1)*0.25/3.)
+    h1 = si.firwin(NFIR+1, 2./3*fcut)*np.exp(2j*np.pi*np.arange(NFIR+1) *
+        0.25/3.)
     h2 = h1*np.exp(2j*np.pi*np.arange(NFIR+1)/6.)
     h3 = h1*np.exp(2j*np.pi*np.arange(NFIR+1)/3.)  
     return (h, g, h1, h2, h3)
 
 
-def plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index, opt1=None, opt2=None):
-  I=index[0]
+def plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index,
+                   opt1=None, opt2=None):
+    """
+    Plots the kurtogram. TODO : flesh out this doc-string.
+    
+    :param Kwav:
+    :param freq_w:
+    :param nlevel:
+    :param level_w:
+    :param Fs:
+    :param fi:
+    :param index:
+    :param opt1:
+    :param opt2:
 
-  imgplot = plt.imshow(Kwav,aspect='auto',extent=(0,freq_w[-1],range(2*nlevel)[-1],range(2*nlevel)[0]),interpolation='none',cmap=plt.cm.hot_r)
-  #imgplot.set_cmap('gray')
-  xx=np.arange(0,int(freq_w[len(freq_w)-1]),step=5)
-  plt.xticks(xx)
-  plt.yticks(range(2*nlevel),np.round(Level_w*10)/10)
-  #plt.plot(Fs*fi,I,'yo')
-  plt.xlabel("Frequency (Hz)")
-  plt.ylabel("Level k")
-  plt.figtext(0.075,0.90,"(a)",fontsize=15)
-  if opt2==1:
-    plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz"%(np.round(10*Level_w[I])/10,Fs*2**(-(Level_w[I]+1)),Fs*fi))
-  else:
-    plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz"%(np.round(10*Level_w[I])/10,Fs*2**(-(Level_w[I]+1)),Fs*fi))
-  plt.colorbar()
-  #plt.show()
+    """
+
+    I = index[0]
+
+    imgplot = plt.imshow(Kwav, aspect='auto',
+                         extent=(0, freq_w[-1], range(2*nlevel)[-1],
+                                 range(2*nlevel)[0]),
+                         interpolation='none', cmap=plt.cm.hot_r)
+    #imgplot.set_cmap('gray')
+    xx = np.arange(0, int(freq_w[len(freq_w)-1]), step=5)
+    plt.xticks(xx)
+    plt.yticks(range(2*nlevel), np.round(Level_w*10)/10)
+    #plt.plot(Fs*fi,I,'yo')
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Level k")
+    plt.figtext(0.075, 0.90, "(a)", fontsize=15)
+    if opt2 == 1:
+        plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz" %
+                  (np.round(10*Level_w[I])/10, Fs*2**(-(Level_w[I]+1)), Fs*fi))
+    else:
+        plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz" %
+                  (np.round(10*Level_w[I])/10, Fs*2**(-(Level_w[I]+1)), Fs*fi))
+    plt.colorbar()
+    plt.show()
 
 
 def getBandwidthAndFrequency(nlevel, Fs, level_w, freq_w, level_index, freq_index):
+    """
+    Gets bandwidth and frequency parameters.
+    TODO : flesh out this doc-string
+    
+    :param nlevel:
+    :param Fs:
+    :param level_w:
+    :param freq_w:
+    :param level_index:
+    :param freq_index:
 
-  #f1 = freq_w[freq_index]
-  l1 = level_w[level_index]
-  fi = (freq_index)/3./2**(nlevel+1)
-  fi += 2.**(-2-l1)
-  bw = Fs * 2 **-(l1) /2
-  fc = Fs * fi
+    """
 
-  return bw, fc, fi, l1
+    #f1 = freq_w[freq_index]
+    l1 = level_w[level_index]
+    fi = (freq_index)/3./2**(nlevel+1)
+    fi += 2.**(-2-l1)
+    bw = Fs * 2 **-(l1) /2
+    fc = Fs * fi
+
+    return bw, fc, fi, l1
 
 
 def get_GridMax(grid):
+    """
+    Gets maximum of a nD grid and its unraveled index
+
+    :param grid: an nD-grid
+    :type param: numpy array
+
+    :returns:
+        * M : grid maximum
+        * index : index of maximum in unraveled grid
+    """
+
     index = np.argmax(grid)
     M = np.amax(grid)
-    index = np.unravel_index(index,grid.shape)
+    index = np.unravel_index(index, grid.shape)
+
     return M, index
 
 
-def Fast_Kurtogram(x, nlevel,verbose=False, Fs=1, NFIR=16, fcut=0.4, opt1=None, opt2=None):
-    # Fast_Kurtogram(x,nlevel,Fs)
-    # Computes the fast kurtogram of signal x up to level 'nlevel'
-    # Maximum number of decomposition levels is log2(length(x)), but it is 
-    # recommended to stay by a factor 1/8 below this.
-    # Fs = sampling frequency of signal x (default is Fs = 1)
-    # opt1 = 1: classical kurtosis based on 4th order statistics
-    # opt1 = 2: robust kurtosis based on 2nd order statistics of the envelope
-    # (if there is any difference in the kurtogram between the two measures, this is
-    # due to the presence of impulsive additive noise)
-    # opt2 = 1: the kurtogram is computed via a fast decimated filterbank treecmap=plt.cm.hot_r
-    # opt2 = 2: the kurtogram is computed via the short-time Fourier transform
-    # (option 1 is faster and has more flexibility than option 2 in the design of the
-    # analysis filter: a short filter in option 1 gives virtually the same results as option 2)
-    # 
-    # -------------------
-    # J. Antoni : 02/2005
-    # Translation to Python: T. Lecocq 02/2012
-    # -------------------
+def Fast_Kurtogram(x, nlevel,verbose=False, Fs=1, NFIR=16, fcut=0.4,
+                   opt1=1, opt2=1):
+    """
+    Computes the fast kurtogram of signal x up to level 'nlevel'
+    Maximum number of decomposition levels is log2(length(x)), but it is 
+    recommended to stay by a factor 1/8 below this.
+
+    J. Antoni : 02/2005
+    Translation to Python: T. Lecocq 02/2012
+
+    :param x: signal to analyse
+    :param nlevel: number of decomposition levels
+    :param verbose: If ``True`` outputs debugging information
+    :param Fs: Sampling frequency of signal x 
+    :param NFIR: Length of FIR filter
+    :param fcut: Fraction of Nyquist for filter
+    :param opt1: [1 | 2]:
+        * opt1=1: classical kurtosis based on 4th order statistics
+        * opt1 = 2: robust kurtosis based on 2nd order statistics of the
+            envelope (if there is any difference in the kurtogram between the
+            two measures, this is  due to the presence of impulsive additive
+            noise)
+    :param opt2: [1 | 2]:
+        * opt2=1: the kurtogram is computed via a fast decimated filterbank
+        * opt2=2: the kurtogram is computed via the short-time Fourier
+            transform (option 1 is faster and has more flexibility than option
+            2 in the design of the analysis filter: a short filter in option 1
+            gives virtually the same results as option 2)
+    
+    :returns: Kwav, Level_w, freq_w, c, f_lower, f_upper
+    """
 
     N = len(x)
     N2 = np.log2(N) - 7
     if nlevel > N2:
        logging.error('Please enter a smaller number of decomposition levels')
-       #sys.exit()
 
-    if opt2 is None:
-        #~ opt2 = int(raw_input('Choose the kurtosis measure (classic = 1  robust = 2): '))
-        opt2 = 1
-    if opt1 is None:
-        #~ opt1  = int(raw_input('Choose the algorithm (filterbank = 1  stft-based = 2): '))
-        opt1  = 1
     # Fast computation of the kurtogram
     ####################################
     
