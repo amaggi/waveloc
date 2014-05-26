@@ -26,6 +26,22 @@ NllGridLib
 .. automodule:: NllGridLib
     :members:
 
+hdf5_grids
+==========
+Waveloc manipulates many large arrays, some of which are written / read from
+disk. On some machines, these arrays are larger than the available RAM. In
+order to avoid the drammatic slow-downs when swapping to disc occurs in these
+cases, we use hdf (hierarchical data formats) that provide memory-like access
+to files on disc. 
+
+All large arrays that are infrequently accessed (e.g. travel-time arrays) are
+written and used in this manner. When there is sufficient RAM available, large
+arrays that are frequently accessed (search-point travel-times, 4D-migration
+grids) are kept in memory.
+
+.. automodule:: hdf5_grids
+    :members:
+
 WAVEFORMS
 ---------
 
