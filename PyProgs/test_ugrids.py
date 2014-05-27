@@ -1,7 +1,9 @@
 import os
 import unittest
 import numpy as np
-from ugrids import create_random_ugrid, read_ugrid, nll2ugrid
+from NllGridLib import read_hdr_file
+from ugrids import create_random_ugrid, read_ugrid, nll2random_ugrid,\
+    nll2reg_ugrid
 
 
 def suite():
@@ -9,7 +11,8 @@ def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(UgridTests('test_create_read_random'))
-    suite.addTest(UgridTests('test_nll2ugrid'))
+    suite.addTest(UgridTests('test_nll2random_ugrid'))
+    suite.addTest(UgridTests('test_nll2reg_ugrid'))
 
     return suite
 
@@ -36,8 +39,7 @@ class UgridTests(unittest.TestCase):
         self.assertTrue(np.min(z) >= zmin)
         self.assertTrue(np.max(z) < zmax)
 
-    def test_nll2ugrid(self):
-        from NllGridLib import read_hdr_file
+    def test_nll2random_ugrid(self):
 
         npts = 1000
 
@@ -46,7 +48,7 @@ class UgridTests(unittest.TestCase):
                                     'test_grid.search.hdr')
         ugrid_filename = 'test_ugrid.hdf5'
 
-        nll2ugrid(nll_filename, ugrid_filename, npts)
+        nll2random_ugrid(nll_filename, ugrid_filename, npts)
         x, y, z = read_ugrid(ugrid_filename)
         os.remove(ugrid_filename)
 
@@ -66,6 +68,36 @@ class UgridTests(unittest.TestCase):
         self.assertTrue(np.max(y) < ymax)
         self.assertTrue(np.min(z) >= zmin)
         self.assertTrue(np.max(z) < zmax)
+
+    def test_nll2reg_ugrid(self):
+
+        npts = 1000
+
+        base_path = os.getenv('WAVELOC_PATH')
+        nll_filename = os.path.join(base_path, 'test_data',
+                                    'test_grid.search.hdr')
+        ugrid_filename = 'test_ugrid.hdf5'
+
+        nll2reg_ugrid(nll_filename, ugrid_filename)
+        x, y, z = read_ugrid(ugrid_filename)
+        os.remove(ugrid_filename)
+
+        info = read_hdr_file(nll_filename)
+        nx = info['nx']
+        ny = info['ny']
+        nz = info['nz']
+        grid_shape = (nx, ny, nz)
+
+        ib = np.random.randint(0, nx*ny*nz)
+        ix, iy, iz = np.unravel_index(ib, grid_shape)
+
+        xval_exp = info['x_orig']+ix*info['dx']
+        yval_exp = info['y_orig']+iy*info['dy']
+        zval_exp = info['z_orig']+iz*info['dz']
+
+        self.assertAlmostEqual(x[ib], xval_exp)
+        self.assertAlmostEqual(y[ib], yval_exp)
+        self.assertAlmostEqual(z[ib], zval_exp)
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@ Helper functions for creating and manipulating unstructured grids.
 import os
 import h5py
 import numpy as np
+from NllGridLib import read_hdr_file
 
 
 def create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts, filename):
@@ -36,11 +37,31 @@ def create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts, filename):
     y = np.random.uniform(low=ymin, high=ymax, size=npts)
     z = np.random.uniform(low=zmin, high=zmax, size=npts)
 
+    write_ugrid(x, y, z, filename)
+
+
+def write_ugrid(x, y, z, filename):
+    """
+    Writes a ugrid HDF5 file given x, y, z vectors of points
+
+    :param x: x-coordinates of points
+    :param y: y-coordinates of points
+    :param z: z-coordinates of points
+    :param filname: File to write
+    """
+
+    # sanity check
+    if not (len(x) == len(y) and len(y) == len(z)):
+        msg = 'x, y, z arrays of different lengths'
+        raise UserWarning(msg)
+
+    npts = len(x)
+
     # write to HDF5 file
     f = h5py.File(filename, 'w')
-    xd = f.create_dataset('x', data=x)
-    yd = f.create_dataset('y', data=y)
-    zd = f.create_dataset('z', data=z)
+    xd = f.create_dataset('x', data=x, compression='lzf')
+    yd = f.create_dataset('y', data=y, compression='lzf')
+    zd = f.create_dataset('z', data=z, compression='lzf')
     xd.attrs['npts'] = npts
     yd.attrs['npts'] = npts
     zd.attrs['npts'] = npts
@@ -82,7 +103,7 @@ def read_ugrid(filename):
     return x, y, z
 
 
-def nll2ugrid(nll_filename, ugrid_filename, npts):
+def nll2random_ugrid(nll_filename, ugrid_filename, npts):
     """
     Reads a NLL .hdr file, and creates a random unstructured-grid by sampling
     the extent of the NonLinLoc grid unifomly using npts points.
@@ -94,7 +115,6 @@ def nll2ugrid(nll_filename, ugrid_filename, npts):
     :type ugrid_filename: string
 
     """
-    from NllGridLib import read_hdr_file
 
     info = read_hdr_file(nll_filename)
 
@@ -108,3 +128,51 @@ def nll2ugrid(nll_filename, ugrid_filename, npts):
 
     create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts,
                         ugrid_filename)
+
+
+def nll2reg_ugrid(nll_filename, ugrid_filename):
+    """
+    Reads a NLL .hdr file, and creates an unstructured grid that is equivalent
+    to the regular NLL grid.
+
+    :param nll_filename: NonLinLoc filename
+    :param ugrid_filename: Filename for output unstructured-grid
+
+    :type nll_filename: string
+    :type ugrid_filename: string
+
+    """
+
+    info = read_hdr_file(nll_filename)
+
+    npts = info['nx']*info['ny']*info['nz']
+
+    xmin = info['x_orig']
+    ymin = info['y_orig']
+    zmin = info['z_orig']
+
+    xmax = xmin+info['nx']*info['dx']
+    ymax = ymin+info['ny']*info['dy']
+    zmax = zmin+info['nz']*info['dz']
+
+    grid_shape = (info['nx'], info['ny'], info['nz'])
+
+    # get the ranges
+    x_range = np.arange(xmin, xmax, info['dx'])
+    y_range = np.arange(ymin, ymax, info['dy'])
+    z_range = np.arange(zmin, zmax, info['dz'])
+
+    # create space for the points
+    x = np.empty(npts, dtype='float')
+    y = np.empty(npts, dtype='float')
+    z = np.empty(npts, dtype='float')
+
+    # fill in the points
+    for ib in xrange(npts):
+        ix, iy, iz = np.unravel_index(ib, grid_shape )
+        x[ib] = x_range[ix]
+        y[ib] = y_range[iy]
+        z[ib] = z_range[iz]
+
+    # create file
+    write_ugrid(x, y, z, ugrid_filename)
