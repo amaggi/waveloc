@@ -2,6 +2,7 @@ import h5py
 import os
 import logging
 import numpy as np
+from scipy import ndimage
 from NllGridLib import read_hdr_file
 
 """
@@ -67,162 +68,61 @@ class H5SingleGrid(object):
     def __del__(self):
         self._f.close()
 
-    def value_at_point(self, x, y, z, epsilon=0.001):
+    def value_at_point(self, x, y, z):
         """
-        Performs n-linear interpolation on the regular grid.
+        Performs 3D interpolation for a single point. Calls value at points.
 
         :param x: x-coordinate of the point of interest
         :param y: y-coordinate of the point of interest
         :param z: z-coordinate of the point of interest
-        :param epsilon: tollerance to edges of the grid
 
         :type x: float
         :type y: float
         :type z: float
-        :type epsilon: float, optional
 
         :rtype: float
         :returns: value at point
 
         """
 
-        nx = self.grid_info['nx']
-        ny = self.grid_info['ny']
-        nz = self.grid_info['nz']
-        x_orig = self.grid_info['x_orig']
-        y_orig = self.grid_info['y_orig']
-        z_orig = self.grid_info['z_orig']
-        dx = self.grid_info['dx']
-        dy = self.grid_info['dy']
-        dz = self.grid_info['dz']
+        x_array = np.array([x, x])
+        y_array = np.array([y, y])
+        z_array = np.array([z, z])
 
-        min_x = x_orig
-        max_x = x_orig+nx*dx
-        min_y = y_orig
-        max_y = y_orig+ny*dy
-        min_z = z_orig
-        max_z = z_orig+nz*dz
+        result = self.value_at_points(x_array, y_array, z_array)
+        return result[0]
 
-        # sanity check for point being within grid
-        # use a tollerance value to avoid problems with numerical errors
-        if x < min_x-epsilon or x > max_x+epsilon \
-           or y < min_y-epsilon or y > max_y+epsilon \
-           or z < min_z-epsilon or z > max_z+epsilon:
-            raise UserWarning(
-                'Point (%f, %f, %f) is outside the grid (tollerance=%f).' %
-                (x, y, z, epsilon))
+    def value_at_points(self, x, y, z):
+        """
+        Performs 3D interpolation on the regular grid.
+        Uses scipy.ndimage. Works on numpy arrays of points
 
-        # fix up lower and upper bounds if they are still (just) outside the
-        # grid
-        if x < min_x:
-            x = min_x
-        if y < min_y:
-            y = min_y
-        if z < min_z:
-            z = min_z
+        :param x: x-coordinates of points
+        :param y: y-coordinates of points
+        :param z: z-coordinates of points
 
-        if x > max_x:
-            x = max_x
-        if y > max_y:
-            y = max_y
-        if z > max_z:
-            z = max_z
+        :type x: numpy array
+        :type y: numpy array
+        :type z: numpy array
 
-        # make arrays of X, Y and Z ranges
-        X = np.arange(nx)*dx+x_orig
-        Y = np.arange(ny)*dy+y_orig
-        Z = np.arange(nz)*dz+z_orig
+        :returns: values at points
 
-        # get the position this point would have in the X,Y,Z arrays if they
-        # were extended by 1
-        ix = X.searchsorted(x)
-        iy = Y.searchsorted(y)
-        iz = Z.searchsorted(z)
+        """
 
-        # set the interpolation "box" for extreme cases
-        if nx == 1:         # special case of 2D grid in x
-            ix1 = 0
-            ix2 = 0
-        elif ix == 0:       # lower bound
-            ix1 = 0
-            ix2 = 1
-        elif ix == nx:      # upper bound
-            ix1 = nx-2
-            ix2 = nx-1
-        else:	            # general case
-            ix1 = ix-1
-            ix2 = ix
+        grid_data = np.empty(self.grid_data.shape, dtype=float)
+        grid_data[:] = self.grid_data[:]
+        grid_data = grid_data.reshape(self.grid_info['nx'],
+                                      self.grid_info['ny'],
+                                      self.grid_info['nz'])
 
-        if ny == 1:         # special case of 2D grid in y
-            iy1 = 0
-            iy2 = 0
-        elif iy == 0:	    # lower bound
-            iy1 = 0
-            iy2 = 1
-        elif iy == ny:      # upper bound
-            iy1 = ny-2
-            iy2 = ny-1
-        else:	            # general case
-            iy1 = iy-1
-            iy2 = iy
+        ix = (x - self.grid_info['x_orig']) / self.grid_info['dx']
+        iy = (y - self.grid_info['y_orig']) / self.grid_info['dy']
+        iz = (z - self.grid_info['z_orig']) / self.grid_info['dz']
 
-        if nz == 1:         # special case of 2D grid in y
-            iz1 = 0
-            iz2 = 0
-        elif iz == 0:	    # lower bound
-            iz1 = 0
-            iz2 = 1
-        elif iz == nz:      # upper bound
-            iz1 = nz-2
-            iz2 = nz-1
-        else:	            # general case
-            iz1 = iz-1
-            iz2 = iz
+        coords = np.array([ix, iy, iz])
 
-        # set up the values
-        # bottom four values counterclockwise from x1y1
-        v_x1y1z1 = self.grid_data[np.ravel_multi_index((ix1, iy1, iz1),
-                                                       (nx, ny, nz))]
-        v_x2y1z1 = self.grid_data[np.ravel_multi_index((ix2, iy1, iz1),
-                                                       (nx, ny, nz))]
-        v_x2y2z1 = self.grid_data[np.ravel_multi_index((ix2, iy2, iz1),
-                                                       (nx, ny, nz))]
-        v_x1y2z1 = self.grid_data[np.ravel_multi_index((ix1, iy2, iz1),
-                                                       (nx, ny, nz))]
-        # top four values counterclockwise from x1y1
-        v_x1y1z2 = self.grid_data[np.ravel_multi_index((ix1, iy1, iz2),
-                                                       (nx, ny, nz))]
-        v_x2y1z2 = self.grid_data[np.ravel_multi_index((ix2, iy1, iz2),
-                                                       (nx, ny, nz))]
-        v_x2y2z2 = self.grid_data[np.ravel_multi_index((ix2, iy2, iz2),
-                                                       (nx, ny, nz))]
-        v_x1y2z2 = self.grid_data[np.ravel_multi_index((ix1, iy2, iz2),
-                                                       (nx, ny, nz))]
-
-        # set up interpolators
-        # take extra care over the interpolators in case of 2D grids
-        if ix2 == ix1:
-            tx = 0
-        else:
-            tx = (x-X[ix1])/(X[ix2]-X[ix1])
-        if iy2 == iy1:
-            ty = 0
-        else:
-            ty = (y-Y[iy1])/(Y[iy2]-Y[iy1])
-        if iz2 == iz1:
-            tz = 0
-        else:
-            tz = (z-Z[iz1])/(Z[iz2]-Z[iz1])
-
-        # do bilinear interpolation
-        result = (1-tx) * (1-ty) * (1-tz) * v_x1y1z1 + \
-            tx * (1-ty) * (1-tz) * v_x2y1z1 + \
-            tx * ty * (1-tz) * v_x2y2z1 + \
-            (1-tx) * ty * (1-tz) * v_x1y2z1 + \
-            (1-tx) * (1-ty) * tz * v_x1y1z2 + \
-            tx * (1-ty) * tz * v_x2y1z2 + \
-            tx * ty * tz * v_x2y2z2 + \
-            (1-tx) * ty * tz * v_x1y2z2
+        result = ndimage.map_coordinates(grid_data, coords, order=3,
+                                         mode='nearest')
 
         return result
 
@@ -254,21 +154,23 @@ class H5SingleGrid(object):
         for key, value in new_grid_info.iteritems():
             buf.attrs[key] = value
 
-        #initialize new buffer
-        new_x = np.arange(nx)*dx+x_orig
-        new_y = np.arange(ny)*dy+y_orig
-        new_z = np.arange(nz)*dz+z_orig
+        #set coordinates for interpolation
+        npts = nx*ny*nz
+        new_shape = (nx, ny, nz)
+        x = np.empty(npts, dtype=float)
+        y = np.empty(npts, dtype=float)
+        z = np.empty(npts, dtype=float)
 
-        # loop doing interpolation
-        for ix in xrange(nx):
-            x = new_x[ix]
-            for iy in xrange(ny):
-                y = new_y[iy]
-                for iz in xrange(nz):
-                    z = new_z[iz]
-                    buf[np.ravel_multi_index((ix, iy, iz), (nx, ny, nz))] = \
-                        self.value_at_point(x, y, z)
+        for i in xrange(npts):
+            ix, iy, iz = np.unravel_index(i, (new_shape))
+            x[i] = x_orig+ix*dx
+            y[i] = y_orig+iy*dy
+            z[i] = z_orig+iz*dz
 
+        # do interpolation
+        buf[:] = self.value_at_points(x, y, z)
+
+        # close the old grid file
         f.close()
 
         # create the new Grid file and object
@@ -320,6 +222,40 @@ def nll2hdf5(nll_name, h5_name):
 
     h5 = H5NllSingleGrid(h5_name, nll_name)
     del h5
+
+
+def interpolateTimeGrid(tgrid_file, out_file, x, y, z):
+    """
+    Interpolates a time_grid.hdf5 file to another file containing only the
+    travel-times for the points in x, y, z.
+
+    :param tgrid_file: HDF5 file containing the time-grid
+    :param out_file: HDF5 file for output
+    :param x: x-coordinates for points of interest
+    :param y: y-coordinates for points of interest
+    :param z: z-coordinates for points of interest
+
+    """
+
+    # sanity check for length of coordinate arrays
+    if (len(x) != len(y)) or (len(y) != len(z)):
+        msg = 'Coordinate arrays of different lengths.'
+        raise ValueError(msg)
+
+    # read the file to be interpolated
+    time_grid = H5SingleGrid(tgrid_file)
+
+    # do the interpolation
+    ttimes = time_grid.value_at_points(x, y, z)
+
+    # create the file for output
+    f = h5py.File(out_file, 'w')
+    f.create_dataset('x', data=x)
+    f.create_dataset('y', data=y)
+    f.create_dataset('z', data=z)
+    buf = f.create_dataset('ttimes', data=ttimes)
+    buf.attrs['station'] = time_grid.grid_info['station']
+    f.close()
 
 
 def get_interpolated_time_grids(opdict):
