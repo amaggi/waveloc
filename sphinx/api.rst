@@ -94,6 +94,12 @@ SDS_processing
 Migration
 ---------
 
+migration
+=========
+
+.. automodule:: migration
+    :members:
+
 synth_migration
 ===============
 
