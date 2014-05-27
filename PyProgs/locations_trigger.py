@@ -433,18 +433,3 @@ def read_header_from_file(filename, opdict):
     opdict['snr_tr_limit'] = np.float(lines[3].split()[14][:-1])
 
     return opdict
-
-
-if __name__ == '__main__':
-
-    from options import WavelocOptions
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)s : %(asctime)s : %(message)s')
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_location_options()
-
-    do_locations_trigger_setup_and_run(wo.opdict)

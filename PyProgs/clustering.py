@@ -503,18 +503,3 @@ def do_clustering_setup_and_run(opdict):
 
                 # Plot graphs
                 plot_graphs(locs, stations, nbsta, CLUSTER, nbmin, threshold)
-
-
-if __name__ == '__main__':
-
-    from options import WavelocOptions
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)s : %(asctime)s : %(message)s')
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_cluster_options()
-
-    do_clustering_setup_and_run(wo.opdict)

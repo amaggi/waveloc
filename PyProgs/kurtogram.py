@@ -1086,18 +1086,3 @@ def do_kurtogram_setup_and_run(opdict):
 
     # read and plot the file you have just written
     read_kurtogram_frequencies(kurto_file)
-
-
-if __name__ == '__main__':
-    from options import WavelocOptions
-
-    logging.basicConfig(level=logging.INFO,
-                        format="%(levelname)s : %(asctime)s : %(message)s")
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_kurtogram_options()
-
-    do_kurtogram_setup_and_run(wo.opdict)

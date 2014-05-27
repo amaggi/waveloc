@@ -11,7 +11,20 @@ the code itself. It is meant as an aide to developpers or advanced users who
 need access to the intrigacies of the code. It is not a tutorial (one will be
 coming soon).
 
-TRAVEL-TIMES
+Waveloc Options
+---------------
+
+Waveloc is piloted entirely through a set of options / parameters that are set
+in a WavelocOptions object. All options will (soon!) be explained on the
+tutorial pages.
+
+options
+=======
+
+.. automodule:: options
+    :members:
+
+Travel-times
 ------------
 
 Waveloc needs travel-times to migrate the kurtosis waveforms. These can in
@@ -42,7 +55,7 @@ grids) are kept in memory.
 .. automodule:: hdf5_grids
     :members:
 
-WAVEFORMS
+Waveforms
 ---------
 
 The waveform manipulation routines in waveloc are heavily based on
@@ -78,7 +91,7 @@ SDS_processing
 .. automodule:: SDS_processing
     :members:
 
-MIGRATION
+Migration
 ---------
 
 integrate4D
@@ -87,7 +100,7 @@ integrate4D
 .. automodule:: integrate4D
     :members:
 
-LOCATION
+Location
 --------
 
 locations_trigger
@@ -108,7 +121,7 @@ magnitude
 .. automodule:: magnitude
     :members:
 
-CLUSTERING
+Clustering
 ----------
 This part of the waveloc code was contributed by Nadège Langet during her PhD
 thesis.

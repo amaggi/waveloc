@@ -157,20 +157,3 @@ def generateSyntheticDirac(opdict,time_grids=None):
     f.write(str(test_info))
 
     return test_info
-    
- 
-if __name__ == '__main__':
-
-  from options import WavelocOptions
-  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
-
-  wo = WavelocOptions()
-  args=wo.p.parse_args()
-
-  wo.set_all_arguments(args)
-  wo.verify_migration_options()
-  wo.verify_synthetic_options()
-
-  generateSynteticDirac(wo.opdict)
-
-

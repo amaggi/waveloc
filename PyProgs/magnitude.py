@@ -207,18 +207,3 @@ def do_comp_mag(opdict):
         ax2.set_xlabel('Magnitude')
         ax2.set_ylabel('log N')
         plt.show()
-
-
-if __name__ == '__main__':
-
-    from options import WavelocOptions
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)s : %(asctime)s : %(message)s')
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_magnitude_options()
-
-    do_comp_mag(wo.opdict)

@@ -201,18 +201,3 @@ def do_probloc_plotting_setup_and_run(opdict):
  
   # close hdf5 file
   f.close()
-
-
-if __name__ == '__main__':
-
-  from options import WavelocOptions
-  logging.basicConfig(level=logging.INFO, format='%(levelname)s : %(asctime)s : %(message)s')
-
-  wo = WavelocOptions()
-  args=wo.p.parse_args()
-
-  wo.set_all_arguments(args)
-  wo.verify_plotting_options()
-
-  do_plotting_setup_and_run(wo.opdict)
-

@@ -226,18 +226,3 @@ def do_locations_prob_setup_and_run(opdict):
     # close location files
     f_prob.close()
     f_marginals.close()
-
-
-if __name__ == '__main__':
-
-    from options import WavelocOptions
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)s : %(asctime)s : %(message)s')
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_location_options()
-
-    do_locations_prob_setup_and_run(wo.opdict)

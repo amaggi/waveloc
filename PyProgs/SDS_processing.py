@@ -153,19 +153,3 @@ def do_SDS_processing_setup_and_run(opdict):
             except UserWarning:
                 logging.info('No data within time limits for %s %s %s' %
                              (net, sta, comp))
-
-
-if __name__ == '__main__':
-
-    from options import WavelocOptions
-
-    logging.basicConfig(level=logging.INFO,
-                        format='%(levelname)s : %(asctime)s : %(message)s')
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_SDS_processing_options()
-
-    do_SDS_processing_setup_and_run(wo.opdict)

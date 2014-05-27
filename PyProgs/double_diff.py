@@ -453,18 +453,3 @@ def do_double_diff_setup_and_run(opdict):
 
     if dd_loc:
         new_loc_file.close()
-
-
-if __name__ == '__main__':
-    from options import WavelocOptions
-
-    logging.basicConfig(level=logging.INFO,
-                        format="%(levelname)s : %(asctime)s : %(message)s")
-
-    wo = WavelocOptions()
-    args = wo.p.parse_args()
-
-    wo.set_all_arguments(args)
-    wo.verify_doublediff_options()
-
-    do_double_diff_setup_and_run(wo.opdict)
