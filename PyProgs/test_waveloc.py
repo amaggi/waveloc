@@ -67,6 +67,7 @@ if __name__ == '__main__':
     test_migration.suite(),
     test_location.suite(),
     test_hdf5.suite(),
+    test_ugrid.suite(),
     test_nllstuff.suite(),
     test_kurtogram.suite(),
     test_correlation.suite(),
