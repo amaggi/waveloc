@@ -121,6 +121,11 @@ magnitude
 .. automodule:: magnitude
     :members:
 
+plot_locations2
+==================
+.. automodule:: plot_locations2
+    :members:
+
 Clustering
 ----------
 This part of the waveloc code was contributed by Nadège Langet during her PhD
