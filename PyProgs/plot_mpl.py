@@ -1,6 +1,7 @@
 import os
 import h5py
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from copy import deepcopy
 
@@ -393,6 +394,12 @@ def plotDiracTest(test_info, fig_dir, otime_window):
     ax1 = fig.add_axes([0.40, 0.03, 0.2, 0.015])
     ax1.tick_params(labelsize=8)
     ax1.xaxis.set_ticks_position('bottom')
+    cmap = mpl.cm.hot_r
+    norm = mpl.colors.Normalize(vmin=np.min(max_val), vmax=np.max(max_val))
+    mpl.colorbar.ColorbarBase(ax1, cmap=cmap, norm=norm,
+                              orientation='horizontal',
+                              ticks=[0, int(np.max(max_val)/2),
+                                     int(np.max(max_val))])
     pos = list(ax1.get_position().bounds)
     fig.text(pos[0]+pos[2]/2., pos[1]+pos[3]+0.01, 'Stack max', fontsize=8,
              horizontalalignment='center', verticalalignment='bottom')
