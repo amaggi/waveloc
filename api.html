@@ -56,8 +56,109 @@ type. This is documentation is automatically generated from the doc-strings in
 the code itself. It is meant as an aide to developpers or advanced users who
 need access to the intrigacies of the code. It is not a tutorial (one will be
 coming soon).</p>
+<div class="section" id="waveloc-options">
+<h2>Waveloc Options<a class="headerlink" href="#waveloc-options" title="Permalink to this headline">¶</a></h2>
+<p>Waveloc is piloted entirely through a set of options / parameters that are set
+in a WavelocOptions object. All options will (soon!) be explained on the
+tutorial pages.</p>
+<div class="section" id="module-options">
+<span id="options"></span><h3>options<a class="headerlink" href="#module-options" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="options.WavelocOptions">
+<em class="property">class </em><tt class="descclassname">options.</tt><tt class="descname">WavelocOptions</tt><a class="reference internal" href="_modules/options.html#WavelocOptions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>The WavelocOptions class contains a single attribute <strong>opdict</strong> containing
+all the options and parameters to control the behaviour of waveloc.
+It also contains many methods to verify the consistency of the options
+before launching the various steps of the waveloc procedure.</p>
+<dl class="method">
+<dt id="options.WavelocOptions.set_test_options">
+<tt class="descname">set_test_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.set_test_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.set_test_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up a standard version of opdict. Used notably in the example
+cases.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_SDS_processing_options">
+<tt class="descname">verify_SDS_processing_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_SDS_processing_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_SDS_processing_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for SDS_processing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_base_path">
+<tt class="descname">verify_base_path</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_base_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_base_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifies that the base_path is set. If the &#8216;base_path&#8217; option is not
+directly set in the opdict, its value is read from the environment
+variable $WAVELOC_PATH.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_cluster_options">
+<tt class="descname">verify_cluster_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_cluster_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_cluster_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for clustering.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_correlation_options">
+<tt class="descname">verify_correlation_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_correlation_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_correlation_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for correlation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_doublediff_options">
+<tt class="descname">verify_doublediff_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_doublediff_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_doublediff_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for double difference
+location.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_kurtogram_options">
+<tt class="descname">verify_kurtogram_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_kurtogram_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_kurtogram_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for kurtogram.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_location_options">
+<tt class="descname">verify_location_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_location_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_location_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for location.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_magnitude_options">
+<tt class="descname">verify_magnitude_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_magnitude_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_magnitude_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for magnitude.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_migration_options">
+<tt class="descname">verify_migration_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_migration_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_migration_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for migration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_plotting_options">
+<tt class="descname">verify_plotting_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_plotting_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_plotting_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for plotting waveloc results.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_probloc_plotting_options">
+<tt class="descname">verify_probloc_plotting_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_probloc_plotting_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_probloc_plotting_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for plotting waveloc using the
+probability density location method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="options.WavelocOptions.verify_synthetic_options">
+<tt class="descname">verify_synthetic_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/options.html#WavelocOptions.verify_synthetic_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#options.WavelocOptions.verify_synthetic_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify presence of all options necessary for synthetic migration runs.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
 <div class="section" id="travel-times">
-<h2>TRAVEL-TIMES<a class="headerlink" href="#travel-times" title="Permalink to this headline">¶</a></h2>
+<h2>Travel-times<a class="headerlink" href="#travel-times" title="Permalink to this headline">¶</a></h2>
 <p>Waveloc needs travel-times to migrate the kurtosis waveforms. These can in
 principle be obtained in many different ways. For simple Earth models, a
 convenient way to obtain travel-time grids is to take advantage of the
@@ -350,7 +451,7 @@ contained in a WavelocOptions.opdict.</p>
 </div>
 </div>
 <div class="section" id="waveforms">
-<h2>WAVEFORMS<a class="headerlink" href="#waveforms" title="Permalink to this headline">¶</a></h2>
+<h2>Waveforms<a class="headerlink" href="#waveforms" title="Permalink to this headline">¶</a></h2>
 <p>The waveform manipulation routines in waveloc are heavily based on
 <a class="reference external" href="http://www.obspy.org">obspy</a>. As waveloc development started before obspy
 was fully functionnal, some external functions are used where obspy equivalents
@@ -1948,9 +2049,30 @@ with parameter B at the probabilities in P.</dd>
 </dd></dl>
 
 </div>
-<div class="section" id="module-SDS_processing">
-<span id="sds-processing"></span><h3>SDS_processing<a class="headerlink" href="#module-SDS_processing" title="Permalink to this headline">¶</a></h3>
-<p>The module SDS_processing contains functions to apply Waveloc specific
+<div class="section" id="module-make_SDS_data_links">
+<span id="sds-processing"></span><h3>SDS_processing<a class="headerlink" href="#module-make_SDS_data_links" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="make_SDS_data_links.make_SDS_data_links">
+<tt class="descclassname">make_SDS_data_links.</tt><tt class="descname">make_SDS_data_links</tt><big>(</big><em>datadir</em>, <em>dataglob</em>, <em>outdir</em><big>)</big><a class="reference internal" href="_modules/make_SDS_data_links.html#make_SDS_data_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#make_SDS_data_links.make_SDS_data_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an SDS directory structure from a flat directory of data files.
+The SDS structure will contain symlinks to the original data, to avoid
+copying data. If existing links exist, they will be overwritten.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>datadir</strong> &#8211; Directory with original data</li>
+<li><strong>dataglob</strong> &#8211; File glob to select data of interest, e.g. <a href="#id1"><span class="problematic" id="id2">*</span></a>.BHZ</li>
+<li><strong>outdir</strong> &#8211; Directory in which to put the root of the SDS structure</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<span class="target" id="module-SDS_processing"></span><p>The module SDS_processing contains functions to apply Waveloc specific
 processing on data contained in an SDS file structure.</p>
 <dl class="function">
 <dt id="SDS_processing.do_SDS_processing_setup_and_run">
@@ -1998,7 +2120,96 @@ channel-name as strings.</td>
 </div>
 </div>
 <div class="section" id="migration">
-<h2>MIGRATION<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h2>
+<h2>Migration<a class="headerlink" href="#migration" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h3>migration<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="module-migration"></span><dl class="function">
+<dt id="migration.do_migration_loop_continuous">
+<tt class="descclassname">migration.</tt><tt class="descname">do_migration_loop_continuous</tt><big>(</big><em>opdict</em>, <em>data</em>, <em>delta</em>, <em>start_time</em>, <em>grid_info</em>, <em>time_grids</em>, <em>keep_grid=False</em>, <em>keep_stacks=True</em><big>)</big><a class="reference internal" href="_modules/migration.html#do_migration_loop_continuous"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#migration.do_migration_loop_continuous" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do continuous migration loop. TODO : flesh out this doc-string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="migration.do_migration_setup_and_run">
+<tt class="descclassname">migration.</tt><tt class="descname">do_migration_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/migration.html#do_migration_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#migration.do_migration_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do setup and launch migration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; WavelocOptions.opdict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="migration.extract_max_values">
+<tt class="descclassname">migration.</tt><tt class="descname">extract_max_values</tt><big>(</big><em>stack_grid</em>, <em>search_info</em>, <em>f_stack</em>, <em>use_ram=False</em>, <em>n_max=500000000.0</em><big>)</big><a class="reference internal" href="_modules/migration.html#extract_max_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#migration.extract_max_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts maximum stack value from a 4D migrated grid. Also extracts x_max,
+y_max, z_max. TODO : flesh out this doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>stack_grid</strong> &#8211; </li>
+<li><strong>search_info</strong> &#8211; </li>
+<li><strong>f_stack</strong> &#8211; </li>
+<li><strong>use_fam</strong> &#8211; </li>
+<li><strong>n_max</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="migration.migrate_4D_stack">
+<tt class="descclassname">migration.</tt><tt class="descname">migrate_4D_stack</tt><big>(</big><em>data</em>, <em>delta</em>, <em>time_grids</em>, <em>stack_grid</em>, <em>use_ram=False</em><big>)</big><a class="reference internal" href="_modules/migration.html#migrate_4D_stack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#migration.migrate_4D_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Migrate the 4D stack. Central part of the waveloc process.
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> &#8211; </li>
+<li><strong>delta</strong> &#8211; </li>
+<li><strong>time_grids</strong> &#8211; </li>
+<li><strong>stack_grid</strong> &#8211; </li>
+<li><strong>use_ram</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-synth_migration">
+<span id="synth-migration"></span><h3>synth_migration<a class="headerlink" href="#module-synth_migration" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="synth_migration.generateSyntheticDirac">
+<tt class="descclassname">synth_migration.</tt><tt class="descname">generateSyntheticDirac</tt><big>(</big><em>opdict</em>, <em>time_grids=None</em><big>)</big><a class="reference internal" href="_modules/synth_migration.html#generateSyntheticDirac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#synth_migration.generateSyntheticDirac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a synthetic test and does the migration. All options are given in
+the WavelocOptions.opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opdict</strong> &#8211; Waveloc options / parameters</li>
+<li><strong>time_grids</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="module-integrate4D">
 <span id="integrate4d"></span><h3>integrate4D<a class="headerlink" href="#module-integrate4D" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
@@ -2181,7 +2392,7 @@ dictionary.</li>
 </div>
 </div>
 <div class="section" id="location">
-<h2>LOCATION<a class="headerlink" href="#location" title="Permalink to this headline">¶</a></h2>
+<h2>Location<a class="headerlink" href="#location" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="module-locations_trigger">
 <span id="locations-trigger"></span><h3>locations_trigger<a class="headerlink" href="#module-locations_trigger" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
@@ -2439,9 +2650,137 @@ on obspy.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-plot_locations2">
+<span id="plot-locations2"></span><h3>plot_locations2<a class="headerlink" href="#module-plot_locations2" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="plot_locations2.do_plotting_setup_and_run">
+<tt class="descclassname">plot_locations2.</tt><tt class="descname">do_plotting_setup_and_run</tt><big>(</big><em>opdict</em>, <em>plot_wfm=True</em>, <em>plot_grid=True</em><big>)</big><a class="reference internal" href="_modules/plot_locations2.html#do_plotting_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plot_locations2.do_plotting_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the results of a wavloc run (migration and location). All options and
+parameters are taken from an opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opdict</strong> &#8211; WavlocOptions.opdict that contains the options / parameters.</li>
+<li><strong>plot_wfm</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> plots waveforms after location (filtered data
+and kurtosis).</li>
+<li><strong>plot_grid</strong> (<em>boolean</em>) &#8211; If <a href="#id4"><span class="problematic" id="id5">``</span></a>True``plots the migration grid.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="plot_locations2.do_probloc_plotting_setup_and_run">
+<tt class="descclassname">plot_locations2.</tt><tt class="descname">do_probloc_plotting_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/plot_locations2.html#do_probloc_plotting_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plot_locations2.do_probloc_plotting_setup_and_run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the results of a wavloc run (migration and location using probability
+density). All options and parameters are taken from an opdict.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opdict</strong> &#8211; WavlocOptions.opdict that contains the options / parameters.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-plot_mpl">
+<span id="plot-mpl"></span><h3>plot_mpl<a class="headerlink" href="#module-plot_mpl" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="plot_mpl.plotDiracTest">
+<tt class="descclassname">plot_mpl.</tt><tt class="descname">plotDiracTest</tt><big>(</big><em>test_info</em>, <em>fig_dir</em>, <em>otime_window</em><big>)</big><a class="reference internal" href="_modules/plot_mpl.html#plotDiracTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plot_mpl.plotDiracTest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates plot for synthetic test.
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>test_info</strong> &#8211; </li>
+<li><strong>fig_dir</strong> &#8211; </li>
+<li><strong>otime_window</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="plot_mpl.plotLocationGrid">
+<tt class="descclassname">plot_mpl.</tt><tt class="descname">plotLocationGrid</tt><big>(</big><em>loc</em>, <em>grid_info</em>, <em>fig_dir</em>, <em>otime_window</em><big>)</big><a class="reference internal" href="_modules/plot_mpl.html#plotLocationGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plot_mpl.plotLocationGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots location grid. TODO : Flesh out this doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loc</strong> &#8211; </li>
+<li><strong>grid_info</strong> &#8211; </li>
+<li><strong>fig_dir</strong> &#8211; </li>
+<li><strong>otime_window</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="plot_mpl.plotLocationWaveforms">
+<tt class="descclassname">plot_mpl.</tt><tt class="descname">plotLocationWaveforms</tt><big>(</big><em>loc</em>, <em>start_time</em>, <em>dt</em>, <em>data_dict</em>, <em>grad_dict</em>, <em>stack_wfm</em>, <em>fig_dir</em><big>)</big><a class="reference internal" href="_modules/plot_mpl.html#plotLocationWaveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plot_mpl.plotLocationWaveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates plot for located waveforms.  Assumes data and grad are ready
+for plotting. TODO : Flesh out this doc-string.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>loc</strong> &#8211; </li>
+<li><strong>start_time</strong> &#8211; </li>
+<li><strong>dt</strong> &#8211; </li>
+<li><strong>data_dict</strong> &#8211; </li>
+<li><strong>grad_dict</strong> &#8211; </li>
+<li><strong>stack_wfm</strong> &#8211; </li>
+<li><strong>fig_dir</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="plot_mpl.plotProbLoc">
+<tt class="descclassname">plot_mpl.</tt><tt class="descname">plotProbLoc</tt><big>(</big><em>marginals</em>, <em>prob_loc</em>, <em>loc</em>, <em>fig_dir</em>, <em>space_only</em><big>)</big><a class="reference internal" href="_modules/plot_mpl.html#plotProbLoc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#plot_mpl.plotProbLoc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates plot for probabilistic location
+TODO : flesh out this doc-string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>marginals</strong> &#8211; </li>
+<li><strong>prob_loc</strong> &#8211; </li>
+<li><strong>loc</strong> &#8211; </li>
+<li><strong>fig_dir</strong> &#8211; </li>
+<li><strong>space_only</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="clustering">
-<h2>CLUSTERING<a class="headerlink" href="#clustering" title="Permalink to this headline">¶</a></h2>
+<h2>Clustering<a class="headerlink" href="#clustering" title="Permalink to this headline">¶</a></h2>
 <p>This part of the waveloc code was contributed by Nadège Langet during her PhD
 thesis.</p>
 <div class="section" id="module-correlation">
@@ -2688,8 +3027,8 @@ station name and start-time</p>
 </dd></dl>
 
 </div>
-<div class="section" id="id1">
-<h3>clustering<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id6">
+<h3>clustering<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
 <span class="target" id="module-clustering"></span><p>Provides classes and functions for clustering of earthquakes based on the
 depth-first algorithm.</p>
 <dl class="function">
@@ -3174,31 +3513,39 @@ stations using pre-calculated time-grids</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">WaveLoc API</a><ul>
-<li><a class="reference internal" href="#travel-times">TRAVEL-TIMES</a><ul>
+<li><a class="reference internal" href="#waveloc-options">Waveloc Options</a><ul>
+<li><a class="reference internal" href="#module-options">options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#travel-times">Travel-times</a><ul>
 <li><a class="reference internal" href="#module-NllGridLib">NllGridLib</a></li>
 <li><a class="reference internal" href="#hdf5-grids">hdf5_grids</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#waveforms">WAVEFORMS</a><ul>
+<li><a class="reference internal" href="#waveforms">Waveforms</a><ul>
 <li><a class="reference internal" href="#module-OP_waveforms">OP_waveform</a></li>
 <li><a class="reference internal" href="#module-filters">filters</a></li>
 <li><a class="reference internal" href="#module-kurtogram">kurtogram</a></li>
-<li><a class="reference internal" href="#module-SDS_processing">SDS_processing</a></li>
+<li><a class="reference internal" href="#module-make_SDS_data_links">SDS_processing</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#migration">MIGRATION</a><ul>
+<li><a class="reference internal" href="#migration">Migration</a><ul>
+<li><a class="reference internal" href="#id3">migration</a></li>
+<li><a class="reference internal" href="#module-synth_migration">synth_migration</a></li>
 <li><a class="reference internal" href="#module-integrate4D">integrate4D</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#location">LOCATION</a><ul>
+<li><a class="reference internal" href="#location">Location</a><ul>
 <li><a class="reference internal" href="#module-locations_trigger">locations_trigger</a></li>
 <li><a class="reference internal" href="#module-locations_prob">locations_prob</a></li>
 <li><a class="reference internal" href="#module-magnitude">magnitude</a></li>
+<li><a class="reference internal" href="#module-plot_locations2">plot_locations2</a></li>
+<li><a class="reference internal" href="#module-plot_mpl">plot_mpl</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#clustering">CLUSTERING</a><ul>
+<li><a class="reference internal" href="#clustering">Clustering</a><ul>
 <li><a class="reference internal" href="#module-correlation">correlation</a></li>
-<li><a class="reference internal" href="#id1">clustering</a></li>
+<li><a class="reference internal" href="#id6">clustering</a></li>
 <li><a class="reference internal" href="#module-double_diff">double_diff</a></li>
 <li><a class="reference internal" href="#module-CZ_color">CZ_color</a></li>
 </ul>
@@ -3249,7 +3596,7 @@ stations using pre-calculated time-grids</p>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Alessia Maggi.
-      Last updated on May 26, 2014.
+      Last updated on May 27, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

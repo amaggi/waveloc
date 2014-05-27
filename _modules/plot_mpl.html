@@ -1,0 +1,625 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>plot_mpl &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for plot_mpl</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+
+<div class="viewcode-block" id="plotLocationWaveforms"><a class="viewcode-back" href="../api.html#plot_mpl.plotLocationWaveforms">[docs]</a><span class="k">def</span> <span class="nf">plotLocationWaveforms</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">grad_dict</span><span class="p">,</span> <span class="n">stack_wfm</span><span class="p">,</span>
+                          <span class="n">fig_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates plot for located waveforms.  Assumes data and grad are ready</span>
+<span class="sd">    for plotting. TODO : Flesh out this doc-string.</span>
+
+<span class="sd">    :param loc:</span>
+<span class="sd">    :param start_time:</span>
+<span class="sd">    :param dt:</span>
+<span class="sd">    :param data_dict:</span>
+<span class="sd">    :param grad_dict:</span>
+<span class="sd">    :param stack_wfm:</span>
+<span class="sd">    :param fig_dir:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">otime</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+    <span class="n">otime_left</span> <span class="o">=</span> <span class="o">-</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">]</span>
+    <span class="n">otime_right</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">]</span>
+
+    <span class="n">plot_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fig_dir</span><span class="p">,</span> <span class="s">&#39;loc_</span><span class="si">%s</span><span class="s">.pdf&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">otime</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()))</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stack_wfm</span><span class="p">))</span><span class="o">*</span><span class="n">dt</span> <span class="o">-</span> <span class="p">(</span><span class="n">otime</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+
+    <span class="n">stations</span> <span class="o">=</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">stations</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">n_traces</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stations</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">n_traces</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Data&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s">&quot;(a)&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">n_traces</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;Characteristic function&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">0.12</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s">&quot;(b)&quot;</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="n">stations</span><span class="p">:</span>
+        <span class="c"># plot the data in the first column</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stations</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">n_traces</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">n_traces</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;time (s)&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">([])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">],</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">otime_left</span><span class="p">,</span> <span class="n">otime_right</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="c"># add the station name</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                 <span class="n">horizontalalignment</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">,</span>
+                 <span class="n">verticalalignment</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">)</span>
+        <span class="c"># plot the kurtosis gradient in the second column</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stations</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">n_traces</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">n_traces</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;time (s)&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">([])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">grad_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">],</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">otime_left</span><span class="p">,</span> <span class="n">otime_right</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span>  <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="c"># add the maximum kurtosis value</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&#39;</span><span class="si">%.1f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">grad_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">]),</span>
+                 <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">otime</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">plot_filename</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="plotLocationGrid"><a class="viewcode-back" href="../api.html#plot_mpl.plotLocationGrid">[docs]</a><span class="k">def</span> <span class="nf">plotLocationGrid</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">grid_info</span><span class="p">,</span> <span class="n">fig_dir</span><span class="p">,</span> <span class="n">otime_window</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots location grid. TODO : Flesh out this doc-string.</span>
+
+<span class="sd">    :param loc:</span>
+<span class="sd">    :param grid_info:</span>
+<span class="sd">    :param fig_dir:</span>
+<span class="sd">    :param otime_window:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># set up plot using info from grid_info</span>
+    <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;grid_shape&#39;</span><span class="p">]</span>
+    <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;grid_spacing&#39;</span><span class="p">]</span>
+    <span class="n">x_orig</span><span class="p">,</span> <span class="n">y_orig</span><span class="p">,</span> <span class="n">z_orig</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;grid_orig&#39;</span><span class="p">]</span>
+    <span class="n">stack_starttime</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span>
+
+    <span class="c"># Take much of the information from the grid_info</span>
+    <span class="n">plot_info</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">grid_info</span><span class="p">)</span>
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+
+    <span class="c"># get location info</span>
+    <span class="n">o_time</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+    <span class="n">x_mean</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span>
+    <span class="n">y_mean</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span>
+    <span class="n">z_mean</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span>
+    <span class="n">o_err_left</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_left&#39;</span><span class="p">]</span>
+    <span class="n">o_err_right</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_err_right&#39;</span><span class="p">]</span>
+    <span class="n">x_sigma</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">]</span>
+    <span class="n">y_sigma</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">]</span>
+    <span class="n">z_sigma</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]</span>
+
+    <span class="c">#get indexes correponding to location</span>
+    <span class="n">it_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">o_time</span><span class="o">-</span><span class="n">stack_starttime</span><span class="p">)</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
+    <span class="n">nt</span> <span class="o">=</span> <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;grid_shape&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">it_true</span> <span class="o">&gt;</span> <span class="n">nt</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;Origin time after last time for plot by </span><span class="si">%3f</span><span class="s"> seconds. </span><span class="se">\n\</span>
+<span class="s">            Increase plot_tafter.&#39;</span> <span class="o">%</span> <span class="p">((</span><span class="n">it_true</span> <span class="o">-</span> <span class="n">nt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">it_true</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;Origin time before first time for plot by </span><span class="si">%3f</span><span class="s"> seconds. </span><span class="se">\n\</span>
+<span class="s">            Increase plot_tbefore.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="n">it_true</span><span class="o">*</span><span class="n">dt</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="c"># zero indexes are default for 2D grids</span>
+    <span class="n">ix_true</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">iy_true</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">iz_true</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">ix_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">x_mean</span><span class="o">-</span><span class="n">x_orig</span><span class="p">)</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">iy_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">y_mean</span><span class="o">-</span><span class="n">y_orig</span><span class="p">)</span><span class="o">/</span><span class="n">dy</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">iz_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">z_mean</span><span class="o">-</span><span class="n">z_orig</span><span class="p">)</span><span class="o">/</span><span class="n">dz</span><span class="p">))</span>
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;true_indexes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ix_true</span><span class="p">,</span> <span class="n">iy_true</span><span class="p">,</span> <span class="n">iz_true</span><span class="p">,</span> <span class="n">it_true</span><span class="p">)</span>
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;true_values&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_mean</span><span class="p">,</span> <span class="n">y_mean</span><span class="p">,</span> <span class="n">z_mean</span><span class="p">,</span> <span class="n">o_time</span><span class="o">-</span><span class="n">stack_starttime</span><span class="p">)</span>
+
+    <span class="c"># get indexes corresponding to location uncertainties</span>
+    <span class="c"># times are wrt stack_starttime</span>
+    <span class="n">t_left</span> <span class="o">=</span> <span class="n">o_time</span> <span class="o">-</span> <span class="n">o_err_left</span> <span class="o">-</span> <span class="n">stack_starttime</span>
+    <span class="n">t_right</span> <span class="o">=</span> <span class="n">o_time</span> <span class="o">+</span> <span class="n">o_err_right</span> <span class="o">-</span> <span class="n">stack_starttime</span>
+    <span class="c"># coordinates are absolute</span>
+    <span class="n">x_low</span> <span class="o">=</span> <span class="n">x_mean</span> <span class="o">-</span> <span class="n">x_sigma</span>
+    <span class="n">y_low</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">-</span> <span class="n">y_sigma</span>
+    <span class="n">z_low</span> <span class="o">=</span> <span class="n">z_mean</span> <span class="o">-</span> <span class="n">z_sigma</span>
+    <span class="n">x_high</span> <span class="o">=</span> <span class="n">x_mean</span> <span class="o">+</span> <span class="n">x_sigma</span>
+    <span class="n">y_high</span> <span class="o">=</span> <span class="n">y_mean</span> <span class="o">+</span> <span class="n">y_sigma</span>
+    <span class="n">z_high</span> <span class="o">=</span> <span class="n">z_mean</span> <span class="o">+</span> <span class="n">z_sigma</span>
+
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;t_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span><span class="p">)</span>
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;x_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_low</span><span class="p">,</span> <span class="n">x_high</span><span class="p">)</span>
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;y_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_low</span><span class="p">,</span> <span class="n">y_high</span><span class="p">)</span>
+    <span class="n">plot_info</span><span class="p">[</span><span class="s">&#39;z_err&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_low</span><span class="p">,</span> <span class="n">z_high</span><span class="p">)</span>
+
+    <span class="n">plotDiracTest</span><span class="p">(</span><span class="n">plot_info</span><span class="p">,</span> <span class="n">fig_dir</span><span class="p">,</span> <span class="n">otime_window</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="plotDiracTest"><a class="viewcode-back" href="../api.html#plot_mpl.plotDiracTest">[docs]</a><span class="k">def</span> <span class="nf">plotDiracTest</span><span class="p">(</span><span class="n">test_info</span><span class="p">,</span> <span class="n">fig_dir</span><span class="p">,</span> <span class="n">otime_window</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates plot for synthetic test.</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param test_info:</span>
+<span class="sd">    :param fig_dir:</span>
+<span class="sd">    :param otime_window:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># set up plot using info from test_info</span>
+    <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;grid_shape&#39;</span><span class="p">]</span>
+    <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;grid_spacing&#39;</span><span class="p">]</span>
+    <span class="n">x_orig</span><span class="p">,</span> <span class="n">y_orig</span><span class="p">,</span> <span class="n">z_orig</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;grid_orig&#39;</span><span class="p">]</span>
+    <span class="n">ix_true</span><span class="p">,</span> <span class="n">iy_true</span><span class="p">,</span> <span class="n">iz_true</span><span class="p">,</span> <span class="n">it_true</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;true_indexes&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s">&#39;true_values&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">x_true</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">z_true</span><span class="p">,</span> <span class="n">t_true</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;true_values&#39;</span><span class="p">]</span>
+    <span class="n">stack_start_time</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span>
+    <span class="n">grid_filename</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;dat_file&#39;</span><span class="p">]</span>
+    <span class="n">stack_filename</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;stack_file&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s">&#39;o_time&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">fig_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fig_dir</span><span class="p">,</span> <span class="s">&quot;grid_</span><span class="si">%s</span><span class="s">.pdf&quot;</span> <span class="o">%</span>
+                                    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig_filename</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fig_dir</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.pdf&quot;</span> <span class="o">%</span>
+                         <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">grid_filename</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c"># read the stack file</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">grid_filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">stack_grid</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;stack_grid&#39;</span><span class="p">]</span>
+
+    <span class="n">stack_3D</span> <span class="o">=</span> <span class="n">stack_grid</span><span class="p">[:,</span> <span class="n">it_true</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">)</span>
+
+    <span class="n">col</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">hot_r</span>
+
+    <span class="c"># cut through the true location at the true time</span>
+    <span class="n">xy_cut</span> <span class="o">=</span> <span class="n">stack_3D</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">iz_true</span><span class="p">]</span>
+    <span class="n">xz_cut</span> <span class="o">=</span> <span class="n">stack_3D</span><span class="p">[:,</span> <span class="n">iy_true</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">yz_cut</span> <span class="o">=</span> <span class="n">stack_3D</span><span class="p">[</span><span class="n">ix_true</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+
+    <span class="c"># extract the max stacks</span>
+    <span class="n">f_stack</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">stack_filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c"># if have a smoothed version, use it for the plots</span>
+    <span class="k">if</span> <span class="s">&#39;max_val_smooth&#39;</span> <span class="ow">in</span> <span class="n">f_stack</span><span class="p">:</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_val_smooth&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_val&#39;</span><span class="p">]</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_x&#39;</span><span class="p">]</span>
+    <span class="n">max_y</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_y&#39;</span><span class="p">]</span>
+    <span class="n">max_z</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_z&#39;</span><span class="p">]</span>
+
+    <span class="c"># set up the 4 axes</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span><span class="o">*</span><span class="n">dz</span><span class="o">+</span><span class="n">z_orig</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c"># setup of t-axis depends on type of stack_start_time</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stack_start_time</span><span class="p">)</span> <span class="o">==</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="o">+</span><span class="n">stack_start_time</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span>
+
+    <span class="c"># do plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="s">&#39;true_values&#39;</span> <span class="ow">in</span> <span class="n">test_info</span> <span class="ow">and</span> <span class="s">&#39;o_time&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">   x = </span><span class="si">%.2f</span><span class="s">km  y = </span><span class="si">%.2f</span><span class="s">km  z = </span><span class="si">%.2f</span><span class="s">km&#39;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="n">test_info</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span> <span class="n">x_true</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">z_true</span><span class="p">))</span>
+
+    <span class="c"># plot xy plane</span>
+    <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.08</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(a)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">xy_cut</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s">&#39;lower&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                   <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">)],</span>
+                   <span class="n">cmap</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;x (km wrt ref)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;y (km wrt ref)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="c">#plot xz plane</span>
+    <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.08</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(d)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">xz_cut</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s">&#39;upper&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                   <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">)],</span>
+                   <span class="n">cmap</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;z (km up)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="c"># plot yz plane</span>
+    <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.08</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(f)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">yz_cut</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s">&#39;upper&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                   <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">)],</span>
+                   <span class="n">cmap</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;y (km wrt ref)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;z (km up)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="c"># choose portion of time series to plot</span>
+    <span class="k">if</span> <span class="s">&#39;true_values&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">llim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t_true</span><span class="o">-</span><span class="n">otime_window</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">rlim</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t_true</span><span class="o">+</span><span class="n">otime_window</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">llim</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">it_true</span><span class="p">]</span><span class="o">-</span><span class="n">otime_window</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">rlim</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">it_true</span><span class="p">]</span><span class="o">+</span><span class="n">otime_window</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">illim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">llim</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+    <span class="n">irlim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">rlim</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">dt</span><span class="p">)</span>
+
+    <span class="c"># plot max value</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>  <span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-.</span><span class="mo">05</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(b)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">max_val</span><span class="p">,</span> <span class="s">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;Stack max&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">max_val</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_val</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">it_true</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">max_val</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_val</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span>
+               <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+        <span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;t_err&#39;</span><span class="p">]</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="c"># put the origin back in for the last plots</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="o">+</span><span class="n">x_orig</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">)</span><span class="o">*</span><span class="n">dy</span><span class="o">+</span><span class="n">y_orig</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nz</span><span class="p">)</span><span class="o">*</span><span class="n">dz</span><span class="o">+</span><span class="n">z_orig</span>
+
+    <span class="c"># plot max x</span>
+    <span class="k">if</span> <span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span>  <span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-.</span><span class="mo">05</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(c)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">max_x</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                    <span class="n">c</span><span class="o">=</span><span class="n">max_val</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">),</span>
+                    <span class="n">clip_on</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;x (km)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;true_values&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">x_true</span><span class="p">,</span> <span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t_true</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_x</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_x</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">ix_true</span><span class="p">],</span> <span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">it_true</span><span class="p">],</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_x</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_x</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;x_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="n">x_low</span><span class="p">,</span> <span class="n">x_high</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;x_err&#39;</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">x_low</span><span class="p">,</span> <span class="n">x_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;t_err&#39;</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="c"># plot max y</span>
+    <span class="k">if</span> <span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span>  <span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-.</span><span class="mo">05</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(e)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">max_y</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                    <span class="n">c</span><span class="o">=</span><span class="n">max_val</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">),</span>
+                    <span class="n">clip_on</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticklabels</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;y (km)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;true_values&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t_true</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_y</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_y</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">iy_true</span><span class="p">],</span> <span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">it_true</span><span class="p">],</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_y</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_y</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;y_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="n">y_low</span><span class="p">,</span> <span class="n">y_high</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;y_err&#39;</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">y_low</span><span class="p">,</span> <span class="n">y_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;t_err&#39;</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="c"># plot max z</span>
+    <span class="k">if</span> <span class="n">dz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-.</span><span class="mo">05</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="s">&#39;(g)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">max_z</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span>
+                    <span class="n">c</span><span class="o">=</span><span class="n">max_val</span><span class="p">[</span><span class="n">illim</span><span class="p">:</span><span class="n">irlim</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">linewidths</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">),</span>
+                    <span class="n">clip_on</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Time (s)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;z (km down)&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;true_values&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">z_true</span><span class="p">,</span> <span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t_true</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_z</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_z</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">z</span><span class="p">[</span><span class="n">iz_true</span><span class="p">],</span> <span class="n">llim</span><span class="p">,</span> <span class="n">rlim</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">it_true</span><span class="p">],</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_z</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_z</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;z_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="n">z_low</span><span class="p">,</span> <span class="n">z_high</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;z_err&#39;</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">z_low</span><span class="p">,</span> <span class="n">z_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;t_err&#39;</span> <span class="ow">in</span> <span class="n">test_info</span><span class="p">:</span>
+            <span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span> <span class="o">=</span> <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;t_err&#39;</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">t_left</span><span class="p">,</span> <span class="n">t_right</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="c"># add independent colorbar</span>
+    <span class="n">ax1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.40</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.015</span><span class="p">])</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">ax1</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ax1</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">pos</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="mf">0.01</span><span class="p">,</span> <span class="s">&#39;Stack max&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+             <span class="n">horizontalalignment</span><span class="o">=</span><span class="s">&#39;center&#39;</span><span class="p">,</span> <span class="n">verticalalignment</span><span class="o">=</span><span class="s">&#39;bottom&#39;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fig_filename</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">f_stack</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">sigma</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)))</span> <span class="o">*</span> \
+        <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">*</span><span class="n">sigma</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="plotProbLoc"><a class="viewcode-back" href="../api.html#plot_mpl.plotProbLoc">[docs]</a><span class="k">def</span> <span class="nf">plotProbLoc</span><span class="p">(</span><span class="n">marginals</span><span class="p">,</span> <span class="n">prob_loc</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">fig_dir</span><span class="p">,</span> <span class="n">space_only</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates plot for probabilistic location</span>
+<span class="sd">    TODO : flesh out this doc-string</span>
+
+<span class="sd">    :param marginals:</span>
+<span class="sd">    :param prob_loc:</span>
+<span class="sd">    :param loc:</span>
+<span class="sd">    :param fig_dir:</span>
+<span class="sd">    :param space_only:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># get basic parameters</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">][:]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][:]</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">][:]</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">z</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">prob_x</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;prob_x&#39;</span><span class="p">][:]</span>
+    <span class="n">prob_y</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;prob_y&#39;</span><span class="p">][:]</span>
+    <span class="n">prob_z</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;prob_z&#39;</span><span class="p">][:]</span>
+    <span class="n">prob_z_rev</span> <span class="o">=</span> <span class="n">prob_z</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>     <span class="c"># reverse array for plot (z is up in plot)</span>
+    <span class="n">prob_xy</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;prob_xy&#39;</span><span class="p">][:,</span> <span class="p">:]</span>
+    <span class="n">prob_xz</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;prob_xz&#39;</span><span class="p">][:,</span> <span class="p">:]</span>
+    <span class="n">prob_yz</span> <span class="o">=</span> <span class="n">marginals</span><span class="p">[</span><span class="s">&#39;prob_yz&#39;</span><span class="p">][:,</span> <span class="p">:]</span>
+
+    <span class="n">x_low</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">]</span>
+    <span class="n">y_low</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">]</span>
+    <span class="n">z_low</span> <span class="o">=</span> <span class="o">-</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]</span>
+    <span class="n">x_high</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_sigma&#39;</span><span class="p">]</span>
+    <span class="n">y_high</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_sigma&#39;</span><span class="p">]</span>
+    <span class="n">z_high</span> <span class="o">=</span> <span class="o">-</span><span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_sigma&#39;</span><span class="p">]</span>
+
+    <span class="c"># set filename</span>
+    <span class="n">o_time</span> <span class="o">=</span> <span class="n">prob_loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+    <span class="n">fig_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fig_dir</span><span class="p">,</span> <span class="s">&quot;probloc_</span><span class="si">%s</span><span class="s">.pdf&quot;</span> <span class="o">%</span> <span class="n">o_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+    <span class="c"># XY plot</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.2</span>
+    <span class="n">left_h</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">width</span>
+    <span class="n">bottom</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.6</span>
+    <span class="n">bottom_h</span> <span class="o">=</span> <span class="n">bottom</span> <span class="o">+</span> <span class="n">height</span>
+
+    <span class="c"># XY plot</span>
+    <span class="n">rect_2D</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">]</span>
+    <span class="n">rect_top</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">bottom_h</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span>
+    <span class="n">rect_rig</span> <span class="o">=</span> <span class="p">[</span><span class="n">left_h</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">,</span> <span class="n">height</span><span class="p">]</span>
+
+    <span class="n">ax_2D</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_2D</span><span class="p">)</span>
+    <span class="n">ax_2D</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_top</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_top</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="n">ax_2D</span><span class="p">)</span>
+    <span class="n">ax_top</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_top</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">ax_top</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(())</span>
+    <span class="n">ax_rig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_rig</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="n">ax_2D</span><span class="p">)</span>
+    <span class="n">ax_rig</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_rig</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">ax_rig</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(())</span>
+
+    <span class="n">ax_2D</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">prob_xy</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s">&#39;lower&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                 <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">)])</span>
+    <span class="n">ax_top</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">prob_x</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">ax_top</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">x_low</span><span class="p">,</span> <span class="n">x_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">ax_rig</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prob_y</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">ax_rig</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">y_low</span><span class="p">,</span> <span class="n">y_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="c">#XZ plot</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">left_h</span><span class="o">+</span><span class="mf">0.05</span><span class="o">+</span><span class="mf">0.075</span><span class="p">,</span> <span class="mf">0.2</span>
+    <span class="n">left_h</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">width</span>
+
+    <span class="n">rect_2D</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">]</span>
+    <span class="n">rect_top</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">bottom_h</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span>
+    <span class="n">rect_rig</span> <span class="o">=</span> <span class="p">[</span><span class="n">left_h</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">,</span> <span class="n">height</span><span class="p">]</span>
+
+    <span class="n">ax_2D_2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_2D</span><span class="p">)</span>
+    <span class="n">ax_2D_2</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_top_2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_top</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="n">ax_2D_2</span><span class="p">)</span>
+    <span class="n">ax_top_2</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_top_2</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">ax_top_2</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(())</span>
+    <span class="n">ax_rig_2</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_rig</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="n">ax_2D_2</span><span class="p">)</span>
+    <span class="n">ax_rig_2</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_rig_2</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">ax_rig_2</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(())</span>
+
+    <span class="n">ax_2D_2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">prob_xz</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s">&#39;upper&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                   <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">)])</span>
+    <span class="n">ax_top_2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">prob_x</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">ax_top_2</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">x_low</span><span class="p">,</span> <span class="n">x_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">ax_rig_2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prob_z_rev</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">ax_rig_2</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">z_low</span><span class="p">,</span> <span class="n">z_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="c">#XZ plot</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">left_h</span><span class="o">+</span><span class="mf">0.05</span><span class="o">+</span><span class="mf">0.075</span><span class="p">,</span> <span class="mf">0.2</span>
+    <span class="n">left_h</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">width</span>
+
+    <span class="n">rect_2D</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">]</span>
+    <span class="n">rect_top</span> <span class="o">=</span> <span class="p">[</span><span class="n">left</span><span class="p">,</span> <span class="n">bottom_h</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]</span>
+    <span class="n">rect_rig</span> <span class="o">=</span> <span class="p">[</span><span class="n">left_h</span><span class="p">,</span> <span class="n">bottom</span><span class="p">,</span> <span class="mf">0.075</span><span class="p">,</span> <span class="n">height</span><span class="p">]</span>
+
+    <span class="n">ax_2D_3</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_2D</span><span class="p">)</span>
+    <span class="n">ax_2D_3</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_top_3</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_top</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="n">ax_2D_3</span><span class="p">)</span>
+    <span class="n">ax_top_3</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_top_3</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">ax_top_3</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(())</span>
+    <span class="n">ax_rig_3</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">rect_rig</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="n">ax_2D_3</span><span class="p">)</span>
+    <span class="n">ax_rig_3</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_rig_3</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">ax_rig_3</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks</span><span class="p">(())</span>
+
+    <span class="n">ax_2D_3</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">prob_yz</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s">&#39;upper&#39;</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">,</span>
+                   <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">z</span><span class="p">)])</span>
+    <span class="n">ax_top_3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">prob_y</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">ax_top_3</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">y_low</span><span class="p">,</span> <span class="n">y_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">ax_rig_3</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">prob_z_rev</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">)</span>
+    <span class="n">ax_rig_3</span><span class="o">.</span><span class="n">axhspan</span><span class="p">(</span><span class="n">z_low</span><span class="p">,</span> <span class="n">z_high</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fig_filename</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 27, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

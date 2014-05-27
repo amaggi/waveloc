@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>plot_locations2 &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for plot_locations2</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">UTCDateTime</span>
+<span class="kn">from</span> <span class="nn">locations_trigger</span> <span class="kn">import</span> <span class="n">read_locs_from_file</span>
+<span class="kn">from</span> <span class="nn">locations_prob</span> <span class="kn">import</span> <span class="n">read_prob_locs_from_file</span>
+<span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_hdr_file</span>
+<span class="kn">from</span> <span class="nn">hdf5_grids</span> <span class="kn">import</span> <span class="n">get_interpolated_time_grids</span>
+<span class="kn">from</span> <span class="nn">migration</span> <span class="kn">import</span> <span class="n">do_migration_loop_continuous</span>
+<span class="kn">from</span> <span class="nn">OP_waveforms</span> <span class="kn">import</span> <span class="n">read_data_compatible_with_time_dict</span>
+<span class="kn">from</span> <span class="nn">plot_mpl</span> <span class="kn">import</span> <span class="n">plotLocationGrid</span><span class="p">,</span> <span class="n">plotLocationWaveforms</span><span class="p">,</span> <span class="n">plotProbLoc</span>
+
+
+<div class="viewcode-block" id="do_plotting_setup_and_run"><a class="viewcode-back" href="../api.html#plot_locations2.do_plotting_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_plotting_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">,</span> <span class="n">plot_wfm</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">plot_grid</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the results of a wavloc run (migration and location). All options and</span>
+<span class="sd">    parameters are taken from an opdict.</span>
+
+<span class="sd">    :param opdict: WavlocOptions.opdict that contains the options / parameters.</span>
+<span class="sd">    :param plot_wfm: If ``True`` plots waveforms after location (filtered data</span>
+<span class="sd">        and kurtosis).</span>
+<span class="sd">    :param plot_grid: If ``True``plots the migration grid.</span>
+
+<span class="sd">    :type plot_wfm: boolean</span>
+<span class="sd">    :type plot_grid: boolean</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># get / set info</span>
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+
+    <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+    <span class="n">stackfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;stack&#39;</span><span class="p">,</span>
+                             <span class="s">&#39;combined_stack_all.hdf5&#39;</span><span class="p">)</span>
+
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+
+    <span class="n">data_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span>
+    <span class="n">data_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">data_glob</span><span class="p">))</span>
+    <span class="n">data_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="n">kurt_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]</span>
+    <span class="n">kurt_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">kurt_glob</span><span class="p">))</span>
+    <span class="n">kurt_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">mig_files</span> <span class="o">=</span> <span class="n">kurt_files</span>
+
+    <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">]:</span>
+        <span class="n">grad_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gradglob&#39;</span><span class="p">]</span>
+        <span class="n">grad_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">grad_glob</span><span class="p">))</span>
+        <span class="n">grad_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="n">mig_files</span> <span class="o">=</span> <span class="n">grad_files</span>
+
+        <span class="k">if</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]:</span>
+            <span class="n">gauss_glob</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gaussglob&#39;</span><span class="p">]</span>
+            <span class="n">gauss_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">gauss_glob</span><span class="p">))</span>
+            <span class="n">gauss_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="n">mig_files</span> <span class="o">=</span> <span class="n">gauss_files</span>
+
+    <span class="n">figdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;fig&#39;</span><span class="p">)</span>
+
+    <span class="c"># grids</span>
+    <span class="n">search_grid_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span>
+                                        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;search_grid&#39;</span><span class="p">])</span>
+    <span class="c"># read time grid information</span>
+    <span class="n">time_grids</span> <span class="o">=</span> <span class="n">get_interpolated_time_grids</span><span class="p">(</span><span class="n">opdict</span><span class="p">)</span>
+
+    <span class="c"># read locations</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">)</span>
+
+    <span class="c"># open stack file</span>
+    <span class="n">f_stack</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">stackfile</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="s">&#39;max_val_smooth&#39;</span><span class="p">]</span>
+    <span class="n">stack_start_time</span> <span class="o">=</span> <span class="n">UTCDateTime</span><span class="p">(</span><span class="n">max_val</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="n">locs</span><span class="p">:</span>
+        <span class="c"># generate the grids</span>
+        <span class="n">o_time</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">o_time</span><span class="o">-</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tbefore&#39;</span><span class="p">]</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">o_time</span><span class="o">+</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tafter&#39;</span><span class="p">]</span>
+
+        <span class="c"># re-read grid info to ensure clean copy</span>
+        <span class="n">grid_info</span> <span class="o">=</span> <span class="n">read_hdr_file</span><span class="p">(</span><span class="n">search_grid_filename</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;x_mean&#39;</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;y_mean&#39;</span><span class="p">]</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">loc</span><span class="p">[</span><span class="s">&#39;z_mean&#39;</span><span class="p">]</span>
+        <span class="c"># get the corresponding travel-times for time-shifting</span>
+        <span class="n">ttimes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="n">time_grids</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ttimes</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_grids</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span><span class="o">.</span><span class="n">value_at_point</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+
+        <span class="n">tshift_migration</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">ttimes</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="n">start_time_migration</span> <span class="o">=</span> <span class="n">start_time</span><span class="o">-</span><span class="n">tshift_migration</span>
+        <span class="n">end_time_migration</span> <span class="o">=</span> <span class="n">end_time</span><span class="o">+</span><span class="n">tshift_migration</span>
+
+        <span class="k">if</span> <span class="n">plot_grid</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Plotting grid for location </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">o_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+
+            <span class="c"># read data</span>
+            <span class="n">mig_dict</span><span class="p">,</span> <span class="n">delta</span> <span class="o">=</span> \
+                <span class="n">read_data_compatible_with_time_dict</span><span class="p">(</span><span class="n">mig_files</span><span class="p">,</span> <span class="n">time_grids</span><span class="p">,</span>
+                                                    <span class="n">start_time_migration</span><span class="p">,</span>
+                                                    <span class="n">end_time_migration</span><span class="p">)</span>
+            <span class="c"># do migration</span>
+            <span class="n">do_migration_loop_continuous</span><span class="p">(</span><span class="n">opdict</span><span class="p">,</span> <span class="n">mig_dict</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span>
+                                         <span class="n">start_time_migration</span><span class="p">,</span> <span class="n">grid_info</span><span class="p">,</span>
+                                         <span class="n">time_grids</span><span class="p">,</span> <span class="n">keep_grid</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="c"># plot</span>
+            <span class="n">plotLocationGrid</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">grid_info</span><span class="p">,</span> <span class="n">figdir</span><span class="p">,</span>
+                             <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_otime_window&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">plot_wfm</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Plotting waveforms for location </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                         <span class="n">o_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">())</span>
+
+            <span class="c"># read data</span>
+            <span class="n">data_dict</span><span class="p">,</span> <span class="n">delta</span> <span class="o">=</span> \
+                <span class="n">read_data_compatible_with_time_dict</span><span class="p">(</span><span class="n">data_files</span><span class="p">,</span> <span class="n">time_grids</span><span class="p">,</span>
+                                                    <span class="n">start_time_migration</span><span class="p">,</span>
+                                                    <span class="n">end_time_migration</span><span class="p">)</span>
+            <span class="n">mig_dict</span><span class="p">,</span> <span class="n">delta</span> <span class="o">=</span> \
+                <span class="n">read_data_compatible_with_time_dict</span><span class="p">(</span><span class="n">mig_files</span><span class="p">,</span> <span class="n">time_grids</span><span class="p">,</span>
+                                                    <span class="n">start_time_migration</span><span class="p">,</span>
+                                                    <span class="n">end_time_migration</span><span class="p">)</span>
+            <span class="c"># cut desired portion out of data</span>
+            <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span>
+
+                <span class="c"># alignment on origin time</span>
+                <span class="n">istart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">ttimes</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">-</span>
+                                          <span class="n">start_time_migration</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta</span><span class="p">))</span>
+                <span class="n">iend</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tbefore&#39;</span><span class="p">]</span> <span class="o">+</span>
+                                                 <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tafter&#39;</span><span class="p">])</span> <span class="o">/</span>
+                                                <span class="n">delta</span><span class="p">))</span>
+
+                <span class="c"># sanity check in case event is close to start or end of data</span>
+                <span class="k">if</span> <span class="n">istart</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">istart</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">iend</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">):</span>
+                    <span class="n">iend</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+                <span class="n">data_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
+                <span class="c"># do slice</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">mig_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span>
+                <span class="n">mig_dict</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
+
+            <span class="c"># retrieve relevant portion of stack max</span>
+            <span class="n">istart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">o_time</span> <span class="o">-</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tbefore&#39;</span><span class="p">]</span> <span class="o">-</span>
+                                      <span class="n">stack_start_time</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta</span><span class="p">))</span>
+            <span class="n">iend</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tbefore&#39;</span><span class="p">]</span> <span class="o">+</span>
+                                             <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;plot_tafter&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">delta</span><span class="p">))</span>
+            <span class="c"># sanity check in case event is close to start or end of data</span>
+            <span class="k">if</span> <span class="n">istart</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">istart</span><span class="p">)</span><span class="o">*</span><span class="n">delta</span>
+                <span class="n">istart</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">iend</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">max_val</span><span class="p">):</span>
+                <span class="n">iend</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">max_val</span><span class="p">)</span>
+            <span class="c"># do slice</span>
+            <span class="n">stack_wfm</span> <span class="o">=</span> <span class="n">max_val</span><span class="p">[</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
+
+            <span class="c"># plot</span>
+            <span class="n">plotLocationWaveforms</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">delta</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">mig_dict</span><span class="p">,</span>
+                                  <span class="n">stack_wfm</span><span class="p">,</span> <span class="n">figdir</span><span class="p">)</span>
+
+    <span class="n">f_stack</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="do_probloc_plotting_setup_and_run"><a class="viewcode-back" href="../api.html#plot_locations2.do_probloc_plotting_setup_and_run">[docs]</a><span class="k">def</span> <span class="nf">do_probloc_plotting_setup_and_run</span><span class="p">(</span><span class="n">opdict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot the results of a wavloc run (migration and location using probability</span>
+<span class="sd">    density). All options and parameters are taken from an opdict.</span>
+
+<span class="sd">    :param opdict: WavlocOptions.opdict that contains the options / parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># get / set info</span>
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">space_only</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;probloc_spaceonly&#39;</span><span class="p">]</span>
+
+    <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+    <span class="n">problocfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                               <span class="s">&#39;locations_prob.dat&#39;</span><span class="p">)</span>
+    <span class="n">problocgrid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">,</span>
+                               <span class="s">&#39;locations_prob.hdf5&#39;</span><span class="p">)</span>
+
+    <span class="n">figdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;fig&#39;</span><span class="p">)</span>
+
+    <span class="c"># read locations</span>
+    <span class="n">locs</span> <span class="o">=</span> <span class="n">read_locs_from_file</span><span class="p">(</span><span class="n">locfile</span><span class="p">)</span>
+    <span class="n">prob_locs</span> <span class="o">=</span> <span class="n">read_prob_locs_from_file</span><span class="p">(</span><span class="n">problocfile</span><span class="p">)</span>
+
+    <span class="c"># open hdf5 file</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">problocgrid</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="c"># for each loc</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">locs</span><span class="p">)):</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">locs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">prob_loc</span> <span class="o">=</span> <span class="n">prob_locs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c"># hdf5 group name is prob loc origin time as string</span>
+        <span class="n">grp</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">prob_loc</span><span class="p">[</span><span class="s">&#39;o_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()]</span>
+
+        <span class="c"># do plotting</span>
+        <span class="n">plotProbLoc</span><span class="p">(</span><span class="n">grp</span><span class="p">,</span> <span class="n">prob_loc</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">figdir</span><span class="p">,</span>  <span class="n">space_only</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 27, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>make_SDS_data_links &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for make_SDS_data_links</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">optparse</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">obspy.core</span> <span class="kn">import</span> <span class="n">read</span>
+
+
+<div class="viewcode-block" id="make_SDS_data_links"><a class="viewcode-back" href="../api.html#make_SDS_data_links.make_SDS_data_links">[docs]</a><span class="k">def</span> <span class="nf">make_SDS_data_links</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="n">dataglob</span><span class="p">,</span> <span class="n">outdir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates an SDS directory structure from a flat directory of data files.</span>
+<span class="sd">    The SDS structure will contain symlinks to the original data, to avoid</span>
+<span class="sd">    copying data. If existing links exist, they will be overwritten.</span>
+
+<span class="sd">    :param datadir: Directory with original data</span>
+<span class="sd">    :param dataglob: File glob to select data of interest, e.g. *.BHZ</span>
+<span class="sd">    :param outdir: Directory in which to put the root of the SDS structure</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">datadir</span><span class="p">)</span>
+    <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Data from directory </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">data_dir</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;SDS data to be put in directory </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">out_dir</span><span class="p">)</span>
+
+    <span class="n">all_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">dataglob</span><span class="p">))</span>
+    <span class="n">all_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="n">filedict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">all_files</span><span class="p">:</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">traces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">network</span>
+        <span class="n">sta</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">traces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">station</span>
+        <span class="n">cha</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">traces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span>
+        <span class="n">dirid</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="n">cha</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dirid</span> <span class="ow">in</span> <span class="n">filedict</span><span class="p">:</span>
+            <span class="n">filedict</span><span class="p">[</span><span class="n">dirid</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filedict</span><span class="p">[</span><span class="n">dirid</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">filename</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">dirid</span><span class="p">,</span> <span class="n">filelist</span> <span class="ow">in</span> <span class="n">filedict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">net</span> <span class="o">=</span> <span class="n">dirid</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sta</span> <span class="o">=</span> <span class="n">dirid</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">cha</span> <span class="o">=</span> <span class="n">dirid</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">sta</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.D&quot;</span> <span class="o">%</span> <span class="n">cha</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Made directories : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">dirname</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Directories already exist : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">dirname</span><span class="p">)</span>
+            <span class="k">pass</span>
+
+        <span class="k">for</span> <span class="n">my_file</span> <span class="ow">in</span> <span class="n">filelist</span><span class="p">:</span>
+            <span class="n">dest_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">my_file</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">my_file</span><span class="p">,</span> <span class="n">dest_file</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Linked </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">dest_file</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Removing old </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">dest_file</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">dest_file</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">my_file</span><span class="p">,</span> <span class="n">dest_file</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Linked </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">dest_file</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">optparse</span><span class="o">.</span><span class="n">OptionParser</span><span class="p">()</span>
+
+    <span class="n">p</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&#39;--datadir&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;data directory&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&#39;--dataglob&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;data glob&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&#39;--outdir&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;output directory&quot;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&#39;--debug&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                 <span class="n">help</span><span class="o">=</span><span class="s">&quot;turn on debugging output&quot;</span><span class="p">)</span>
+
+    <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">arguments</span><span class="p">)</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                            <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+                            <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+
+    <span class="n">make_SDS_data_links</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">datadir</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">dataglob</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">outdir</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 27, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

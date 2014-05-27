@@ -1,0 +1,887 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>options &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for options</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="WavelocOptions"><a class="viewcode-back" href="../api.html#options.WavelocOptions">[docs]</a><span class="k">class</span> <span class="nc">WavelocOptions</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The WavelocOptions class contains a single attribute **opdict** containing</span>
+<span class="sd">    all the options and parameters to control the behaviour of waveloc.</span>
+<span class="sd">    It also contains many methods to verify the consistency of the options</span>
+<span class="sd">    before launching the various steps of the waveloc procedure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c"># set some default values</span>
+
+        <span class="c"># general profiling / debugging behaviour</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;use_ram&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># data processing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;resample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># migration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;load_ttimes_buf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc_snr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">12.</span>
+
+        <span class="c"># location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;auto_loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">50.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_limit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_tr_limit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sn_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;n_kurt_min&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="c"># prob density location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;probloc_spaceonly&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># synthetic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_addnoise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_amplitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_kwidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+        <span class="c"># cross-correlation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_before&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_after&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">6.0</span>
+
+        <span class="c"># clustering</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;nbsta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;clus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.8</span>
+
+        <span class="c"># double-difference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dd_loc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># kurtogram</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;new_kurtfile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="WavelocOptions.set_test_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.set_test_options">[docs]</a>    <span class="k">def</span> <span class="nf">set_test_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets up a standard version of opdict. Used notably in the example</span>
+<span class="sd">        cases.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;verbose&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;test_datadir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;test_data&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;TEST&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;TEST&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;net_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;YA&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sta_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,</span><span class="se">\</span>
+<span class="s">            UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;comp_list&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;HHZ&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;starttime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;2010-10-14T00:14:00.0Z&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;endtime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;2010-10-14T00:18:00.0Z&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;time_grid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Slow_len.100m.P&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;search_grid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;test_grid.search.hdr&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;stations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;coord_stations_test&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;resample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;fs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">4.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;c2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kwin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;krec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gthreshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;mu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;data_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;data_overlap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;*filt.mseed&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;*kurt.mseed&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gradglob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;*grad.mseed&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gaussglob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;*gauss.mseed&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;load_ttimes_buf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc_snr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">12.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;auto_loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;loclevel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">50.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_limit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;snr_tr_limit&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sn_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">10.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;n_kurt_min&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_addnoise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;new_kurtfile&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_before&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_after&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">6.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_corr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;corr&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;delay&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;clus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;nbsta&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dd_loc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_base_path"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_base_path">[docs]</a>    <span class="k">def</span> <span class="nf">verify_base_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verifies that the base_path is set. If the &#39;base_path&#39; option is not</span>
+<span class="sd">        directly set in the opdict, its value is read from the environment</span>
+<span class="sd">        variable $WAVELOC_PATH. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># if the option base_path is not set, then check the environment</span>
+        <span class="c"># variable</span>
+        <span class="c"># if the environment variable is not set, quit with error message</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;base_path&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;No base_path set in options, getting base_path from </span><span class="se">\</span>
+<span class="s">                          $WAVELOC_PATH&#39;</span><span class="p">)</span>
+            <span class="n">base_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&#39;WAVELOC_PATH&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">base_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Environment variable WAVELOC_PATH not set </span><span class="se">\</span>
+<span class="s">                  correctly.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_path</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">lib_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">lib_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Directory </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">lib_path</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_verify_lib_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">lib_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">lib_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Directory </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">lib_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_datadir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;datadir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;datadir option not set&#39;</span><span class="p">)</span>
+
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">datadir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Directory </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">datadir</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_outdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;outdir&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;outdir option not set&#39;</span><span class="p">)</span>
+
+        <span class="n">outdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;fig&#39;</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;fig&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;grid&#39;</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;grid&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;loc&#39;</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;loc&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;stack&#39;</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;stack&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;time_grids&#39;</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;time_grids&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span>
+                                                                   <span class="s">&#39;reloc&#39;</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s">&#39;reloc&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_verify_net_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;net_list&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;net_list option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_sta_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;sta_list&#39;</span><span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;sta_list option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_comp_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;comp_list&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;comp_list option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_channel_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;channel_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;channel_file option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;channel_file&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_starttime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;starttime&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;starttime option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_endtime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;endtime&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;endtime option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_resample</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;resample&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;resample option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_fs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_resample</span><span class="p">()</span>
+        <span class="n">resample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;resample&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">resample</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;fs&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;fs option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_c1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;c1&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;c1 option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_c2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;c2&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;c2 option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_kwin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;kwin&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;kwin option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_gthreshold</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;gthreshold&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;gthreshold option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;mu&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;mu option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_sigma</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;sigma&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;sigma option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_dataless</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;dataless&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;dataless option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">lib_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">)</span>
+        <span class="n">dataless_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lib_path</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataless&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataless_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No dataless files found: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">dataless_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_dataglob</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;dataglob&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;dataglob option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+        <span class="n">data_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;dataglob&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No data files found : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">data_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_kurtglob</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;kurtglob&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;kurtglob option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+        <span class="n">kurt_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kurtglob&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kurt_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No kurtosis files found : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">kurt_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_gradglob</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;gradglob&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;gradglob option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+        <span class="n">grad_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gradglob&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">grad_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No kurtosis gradient files found : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                              <span class="n">grad_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_gaussglob</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;gaussglob&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;gaussglob option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;datadir&#39;</span><span class="p">])</span>
+        <span class="n">gauss_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gaussglob&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gauss_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No gaussian files found : </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">gauss_names</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_time_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;time_grid&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;time_grid option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">time_grid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;time_grid&#39;</span><span class="p">])</span>
+        <span class="n">tg_glob</span> <span class="o">=</span> <span class="n">time_grid</span><span class="o">+</span><span class="s">&#39;*&#39;</span>
+        <span class="n">tg_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">tg_glob</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tg_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;No time grid files found </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">tg_glob</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_data_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;data_length&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;data_length option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_data_overlap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;data_overlap&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;data_overlap option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_snr_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;snr_limit&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;snr_limit option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_snr_tr_limit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;snr_tr_limit&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;snr_tr_limit option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_sn_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;sn_time&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;sn_time option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_n_kurt_min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;n_kurt_min&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;n_kurt_min option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_stations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;stations&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;stations option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">stations</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;stations&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">stations</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">stations</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_search_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;search_grid&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;search_grid option not set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">search_grid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;search_grid&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">search_grid</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">search_grid</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_reloc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;reloc&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;reloc option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_reloc_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;reloc_snr&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;reloc_snr option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_auto_loclevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;auto_loclevel&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;auto_loclevel option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_snr_loclevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_auto_loclevel</span><span class="p">()</span>
+        <span class="n">auto_loclevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;auto_loclevel&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">auto_loclevel</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;snr_loclevel&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;snr_loclevel option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_loclevel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_auto_loclevel</span><span class="p">()</span>
+        <span class="n">auto_loclevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;auto_loclevel&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">auto_loclevel</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;loclevel&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;loclevel option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_probloc_spaceonly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;probloc_spaceonly&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;probloc_spaceonly option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_xcorr_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;xcorr_threshold&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;xcorr_threshold option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_newkurtfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;new_kurtfile&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;new_kurtfile option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_xcorr_before</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;xcorr_before&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;xcorr_before option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_xcorr_after</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;xcorr_after&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;xcorr_after option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_xcorr_corr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;xcorr_corr&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;xcorr_corr option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_xcorr_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;xcorr_delay&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;xcorr_delay option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_nbsta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;nbsta&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;nbsta option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_clus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;clus&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;clus option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_dd_loc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;dd_loc&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;dd_loc option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_addnoise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_addnoise&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_addnoise option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_addnoise</span><span class="p">()</span>
+        <span class="n">syn_addnoise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_addnoise&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">syn_addnoise</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_snr&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_snr option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_amplitude</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_amplitude&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_amplitude option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_datalength</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_datalength&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_datalength option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_samplefreq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_samplefreq&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_samplefreq option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_kwidth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_kwidth&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_kwidth option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_otime</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_otime&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_otime option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_ix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_ix&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_ix option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_iy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_iy&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_iy option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_iz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_iz&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_iz option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_syn_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;syn_filename&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;syn_filename option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_plot_tbefore</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;plot_tbefore&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;plot_tbefore option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_plot_tafter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;plot_tafter&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;plot_tafter option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_plot_otime_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s">&#39;plot_otime_window&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;plot_otime_window option not set&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_channel_net_sta_comp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># if have channel_file option, check that</span>
+        <span class="k">if</span> <span class="s">&#39;channel_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_channel_file</span><span class="p">()</span>
+        <span class="c"># else check net sta comp lists are set</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_net_list</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_sta_list</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_comp_list</span><span class="p">()</span>
+
+<div class="viewcode-block" id="WavelocOptions.verify_SDS_processing_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_SDS_processing_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_SDS_processing_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for SDS_processing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_channel_net_sta_comp</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_starttime</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_endtime</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_fs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_c1</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_c2</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_kwin</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_gthreshold</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_mu</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_sigma</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_migration_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_migration_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_migration_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for migration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_channel_net_sta_comp</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_kurtglob</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;kderiv&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_gradglob</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;gauss&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_verify_gaussglob</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_starttime</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_endtime</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_data_length</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_data_overlap</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_stations</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_search_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_time_grid</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_reloc</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;reloc&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_verify_reloc_snr</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_location_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_location_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_location_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for location.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_kurtglob</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_loclevel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_snr_loclevel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_snr_limit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_snr_tr_limit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_sn_time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_n_kurt_min</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_probloc_spaceonly</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_search_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_time_grid</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_reloc</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_kurtogram_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_kurtogram_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_kurtogram_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for kurtogram.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_dataglob</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_kurtglob</span><span class="p">()</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_newkurtfile</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_magnitude_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_magnitude_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_magnitude_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for magnitude.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_channel_net_sta_comp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_dataless</span><span class="p">()</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_correlation_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_correlation_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_correlation_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for correlation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_dataglob</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_threshold</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_before</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_after</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_corr</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_delay</span><span class="p">()</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_cluster_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_cluster_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_cluster_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for clustering.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_dataglob</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_stations</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_corr</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_delay</span><span class="p">()</span>
+
+        <span class="n">coeff_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_corr&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">coeff_file</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">coeff_file</span><span class="p">)</span>
+
+        <span class="n">delay_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_delay&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">delay_file</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">delay_file</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_nbsta</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_clus</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_doublediff_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_doublediff_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_doublediff_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for double difference</span>
+<span class="sd">        location.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_time_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_search_grid</span><span class="p">()</span>
+
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_stations</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_corr</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_xcorr_delay</span><span class="p">()</span>
+
+        <span class="n">coeff_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_corr&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">coeff_file</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">coeff_file</span><span class="p">)</span>
+
+        <span class="n">delay_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;xcorr_delay&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">delay_file</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Cannot find </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">delay_file</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_nbsta</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_clus</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_dd_loc</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_synthetic_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_synthetic_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_synthetic_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for synthetic migration runs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_time_grid</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_stations</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_addnoise</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_snr</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_amplitude</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_datalength</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_samplefreq</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_kwidth</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_otime</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_ix</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_iy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_iz</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_syn_filename</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_plotting_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_plotting_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_plotting_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for plotting waveloc results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Locations file </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_dataglob</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_kurtglob</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_gradglob</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_plot_tbefore</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_plot_tafter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_plot_otime_window</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_search_grid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_time_grid</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_stations</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="WavelocOptions.verify_probloc_plotting_options"><a class="viewcode-back" href="../api.html#options.WavelocOptions.verify_probloc_plotting_options">[docs]</a>    <span class="k">def</span> <span class="nf">verify_probloc_plotting_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify presence of all options necessary for plotting waveloc using the</span>
+<span class="sd">        probability density location method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify_base_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_lib_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_datadir</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_outdir</span><span class="p">()</span>
+
+        <span class="n">base_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+        <span class="n">locdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;loc&#39;</span><span class="p">)</span>
+
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations.dat&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Locations file </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations_prob.dat&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Locations file </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span>
+
+        <span class="n">locfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">locdir</span><span class="p">,</span> <span class="s">&#39;locations_prob.hdf5&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">locfile</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">UserWarning</span><span class="p">(</span><span class="s">&#39;Locations file </span><span class="si">%s</span><span class="s"> does not exist.&#39;</span> <span class="o">%</span> <span class="n">locfile</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 27, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

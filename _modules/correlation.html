@@ -506,23 +506,7 @@
     <span class="n">a</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span>
 
     <span class="n">b</span> <span class="o">=</span> <span class="n">BinaryFile</span><span class="p">(</span><span class="n">delay_file</span><span class="p">)</span>
-    <span class="n">b</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
-
-</div>
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-
-    <span class="kn">from</span> <span class="nn">options</span> <span class="kn">import</span> <span class="n">WavelocOptions</span>
-
-    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
-                        <span class="n">format</span><span class="o">=</span><span class="s">&quot;</span><span class="si">%(levelname)s</span><span class="s"> : </span><span class="si">%(asctime)s</span><span class="s"> : </span><span class="si">%(message)s</span><span class="s">&quot;</span><span class="p">)</span>
-
-    <span class="n">wo</span> <span class="o">=</span> <span class="n">WavelocOptions</span><span class="p">()</span>
-    <span class="n">args</span> <span class="o">=</span> <span class="n">wo</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
-
-    <span class="n">wo</span><span class="o">.</span><span class="n">set_all_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-    <span class="n">wo</span><span class="o">.</span><span class="n">verify_correlation_options</span><span class="p">()</span>
-
-    <span class="n">do_correlation_setup_and_run</span><span class="p">(</span><span class="n">wo</span><span class="o">.</span><span class="n">opdict</span><span class="p">)</span>
+    <span class="n">b</span><span class="o">.</span><span class="n">write_binary_file</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span></div>
 </pre></div>
 
           </div>
@@ -562,7 +546,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, Alessia Maggi.
-      Last updated on May 26, 2014.
+      Last updated on May 27, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

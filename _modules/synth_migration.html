@@ -1,0 +1,266 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>synth_migration &mdash; waveloc 0.2.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="waveloc 0.2.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for synth_migration</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="generateSyntheticDirac"><a class="viewcode-back" href="../api.html#synth_migration.generateSyntheticDirac">[docs]</a><span class="k">def</span> <span class="nf">generateSyntheticDirac</span><span class="p">(</span><span class="n">opdict</span><span class="p">,</span> <span class="n">time_grids</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a synthetic test and does the migration. All options are given in</span>
+<span class="sd">    the WavelocOptions.opdict.</span>
+
+<span class="sd">    :param opdict: Waveloc options / parameters</span>
+<span class="sd">    :param time_grids:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Creates the synthetic dataset for us to work with</span>
+
+    <span class="kn">from</span> <span class="nn">NllGridLib</span> <span class="kn">import</span> <span class="n">read_stations_file</span><span class="p">,</span> <span class="n">read_hdr_file</span>
+    <span class="kn">from</span> <span class="nn">migration</span> <span class="kn">import</span> <span class="n">migrate_4D_stack</span><span class="p">,</span> <span class="n">extract_max_values</span>
+    <span class="kn">from</span> <span class="nn">hdf5_grids</span> <span class="kn">import</span> <span class="n">get_interpolated_time_grids</span>
+
+    <span class="n">load_time_grids</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="n">time_grids</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">load_time_grids</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="c">#define length and sampling frequency of synthetic data</span>
+    <span class="n">s_amplitude</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_amplitude&#39;</span><span class="p">]</span>
+    <span class="n">s_data_length</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_datalength&#39;</span><span class="p">]</span>
+    <span class="n">s_sample_freq</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_samplefreq&#39;</span><span class="p">]</span>
+    <span class="n">s_filename</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_filename&#39;</span><span class="p">]</span>
+
+    <span class="n">s_npts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">s_data_length</span><span class="o">*</span><span class="n">s_sample_freq</span><span class="p">)</span>
+    <span class="n">s_delta</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">s_sample_freq</span>
+    <span class="n">s_kwidth</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_kwidth&#39;</span><span class="p">]</span>
+    <span class="n">s_nkwidth</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">s_kwidth</span><span class="o">*</span><span class="n">s_sample_freq</span><span class="p">))</span>
+
+    <span class="c"># define origin time</span>
+    <span class="n">s_t0</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_otime&#39;</span><span class="p">]</span>
+
+    <span class="n">base_path</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;base_path&#39;</span><span class="p">]</span>
+    <span class="n">test_grid_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;grid&#39;</span><span class="p">,</span>
+                                  <span class="n">s_filename</span><span class="p">)</span>
+    <span class="n">test_stack_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;stack&#39;</span><span class="p">,</span>
+                                   <span class="s">&#39;stack_all_&#39;</span><span class="o">+</span><span class="n">s_filename</span><span class="p">)</span>
+    <span class="n">test_info_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;outdir&#39;</span><span class="p">],</span> <span class="s">&#39;grid&#39;</span><span class="p">,</span>
+                                  <span class="s">&#39;</span><span class="si">%s</span><span class="s">.info&#39;</span> <span class="o">%</span> <span class="n">s_filename</span><span class="p">)</span>
+
+    <span class="c"># get filenames for time-grids and search grids</span>
+    <span class="n">search_grid_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span>
+                                        <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;search_grid&#39;</span><span class="p">])</span>
+    <span class="n">stations_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s">&#39;lib&#39;</span><span class="p">,</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;stations&#39;</span><span class="p">])</span>
+    <span class="n">stations</span> <span class="o">=</span> <span class="n">read_stations_file</span><span class="p">(</span><span class="n">stations_filename</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;sta_list&#39;</span> <span class="ow">in</span> <span class="n">opdict</span><span class="p">:</span>
+        <span class="n">sta_list</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;sta_list&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sta_list</span> <span class="o">=</span> <span class="n">stations</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="c"># get parameters for noise etc</span>
+    <span class="n">syn_addnoise</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_addnoise&#39;</span><span class="p">]</span>
+
+    <span class="c">#################################</span>
+    <span class="c"># start setting up synthetic data</span>
+    <span class="c">#################################</span>
+
+    <span class="n">grid_info</span> <span class="o">=</span> <span class="n">read_hdr_file</span><span class="p">(</span><span class="n">search_grid_filename</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">load_time_grids</span><span class="p">:</span>
+        <span class="n">time_grids</span> <span class="o">=</span> <span class="n">get_interpolated_time_grids</span><span class="p">(</span><span class="n">opdict</span><span class="p">)</span>
+
+    <span class="c">#################################</span>
+    <span class="c"># create synthetic data</span>
+    <span class="c">#################################</span>
+
+    <span class="c"># choose hypocenter</span>
+    <span class="n">nx</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;nx&#39;</span><span class="p">]</span>
+    <span class="n">ny</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;ny&#39;</span><span class="p">]</span>
+    <span class="n">nz</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;nz&#39;</span><span class="p">]</span>
+
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dx&#39;</span><span class="p">]</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dy&#39;</span><span class="p">]</span>
+    <span class="n">dz</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;dz&#39;</span><span class="p">]</span>
+
+    <span class="n">x_orig</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;x_orig&#39;</span><span class="p">]</span>
+    <span class="n">y_orig</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;y_orig&#39;</span><span class="p">]</span>
+    <span class="n">z_orig</span> <span class="o">=</span> <span class="n">grid_info</span><span class="p">[</span><span class="s">&#39;z_orig&#39;</span><span class="p">]</span>
+
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_ix&#39;</span><span class="p">]</span>
+    <span class="n">iy</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_iy&#39;</span><span class="p">]</span>
+    <span class="n">iz</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_iz&#39;</span><span class="p">]</span>
+    <span class="n">it</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">s_t0</span><span class="o">/</span><span class="n">s_delta</span><span class="p">))</span>
+
+    <span class="c"># retrieve travel times for chosen hypocenter</span>
+    <span class="c"># and station list</span>
+    <span class="n">ib</span> <span class="o">=</span> <span class="n">ix</span><span class="o">*</span><span class="n">ny</span><span class="o">*</span><span class="n">nz</span> <span class="o">+</span> <span class="n">iy</span><span class="o">*</span><span class="n">nz</span> <span class="o">+</span> <span class="n">iz</span>
+    <span class="n">n_buf</span> <span class="o">=</span> <span class="n">nx</span><span class="o">*</span><span class="n">ny</span><span class="o">*</span><span class="n">nz</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;ib for true hypocenter = </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">ib</span><span class="p">)</span>
+    <span class="n">ttimes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">sta</span> <span class="ow">in</span> <span class="n">sta_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sta</span> <span class="ow">in</span> <span class="n">time_grids</span><span class="p">:</span>
+            <span class="n">ttimes</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_grids</span><span class="p">[</span><span class="n">sta</span><span class="p">]</span><span class="o">.</span><span class="n">grid_data</span><span class="p">[</span><span class="n">ib</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Missing travel-time information for station </span><span class="si">%s</span><span class="s">.</span><span class="se">\</span>
+<span class="s">                          Ignoring station...&#39;</span> <span class="o">%</span> <span class="n">sta</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Travel-times for true hypocenter = </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">ttimes</span><span class="p">)</span>
+
+    <span class="c"># construct data with these travel times</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">delay</span> <span class="ow">in</span> <span class="n">ttimes</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">syn_addnoise</span><span class="p">:</span>
+            <span class="n">s_snr</span> <span class="o">=</span> <span class="n">opdict</span><span class="p">[</span><span class="s">&#39;syn_snr&#39;</span><span class="p">]</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">s_npts</span><span class="p">)</span><span class="o">*</span><span class="n">s_amplitude</span><span class="o">/</span><span class="n">s_snr</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">s_npts</span><span class="p">)</span>
+        <span class="n">atime</span> <span class="o">=</span> <span class="n">s_t0</span><span class="o">+</span><span class="n">delay</span>
+        <span class="n">i_atime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">(</span><span class="n">atime</span><span class="o">/</span><span class="n">s_delta</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i_atime</span><span class="o">+</span><span class="n">s_nkwidth</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;syn_datalength is too small compared with</span><span class="se">\</span>
+<span class="s">                           geographical size of network &#39;</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">[</span><span class="n">i_atime</span><span class="p">:</span><span class="n">i_atime</span><span class="o">+</span><span class="n">s_nkwidth</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_amplitude</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">s_nkwidth</span><span class="p">)</span> <span class="o">*</span> \
+            <span class="p">(</span><span class="n">s_amplitude</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">s_nkwidth</span><span class="p">))</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+
+    <span class="c"># DO MIGRATION</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Doing migration to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">test_grid_file</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">test_grid_file</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">stack_grid</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;stack_grid&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">n_buf</span><span class="p">,</span> <span class="n">s_npts</span><span class="p">),</span> <span class="s">&#39;f&#39;</span><span class="p">,</span>
+                                  <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">s_npts</span><span class="p">))</span>
+    <span class="n">stack_shift_time</span> <span class="o">=</span> <span class="n">migrate_4D_stack</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">s_delta</span><span class="p">,</span> <span class="n">time_grids</span><span class="p">,</span> <span class="n">stack_grid</span><span class="p">)</span>
+    <span class="n">n_buf</span><span class="p">,</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">stack_grid</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c"># add useful information to dataset</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">grid_info</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">stack_grid</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="n">stack_grid</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_delta</span>
+    <span class="n">stack_grid</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">stack_shift_time</span>
+
+    <span class="c"># extract max-stack</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Extracting max_val etc. to </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">test_stack_file</span><span class="p">)</span>
+    <span class="n">f_stack</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">test_stack_file</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="c"># extract maxima</span>
+    <span class="n">extract_max_values</span><span class="p">(</span><span class="n">stack_grid</span><span class="p">,</span> <span class="n">grid_info</span><span class="p">,</span> <span class="n">f_stack</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">f_stack</span><span class="p">:</span>
+        <span class="n">dset</span> <span class="o">=</span> <span class="n">f_stack</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;After extract_max_values : </span><span class="si">%s</span><span class="s"> </span><span class="si">%f</span><span class="s"> </span><span class="si">%f</span><span class="s">&#39;</span> <span class="o">%</span>
+                      <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dset</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dset</span><span class="p">)))</span>
+        <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">stack_shift_time</span>
+        <span class="n">dset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_delta</span>
+
+    <span class="c"># close the stack and grid files</span>
+    <span class="n">f_stack</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Saved 4D grid to file </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">test_grid_file</span><span class="p">)</span>
+
+    <span class="n">shifted_it</span> <span class="o">=</span> <span class="n">it</span><span class="o">+</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">stack_shift_time</span><span class="o">/</span><span class="n">s_delta</span><span class="p">))</span>
+
+    <span class="c"># SETUP information to pass back</span>
+    <span class="n">test_info</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;dat_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_grid_file</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;stack_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_stack_file</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;grid_shape&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;grid_spacing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="n">s_delta</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;grid_orig&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_orig</span><span class="p">,</span> <span class="n">y_orig</span><span class="p">,</span> <span class="n">z_orig</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;true_indexes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span><span class="p">,</span> <span class="n">shifted_it</span><span class="p">)</span>
+    <span class="n">test_info</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">stack_shift_time</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">test_info</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">test_info_file</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">test_info</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">test_info</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">waveloc 0.2.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Alessia Maggi.
+      Last updated on May 27, 2014.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
