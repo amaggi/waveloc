@@ -94,6 +94,12 @@ SDS_processing
 Migration
 ---------
 
+synth_migration
+===============
+
+.. automodule:: synth_migration
+    :members:
+
 integrate4D
 ===========
 
