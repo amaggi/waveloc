@@ -247,9 +247,9 @@ class MigrationTests(unittest.TestCase):
         self.assertSequenceEqual(lines, expected_lines)
 
 
-class UgridMigrationTests(unittest.TestCase);
+class UgridMigrationTests(unittest.TestCase):
 
-    def setUp()
+    def setUp():
 
         self.wo = WavelocOptions()
         self.wo.set_test_options()
