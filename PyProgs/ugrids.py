@@ -8,7 +8,7 @@ import numpy as np
 from NllGridLib import read_hdr_file
 
 
-def create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts, filename):
+def create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts):
     """
     Creates a random unstructured grid for use with waveloc, by sampling with a
     uniform probability distribution.
@@ -37,7 +37,7 @@ def create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts, filename):
     y = np.random.uniform(low=ymin, high=ymax, size=npts)
     z = np.random.uniform(low=zmin, high=zmax, size=npts)
 
-    write_ugrid(x, y, z, filename)
+    return x, y, z
 
 
 def write_ugrid(x, y, z, filename):
@@ -103,7 +103,7 @@ def read_ugrid(filename):
     return x, y, z
 
 
-def nll2random_ugrid(nll_filename, ugrid_filename, npts):
+def nll2random_ugrid(nll_filename, npts):
     """
     Reads a NLL .hdr file, and creates a random unstructured-grid by sampling
     the extent of the NonLinLoc grid unifomly using npts points.
@@ -126,11 +126,11 @@ def nll2random_ugrid(nll_filename, ugrid_filename, npts):
     ymax = ymin+info['ny']*info['dy']
     zmax = zmin+info['nz']*info['dz']
 
-    create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts,
-                        ugrid_filename)
+    x, y, z = create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts)
+    return x, y, z
 
 
-def nll2reg_ugrid(nll_filename, ugrid_filename):
+def nll2reg_ugrid(nll_filename):
     """
     Reads a NLL .hdr file, and creates an unstructured grid that is equivalent
     to the regular NLL grid.
@@ -174,5 +174,4 @@ def nll2reg_ugrid(nll_filename, ugrid_filename):
         y[ib] = y_range[iy]
         z[ib] = z_range[iz]
 
-    # create file
-    write_ugrid(x, y, z, ugrid_filename)
+    return x, y, z

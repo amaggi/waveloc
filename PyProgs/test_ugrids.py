@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from NllGridLib import read_hdr_file
 from ugrids import create_random_ugrid, read_ugrid, nll2random_ugrid,\
-    nll2reg_ugrid
+    nll2reg_ugrid, write_ugrid
 
 
 def suite():
@@ -27,9 +27,7 @@ class UgridTests(unittest.TestCase):
         xmin, ymin, zmin = np.random.uniform(low=0., high=10., size=3)
         xmax, ymax, zmax = np.random.uniform(low=20., high=50., size=3)
 
-        create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts, filename)
-        x, y, z = read_ugrid(filename)
-        os.remove(filename)
+        x, y, z = create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts)
 
         self.assertEqual(len(x), npts)
         self.assertTrue(np.min(x) >= xmin)
@@ -46,11 +44,8 @@ class UgridTests(unittest.TestCase):
         base_path = os.getenv('WAVELOC_PATH')
         nll_filename = os.path.join(base_path, 'test_data',
                                     'test_grid.search.hdr')
-        ugrid_filename = 'test_ugrid.hdf5'
 
-        nll2random_ugrid(nll_filename, ugrid_filename, npts)
-        x, y, z = read_ugrid(ugrid_filename)
-        os.remove(ugrid_filename)
+        x, y, z = nll2random_ugrid(nll_filename, npts)
 
         info = read_hdr_file(nll_filename)
         xmin = info['x_orig']
@@ -76,11 +71,8 @@ class UgridTests(unittest.TestCase):
         base_path = os.getenv('WAVELOC_PATH')
         nll_filename = os.path.join(base_path, 'test_data',
                                     'test_grid.search.hdr')
-        ugrid_filename = 'test_ugrid.hdf5'
 
-        nll2reg_ugrid(nll_filename, ugrid_filename)
-        x, y, z = read_ugrid(ugrid_filename)
-        os.remove(ugrid_filename)
+        x, y, z = nll2reg_ugrid(nll_filename)
 
         info = read_hdr_file(nll_filename)
         nx = info['nx']

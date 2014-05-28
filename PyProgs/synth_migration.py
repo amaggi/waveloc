@@ -4,7 +4,7 @@ import h5py
 import numpy as np
 
 
-def generateSyntheticDirac(opdict, time_grids=None):
+def generateSyntheticDirac(opdict, time_grids=None, ugrid=False):
     """
     Generates a synthetic test and does the migration. All options are given in
     the WavelocOptions.opdict.
@@ -18,7 +18,8 @@ def generateSyntheticDirac(opdict, time_grids=None):
 
     from NllGridLib import read_stations_file, read_hdr_file
     from migration import migrate_4D_stack, extract_max_values
-    from hdf5_grids import get_interpolated_time_grids
+    from hdf5_grids import get_interpolated_time_grids,\
+        get_interpolated_time_ugrids
 
     load_time_grids = False
     if time_grids is None:
@@ -67,7 +68,10 @@ def generateSyntheticDirac(opdict, time_grids=None):
     grid_info = read_hdr_file(search_grid_filename)
 
     if load_time_grids:
-        time_grids = get_interpolated_time_grids(opdict)
+        if ugrid:
+            time_grids = get_interpolated_time_ugrids(opdict)
+        else:
+            time_grids = get_interpolated_time_grids(opdict)
 
     #################################
     # create synthetic data
@@ -99,7 +103,7 @@ def generateSyntheticDirac(opdict, time_grids=None):
     ttimes = {}
     for sta in sta_list:
         if sta in time_grids:
-            ttimes[sta] = time_grids[sta].grid_data[ib]
+            ttimes[sta] = time_grids[sta][ib]
         else:
             logging.info('Missing travel-time information for station %s.\
                           Ignoring station...' % sta)

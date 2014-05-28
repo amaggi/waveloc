@@ -276,7 +276,8 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
     # construct grid (n_buf x n_sta) grid of time_indexes for migration
     for i in islice(count(0), n_wf_ids):
         wf_id = wf_ids[i]
-        i_times[i, :] = np.round(time_grids[wf_id].grid_data[:]/delta)/1
+        #i_times[i, :] = np.round(time_grids[wf_id].grid_data[:]/delta)/1
+        i_times[i, :] = np.round(time_grids[wf_id][:]/delta)/1
 
     # find the min and max time indexes for point
     i_min_times = np.min(i_times, 0)

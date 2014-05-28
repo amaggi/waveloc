@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from scipy import ndimage
 from NllGridLib import read_hdr_file
+from ugrids import read_ugrid, nll2reg_ugrid
 
 """
 Contains wrapper classes to easily manipulate hdf5 files.
@@ -224,13 +225,12 @@ def nll2hdf5(nll_name, h5_name):
     del h5
 
 
-def interpolateTimeGrid(tgrid_file, out_file, x, y, z):
+def interpolateTimeGrid(tgrid_file, x, y, z):
     """
     Interpolates a time_grid.hdf5 file to another file containing only the
     travel-times for the points in x, y, z.
 
     :param tgrid_file: HDF5 file containing the time-grid
-    :param out_file: HDF5 file for output
     :param x: x-coordinates for points of interest
     :param y: y-coordinates for points of interest
     :param z: z-coordinates for points of interest
@@ -247,16 +247,102 @@ def interpolateTimeGrid(tgrid_file, out_file, x, y, z):
 
     # do the interpolation
     ttimes = time_grid.value_at_points(x, y, z)
+    return ttimes
 
+def write_interpolated_time_ugrid(ttimes, sta, out_file):
+    """
+    Write time grid in an unstructured-grid format.
+
+    :param ttimes: time ugrid to write
+    :param sta: station name
+    :param out_file: HDF5 file for output
+    """
     # create the file for output
     f = h5py.File(out_file, 'w')
-    f.create_dataset('x', data=x)
-    f.create_dataset('y', data=y)
-    f.create_dataset('z', data=z)
-    buf = f.create_dataset('ttimes', data=ttimes)
-    buf.attrs['station'] = time_grid.grid_info['station']
+    buf = f.create_dataset('ttimes', data=ttimes, compression='lzf')
+    buf.attrs['station'] = sta
     f.close()
 
+def read_interpolated_time_ugrid(filename):
+    """
+    Read a time grid in an unstructured-grid format. The grid geometry itself
+    must be read from the unstructured-grid x, y, z file.
+
+    :param filename: HDF5 file to read
+
+    :returns: sta, ttimes
+    """
+    # create the file for output
+    f = h5py.File(filename, 'r')
+    buf = f['ttimes']
+    ttimes = buf[:]
+    sta = buf.attrs['station']
+    f.close()
+
+    return sta, ttimes
+
+
+def get_interpolated_time_ugrids(opdict):
+    """
+    Interpolates the NLL time grids onto an given ugrid. Uses options
+    contained in a WavelocOptions.opdict.
+
+    :param opdict: Dictionary of options in WavelocOptions.opdict format
+    """
+    import glob
+
+    base_path = opdict['base_path']
+    ugrid_type = opdict['ugrid_type']
+
+    # read or create the x, y, z coordinates of search points
+    if ugrid_type == 'USER':
+        ugrid_file = opdict['ugrid_file']
+        filename = os.path.join(base_path, 'lib', ugrid_file)
+        x, y, z = read_ugrid(filename)
+    elif ugrid_type == 'FULL':
+        search_grid = opdict['search_grid']
+        filename = os.path.join(base_path, 'lib', search_grid)
+        x, y, z = nll2reg_ugrid(filename)
+ 
+    # read full time grids
+
+    full_time_grids = glob.glob(os.path.join(base_path, 'lib',
+                                opdict['time_grid']+'*.hdf5'))
+    full_time_grids.sort()
+
+    # create the dictionary of interpolated time_grids
+    time_grids = {}
+    tgrid_dir = os.path.join(base_path, 'out', opdict['outdir'], 'time_grids')
+
+    # for each of the full-length time grids
+    logging.info('Loading time grids ... ')
+    for f_timegrid in full_time_grids:
+        # get the filename of the corresponding short-length grid (the one for
+        # the search grid in particular)
+        f_basename = os.path.basename(f_timegrid)
+        tgrid_filename = os.path.join(tgrid_dir, f_basename)
+
+        # if file exists and we want to load it, then open the file and give it
+        # to the dictionary
+        if os.path.isfile(tgrid_filename) and opdict['load_ttimes_buf']:
+            logging.debug('Loading %s' % tgrid_filename)
+            sta, ttimes = read_interpolated_time_ugrid(tgrid_filename)
+
+        # otherwise create / overwrite it
+        else:
+            logging.info('Creating %s - Please be patient' % tgrid_filename)
+            ttimes = interpolateTimeGrid(f_timegrid, x, y, z)
+            # get station name
+            full_grid = H5SingleGrid(f_timegrid)
+            sta = full_grid.grid_info['station']
+            del full_grid
+            # write new file
+            write_interpolated_time_ugrid(ttimes, sta, tgrid_filename)
+
+        # add to dictionary
+        time_grids[sta] = ttimes
+
+    return time_grids    
 
 def get_interpolated_time_grids(opdict):
     """
@@ -299,7 +385,8 @@ def get_interpolated_time_grids(opdict):
             logging.debug('Loading %s' % tgrid_filename)
             grid = H5SingleGrid(tgrid_filename)
             name = grid.grid_info['station']
-            time_grids[name] = grid
+            time_grids[name] = grid.grid_data[:]
+            del grid
 
         # if the file does not exist, or want to force re-creation, then create
         # it
@@ -325,8 +412,9 @@ def get_interpolated_time_grids(opdict):
             grid = full_grid.interp_to_newgrid(tgrid_filename, new_info)
             # add to dictionary
             name = grid.grid_info['station']
-            time_grids[name] = grid
+            time_grids[name] = grid.grid_data[:]
             # close full grid safely
+            del grid
             del full_grid
 
     return time_grids

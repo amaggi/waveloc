@@ -29,6 +29,7 @@ class WavelocOptions(object):
         self.opdict['gauss'] = False
 
         # migration
+        self.opdict['ugrid_type'] = 'FULL'
         self.opdict['load_ttimes_buf'] = True
         self.opdict['reloc'] = False
         self.opdict['reloc_snr'] = 12.
@@ -319,6 +320,17 @@ class WavelocOptions(object):
         if len(gauss_names) == 0:
             raise UserWarning('No gaussian files found : %s' % gauss_names)
 
+    def _verify_ugrid_type(self):
+        if not 'ugrid_type' in self.opdict:
+            raise UserWarning('ugrid_type option not set')
+        utype = self.opdict['ugrid_type']
+        if not utype in ['FULL', 'USER']:
+            raise UserWarning('Unknown ugrid_type %s' % utype)
+        if utype == 'USER':
+            self._verify_ugrid_file()
+        else:
+            self._verify_search_grid()
+
     def _verify_time_grid(self):
         if not 'time_grid' in self.opdict:
             raise UserWarning('time_grid option not set')
@@ -370,6 +382,16 @@ class WavelocOptions(object):
         base_path = self.opdict['base_path']
         search_grid = os.path.join(base_path, 'lib',
                                    self.opdict['search_grid'])
+        if not os.path.isfile(search_grid):
+            raise UserWarning('Cannot find %s' % search_grid)
+
+    def _verify_ugrid_file(self):
+        if not 'ugrid_file' in self.opdict:
+            raise UserWarning('ugrid_file option not set')
+        self._verify_lib_path()
+        base_path = self.opdict['base_path']
+        search_grid = os.path.join(base_path, 'lib',
+                                   self.opdict['ugrid_file'])
         if not os.path.isfile(search_grid):
             raise UserWarning('Cannot find %s' % search_grid)
 
@@ -555,6 +577,7 @@ class WavelocOptions(object):
         self._verify_data_overlap()
 
         self._verify_stations()
+        self._verify_ugrid_type()
         self._verify_search_grid()
         self._verify_time_grid()
 

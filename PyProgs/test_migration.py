@@ -18,6 +18,8 @@ def suite():
     suite.addTest(MigrationTests('test_migration'))
     suite.addTest(MigrationTests('test_migration_fullRes'))
     suite.addTest(MigrationTests('test_migration_use_ram'))
+    suite.addTest(UgridMigrationTests('test_time_grid_ugrids'))
+    suite.addTest(UgridMigrationTests('test_syn_ugrid_migration'))
 
     return suite
 
@@ -72,33 +74,10 @@ class SyntheticMigrationTests(unittest.TestCase):
     def test_dirac_migration(self):
         from locations_trigger import trigger_locations_inner
 
-        wo = WavelocOptions()
-        wo.set_test_options()
+        outdir = 'TEST_Dirac'
 
-        wo.opdict['outdir'] = 'TEST_Dirac'
-        wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
-        wo.opdict['loclevel'] = 10
-        wo.opdict['load_ttimes_buf'] = True
-        wo.opdict['syn_addnoise'] = False
-        wo.opdict['syn_amplitude'] = 1.0
-        wo.opdict['syn_datalength'] = 20.0
-        wo.opdict['syn_samplefreq'] = 100.0
-        wo.opdict['syn_kwidth'] = 0.1
-        wo.opdict['syn_otime'] = 6.0
-        wo.opdict['syn_ix'] = 16
-        wo.opdict['syn_iy'] = 8
-        wo.opdict['syn_iz'] = 6
-        wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
-
-        wo.verify_synthetic_options()
-
-        ##########################
-        # generate the test case and retrieve necessary information
-        ##########################
-
-        logging.info('Running synthetic test case generation...')
-        test_info = generateSyntheticDirac(wo.opdict)
-        logging.debug(test_info)
+        # run the synthetic test (call external function to avoid copying code)
+        wo, test_info = run_synthetic_test(outdir)
 
         # retrieve info
         stack_filename = test_info['stack_file']
@@ -136,7 +115,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         f_stack.close()
 
-
+#@unittest.skip('Skipping migration tests for rapidity')
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -249,12 +228,91 @@ class MigrationTests(unittest.TestCase):
 
 class UgridMigrationTests(unittest.TestCase):
 
-    def setUp():
+    def test_time_grid_ugrids(self):
 
-        self.wo = WavelocOptions()
-        self.wo.set_test_options()
+        from hdf5_grids import get_interpolated_time_grids,\
+            get_interpolated_time_ugrids
 
-        self.wo.verify_migration_options()
+        wo = WavelocOptions()
+        wo.set_test_options()
+        wo.verify_base_path()
+
+        # force creation of time grids
+        wo.opdict['load_ttimes_buf'] = False
+
+        # do old-style interpolation
+        wo.opdict['outdir'] = 'TEST_Dirac'
+        wo.verify_migration_options()
+        time_grids = get_interpolated_time_grids(wo.opdict)
+
+        # do new-style interpolation
+        wo.opdict['outdir'] = 'TEST_Dirac_ugrid'
+        wo.opdict['ugrid_type'] = 'FULL'
+        wo.verify_migration_options()
+        time_ugrids = get_interpolated_time_ugrids(wo.opdict)
+
+        # check that we have the same time grids
+        for sta in time_grids.keys():
+            np.testing.assert_allclose(time_grids[sta], time_ugrids[sta])
+
+
+    def test_syn_ugrid_migration(self):
+
+        # run the same synthetic test the old way and with ugrid
+        wo, test_info = run_synthetic_test('TEST_Dirac', ugrid=False)
+        wo_ugrid, test_info_ugrid = run_synthetic_test('TEST_Dirac_ugrid',
+                                                       ugrid=True)
+
+        # get old-style max_val
+        stack_filename = test_info['stack_file']
+        f = h5py.File(stack_filename, 'r')
+        mv = f['max_val']
+        max_val = mv[:]
+        f.close()
+
+        # get new-style max_val
+        stack_filename = test_info_ugrid['stack_file']
+        f = h5py.File(stack_filename, 'r')
+        mv = f['max_val']
+        max_val_ugrid = mv[:]
+        f.close()
+
+        # compare
+        np.testing.assert_allclose(max_val, max_val_ugrid) 
+
+
+def run_synthetic_test(outdir, ugrid=False):
+
+    wo = WavelocOptions()
+    wo.set_test_options()
+
+    wo.opdict['outdir'] = outdir
+    wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
+    wo.opdict['loclevel'] = 10
+    wo.opdict['load_ttimes_buf'] = False
+    wo.opdict['syn_addnoise'] = False
+    wo.opdict['syn_amplitude'] = 1.0
+    wo.opdict['syn_datalength'] = 20.0
+    wo.opdict['syn_samplefreq'] = 100.0
+    wo.opdict['syn_kwidth'] = 0.1
+    wo.opdict['syn_otime'] = 6.0
+    wo.opdict['syn_ix'] = 16
+    wo.opdict['syn_iy'] = 8
+    wo.opdict['syn_iz'] = 6
+    wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
+
+    wo.verify_base_path
+    wo.verify_synthetic_options()
+
+    ##########################
+    # generate the test case and retrieve necessary information
+    ##########################
+
+    if ugrid:
+        test_info = generateSyntheticDirac(wo.opdict, ugrid=True)
+    else:
+        test_info = generateSyntheticDirac(wo.opdict, ugrid=False)
+    return wo, test_info
 
 
 if __name__ == '__main__':
