@@ -6,6 +6,7 @@ import os
 import h5py
 import numpy as np
 from NllGridLib import read_hdr_file
+from sklearn.svm import SVR
 
 
 def create_random_ugrid(xmin, xmax, ymin, ymax, zmin, zmax, npts):
@@ -110,12 +111,38 @@ def ugrid_closest_point_index(x, y, z, xi, yi, zi):
     :param x: x-coordinates of the unstructured grid
     :param y: y-coordinates of the unstructured grid
     :param z: z-coordinates of the unstructured grid
+    :param xi: x-corrdinate of point of interest
+    :param yi: y-corrdinate of point of interest
+    :param zi: z-corrdinate of point of interest
     """
 
     dist = (x-xi)**2 + (y-yi)**2 + (z-zi)**2
     ic = np.argmin(dist)    # index of closest point
 
     return ic, x[ic], y[ic], z[ic]
+
+
+def ugrid_svr(x, y, z, values, xi, yi, zi, C=1e3, gamma=0.1):
+    """
+    Uses support vector regression to estimate values at points xi, yi, zi when
+    values at irregular points x, y, z are known.
+
+    :param x: x-coordinates of the unstructured grid
+    :param y: y-coordinates of the unstructured grid
+    :param z: z-coordinates of the unstructured grid
+    :param values: values at irregular points x, y, z
+    :param xi: x-corrdinate of point of interest
+    :param yi: y-corrdinate of point of interest
+    :param zi: z-corrdinate of point of interest
+    """
+
+    svr = SVR(kernel='rbf', C=C, gamma=gamma)
+    X = np.array([x, y, z])
+    Xi = np.array([xi, yi, zi])
+
+    yi = svr.fit(X, values).predict(Xi)
+
+    return yi
 
 
 def nll2random_ugrid(nll_filename, npts):
