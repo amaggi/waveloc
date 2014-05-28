@@ -77,7 +77,7 @@ class SyntheticMigrationTests(unittest.TestCase):
         outdir = 'TEST_Dirac'
 
         # run the synthetic test (call external function to avoid copying code)
-        wo, test_info = run_synthetic_test(outdir)
+        wo, test_info = run_synthetic_test(outdir, ugrid=True)
 
         # retrieve info
         stack_filename = test_info['stack_file']
@@ -115,7 +115,6 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         f_stack.close()
 
-#@unittest.skip('Skipping migration tests for rapidity')
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -195,6 +194,7 @@ class MigrationTests(unittest.TestCase):
         # verify that the two give the same result
         np.testing.assert_allclose(lines_use_ram, lines_no_ram)
 
+    @unittest.skip('Skipping tests for rapidity')
     def test_migration_fullRes(self):
 
         self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
@@ -226,6 +226,7 @@ class MigrationTests(unittest.TestCase):
         self.assertSequenceEqual(lines, expected_lines)
 
 
+@unittest.skip('Skipping tests for rapidity')
 class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):
@@ -300,6 +301,7 @@ def run_synthetic_test(outdir, ugrid=False):
     wo.opdict['syn_iy'] = 8
     wo.opdict['syn_iz'] = 6
     wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
+    wo.opdict['ugrid_type'] = 'FULL'
 
     wo.verify_base_path
     wo.verify_synthetic_options()

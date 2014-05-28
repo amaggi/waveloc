@@ -13,7 +13,8 @@ from time import time
 
 from OP_waveforms import read_data_compatible_with_time_dict
 from NllGridLib import read_hdr_file
-from hdf5_grids import get_interpolated_time_grids
+from hdf5_grids import get_interpolated_time_grids,\
+    get_interpolated_time_ugrids
 from filters import smooth
 
 
@@ -46,7 +47,8 @@ def do_migration_setup_and_run(opdict):
     # grids
     search_grid_filename = os.path.join(base_path, 'lib',
                                         opdict['search_grid'])
-    time_grids = get_interpolated_time_grids(opdict)
+    #time_grids = get_interpolated_time_grids(opdict)
+    time_grids = get_interpolated_time_ugrids(opdict)
 
     #start and end times
     starttime = opdict['starttime']
