@@ -249,6 +249,7 @@ def interpolateTimeGrid(tgrid_file, x, y, z):
     ttimes = time_grid.value_at_points(x, y, z)
     return ttimes
 
+
 def write_interpolated_time_ugrid(ttimes, sta, out_file):
     """
     Write time grid in an unstructured-grid format.
@@ -262,6 +263,7 @@ def write_interpolated_time_ugrid(ttimes, sta, out_file):
     buf = f.create_dataset('ttimes', data=ttimes, compression='lzf')
     buf.attrs['station'] = sta
     f.close()
+
 
 def read_interpolated_time_ugrid(filename):
     """
@@ -303,7 +305,7 @@ def get_interpolated_time_ugrids(opdict):
         search_grid = opdict['search_grid']
         filename = os.path.join(base_path, 'lib', search_grid)
         x, y, z = nll2reg_ugrid(filename)
- 
+
     # read full time grids
 
     full_time_grids = glob.glob(os.path.join(base_path, 'lib',
@@ -342,7 +344,8 @@ def get_interpolated_time_ugrids(opdict):
         # add to dictionary
         time_grids[sta] = ttimes
 
-    return time_grids    
+    return x, y, z, time_grids
+
 
 def get_interpolated_time_grids(opdict):
     """
@@ -417,7 +420,30 @@ def get_interpolated_time_grids(opdict):
             del grid
             del full_grid
 
-    return time_grids
+    # x, y, z ranges
+    x_range = np.arange(0, search_info['nx']*search_info['dx'],
+                        search_info['dx']) + search_info['x_orig']
+    y_range = np.arange(0, search_info['ny']*search_info['dy'],
+                        search_info['dy']) + search_info['y_orig']
+    z_range = np.arange(0, search_info['nz']*search_info['dz'],
+                        search_info['dz']) + search_info['z_orig']
+
+    npts = search_info['nx']*search_info['ny']*search_info['nz']
+    grid_shape = (search_info['nx'], search_info['ny'], search_info['nz'])
+
+    # create space for the points
+    x = np.empty(npts, dtype='float')
+    y = np.empty(npts, dtype='float')
+    z = np.empty(npts, dtype='float')
+
+    # fill in the points
+    for ib in xrange(npts):
+        ix, iy, iz = np.unravel_index(ib, grid_shape )
+        x[ib] = x_range[ix]
+        y[ib] = y_range[iy]
+        z[ib] = z_range[iz]
+
+    return x, y, z, time_grids
 
 
 if __name__ == '__main__':

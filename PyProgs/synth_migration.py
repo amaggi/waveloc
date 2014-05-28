@@ -69,9 +69,9 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=False):
 
     if load_time_grids:
         if ugrid:
-            time_grids = get_interpolated_time_ugrids(opdict)
+            x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
         else:
-            time_grids = get_interpolated_time_grids(opdict)
+            x, y, z, time_grids = get_interpolated_time_grids(opdict)
 
     #################################
     # create synthetic data
@@ -136,15 +136,16 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=False):
     n_buf, nt = stack_grid.shape
 
     # add useful information to dataset
-    for key, value in grid_info.iteritems():
-        stack_grid.attrs[key] = value
     stack_grid.attrs['dt'] = s_delta
+    stack_grid.attrs['nt'] = nt
+    stack_grid.attrs['n_buf'] = n_buf
     stack_grid.attrs['start_time'] = -stack_shift_time
 
     # extract max-stack
     logging.info('Extracting max_val etc. to %s' % test_stack_file)
     f_stack = h5py.File(test_stack_file, 'w')
     # extract maxima
+    grid_info = (x, y, z)
     extract_max_values(stack_grid, grid_info, f_stack)
     for name in f_stack:
         dset = f_stack[name]

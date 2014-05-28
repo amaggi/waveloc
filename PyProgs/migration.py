@@ -12,9 +12,7 @@ from itertools import count, islice
 from time import time
 
 from OP_waveforms import read_data_compatible_with_time_dict
-from NllGridLib import read_hdr_file
-from hdf5_grids import get_interpolated_time_grids,\
-    get_interpolated_time_ugrids
+from hdf5_grids import get_interpolated_time_ugrids
 from filters import smooth
 
 
@@ -45,10 +43,7 @@ def do_migration_setup_and_run(opdict):
         raise UserWarning
 
     # grids
-    search_grid_filename = os.path.join(base_path, 'lib',
-                                        opdict['search_grid'])
-    #time_grids = get_interpolated_time_grids(opdict)
-    time_grids = get_interpolated_time_ugrids(opdict)
+    x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
 
     #start and end times
     starttime = opdict['starttime']
@@ -94,7 +89,7 @@ def do_migration_setup_and_run(opdict):
                     data[staname] = np.zeros(len(data[staname]))
 
         # re-read grid_info at each iteration to make sure it is a clean copy
-        grid_info = read_hdr_file(search_grid_filename)
+        grid_info = (x, y, z)
 
         # do migration if have enough data (3 is bare minimum)
         if len(data.keys()) >= 3:
@@ -131,19 +126,9 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
     output_dir = os.path.join(opdict['base_path'], 'out', opdict['outdir'])
     options_reloc = opdict['reloc']
 
-    nx = grid_info['nx']
-    ny = grid_info['ny']
-    nz = grid_info['nz']
-    n_buf = nx*ny*nz
+    x, y, z = grid_info
+    n_buf = len(x)
     min_npts = min([len(data[key]) for key in data.keys()])
-
-    dx = grid_info['dx']
-    dy = grid_info['dy']
-    dz = grid_info['dz']
-
-    x_orig = grid_info['x_orig']
-    y_orig = grid_info['y_orig']
-    z_orig = grid_info['z_orig']
 
     if options_time:
         t_ref = time()
@@ -162,13 +147,15 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
         stack_grid = f.create_dataset('stack_grid', (n_buf, min_npts), 'f',
                                       chunks=(1, min_npts))
         stack_grid[...] = 0.
+        f.create_dataset('x', data=x)
+        f.create_dataset('y', data=y)
+        f.create_dataset('z', data=z)
     else:
         # if running on big memory machine work in ram
         stack_grid = np.empty((n_buf, min_npts), dtype='float32', order='F')
         stack_grid[...] = 0.
 
     # DO MIGRATION
-    #logging.debug("Data sum = %.6f"%np.sum(data.values()))
     stack_shift_time = migrate_4D_stack(data, delta, time_grids, stack_grid,
                                         use_ram)
     stack_start_time = start_time-stack_shift_time
@@ -203,7 +190,6 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
 
         f_stack.close()
         # keep the stack_filename
-        grid_info['stack_file'] = stack_filename
         if options_time:
             t = time()-t_ref
             logging.info("Time for extracting maxima : %.2f s\n" % (t))
@@ -217,22 +203,14 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
             #create the hdf5 file
             f = h5py.File(grid_filename, 'w')
             sg = f.create_dataset('stack_grid', data=stack_grid)
+            f.create_dataset('x', data=x)
+            f.create_dataset('y', data=y)
+            f.create_dataset('z', data=z)
         # add useful attributes to the hdf5 dataset
-        for key, value in grid_info.iteritems():
-            sg.attrs[key] = value
+        sg.attrs['n_buf'] = n_buf
+        sg.attrs['nt'] = nt
         sg.attrs['dt'] = delta
         sg.attrs['start_time'] = stack_start_time.isoformat()
-
-        # keep the grid_filename
-        grid_info['dat_file'] = grid_filename
-
-    # hdf5 files cannot have complex attributes
-    # so add these to grid_info after having added
-    # useful info to stack_grid.attrs
-    grid_info['grid_spacing'] = (dx, dy, dz, delta)
-    grid_info['grid_orig'] = (x_orig, y_orig, z_orig)
-    grid_info['grid_shape'] = (nx, ny, nz, nt)
-    grid_info['start_time'] = stack_start_time
 
     # close the hdf5 file for the grid
     if (not use_ram) or keep_grid:
@@ -278,7 +256,6 @@ def migrate_4D_stack(data, delta, time_grids, stack_grid, use_ram=False):
     # construct grid (n_buf x n_sta) grid of time_indexes for migration
     for i in islice(count(0), n_wf_ids):
         wf_id = wf_ids[i]
-        #i_times[i, :] = np.round(time_grids[wf_id].grid_data[:]/delta)/1
         i_times[i, :] = np.round(time_grids[wf_id][:]/delta)/1
 
     # find the min and max time indexes for point
@@ -361,15 +338,7 @@ def extract_max_values(stack_grid, search_info, f_stack, use_ram=False,
     """
 
     # get basic info
-    nx = search_info['nx']
-    ny = search_info['ny']
-    nz = search_info['nz']
-    dx = search_info['dx']
-    dy = search_info['dy']
-    dz = search_info['dz']
-    x_orig = search_info['x_orig']
-    y_orig = search_info['y_orig']
-    z_orig = search_info['z_orig']
+    x, y, z = search_info
 
     nb, nt = stack_grid.shape
 
@@ -381,9 +350,6 @@ def extract_max_values(stack_grid, search_info, f_stack, use_ram=False,
         max_z = np.empty(nt, dtype='float32')
         # create temporary datasets
         max_ib = np.empty(nt, dtype=int)
-        max_ix = np.empty(nt, dtype=int)
-        max_iy = np.empty(nt, dtype=int)
-        max_iz = np.empty(nt, dtype=int)
     else:
         max_val = f_stack.create_dataset('max_val', (nt, ), 'f')
         max_val_smooth = f_stack.create_dataset('max_val_smooth', (nt, ), 'f')
@@ -392,9 +358,6 @@ def extract_max_values(stack_grid, search_info, f_stack, use_ram=False,
         max_z = f_stack.create_dataset('max_z', (nt, ), 'f')
         # create temporary datasets
         max_ib = f_stack.create_dataset('max_ib', (nt, ), 'i')
-        max_ix = f_stack.create_dataset('max_ix', (nt, ), 'i')
-        max_iy = f_stack.create_dataset('max_iy', (nt, ), 'i')
-        max_iz = f_stack.create_dataset('max_iz', (nt, ), 'i')
 
     # extract values
     dt = int(n_max/nb)
@@ -415,10 +378,10 @@ def extract_max_values(stack_grid, search_info, f_stack, use_ram=False,
         max_val[n*dt:nt] = np.max(stack_grid[:, n*dt:nt], 0)
 
     # find the corresponding x,y,z values
-    max_ix, max_iy, max_iz = np.unravel_index(max_ib, (nx, ny, nz))
-    max_x[:] = max_ix[:]*dx+x_orig
-    max_y[:] = max_iy[:]*dy+y_orig
-    max_z[:] = max_iz[:]*dz+z_orig
+    np_max_ib = max_ib[:]   # copy data to a numpy array for indexing
+    max_x[:] = x[np_max_ib]
+    max_y[:] = y[np_max_ib]
+    max_z[:] = z[np_max_ib]
     max_val_smooth[:] = smooth(np.array(max_val), 51)
 
     if use_ram:
@@ -432,6 +395,3 @@ def extract_max_values(stack_grid, search_info, f_stack, use_ram=False,
     else:
         # clean up temporary datasets
         del f_stack['max_ib']
-        del f_stack['max_ix']
-        del f_stack['max_iy']
-        del f_stack['max_iz']

@@ -42,6 +42,37 @@ def hdf5_to_signature(base_path, datadir, dataglob, output_filename):
         f.close()
 
 
+def read_signature_file(filename):
+    f = open(filename, 'r')
+    lines = f.readlines()
+    f.close()
+
+    nlines = len(lines)
+    maximum = np.empty(nlines, dtype='float')
+    datasum = np.empty(nlines, dtype='float')
+    datalen = np.empty(nlines, dtype='int')
+
+    for i in xrange(nlines):
+        line = lines[i]
+        maximum[i] = np.float(line.split()[2])
+        datasum[i] = np.float(line.split()[3])
+        datalen[i] = np.float(line.split()[4])
+
+    return maximum, datasum, datalen
+
+
+def signature_comparison(fname1, fname2):
+
+    m1, d1, l1 = read_signature_file(fname1)
+    m2, d2, l2 = read_signature_file(fname2)
+
+    r_m = np.sum(np.abs(m1-m2))/np.sum(m1)
+    r_d = np.sum(np.abs(d1-d2))/np.sum(d1)
+    r_l = np.sum(np.abs(l1-l2))
+
+    return r_m, r_d, r_l
+
+
 def hdf5_to_sig_values(filename):
 
     f = h5py.File(filename, 'r')
@@ -115,6 +146,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         f_stack.close()
 
+
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -132,23 +164,25 @@ class MigrationTests(unittest.TestCase):
         test_datadir = self.wo.opdict['test_datadir']
         outdir = self.wo.opdict['outdir']
 
-        expected_signature_filename = os.path.join(base_path,
-                                                   test_datadir,
-                                                   'test_stack_signature.dat')
-        expected_signature_file = open(expected_signature_filename, 'r')
-        expected_lines = expected_signature_file.readlines()
-
+        # do migration
         do_migration_setup_and_run(self.wo.opdict)
 
+        # write signature
         hdf5_to_signature(base_path, os.path.join('out', outdir, 'stack'),
                           'stack_all_2010-10-14T00:14:00.000000Z.hdf5',
                           'stack_signature.dat')
         signature_filename = os.path.join(base_path, 'out', outdir, 'stack',
                                           'stack_signature.dat')
-        signature_file = open(signature_filename, 'r')
-        lines = signature_file.readlines()
 
-        self.assertSequenceEqual(lines, expected_lines)
+        # read expected signature
+        expected_signature_filename =\
+            os.path.join(base_path, test_datadir, 'test_stack_signature.dat')
+
+        m, d, l = signature_comparison(signature_filename,
+                                       expected_signature_filename)
+        self.assertAlmostEqual(m, 0.0)
+        self.assertAlmostEqual(d, 0.0)
+        self.assertAlmostEqual(l, 0.0)
 
     def test_take(self):
 
@@ -194,7 +228,6 @@ class MigrationTests(unittest.TestCase):
         # verify that the two give the same result
         np.testing.assert_allclose(lines_use_ram, lines_no_ram)
 
-    @unittest.skip('Skipping tests for rapidity')
     def test_migration_fullRes(self):
 
         self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
@@ -211,8 +244,6 @@ class MigrationTests(unittest.TestCase):
         expected_signature_filename =\
             os.path.join(base_path, test_datadir,
                          'TEST_fullRes_stack_signature.dat')
-        expected_signature_file = open(expected_signature_filename, 'r')
-        expected_lines = expected_signature_file.readlines()
 
         do_migration_setup_and_run(self.wo.opdict)
 
@@ -220,13 +251,14 @@ class MigrationTests(unittest.TestCase):
                           'stack*hdf5', 'stack_signature.dat')
         signature_filename = os.path.join(base_path, 'out', outdir, 'stack',
                                           'stack_signature.dat')
-        signature_file = open(signature_filename, 'r')
-        lines = signature_file.readlines()
 
-        self.assertSequenceEqual(lines, expected_lines)
+        m, d, l = signature_comparison(signature_filename,
+                                       expected_signature_filename)
+        self.assertAlmostEqual(m, 0.0)
+        self.assertAlmostEqual(d, 0.0)
+        self.assertAlmostEqual(l, 0.0)
 
 
-@unittest.skip('Skipping tests for rapidity')
 class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):
@@ -244,18 +276,17 @@ class UgridMigrationTests(unittest.TestCase):
         # do old-style interpolation
         wo.opdict['outdir'] = 'TEST_Dirac'
         wo.verify_migration_options()
-        time_grids = get_interpolated_time_grids(wo.opdict)
+        x, y, z, time_grids = get_interpolated_time_grids(wo.opdict)
 
         # do new-style interpolation
         wo.opdict['outdir'] = 'TEST_Dirac_ugrid'
         wo.opdict['ugrid_type'] = 'FULL'
         wo.verify_migration_options()
-        time_ugrids = get_interpolated_time_ugrids(wo.opdict)
+        ux, uy, yz, time_ugrids = get_interpolated_time_ugrids(wo.opdict)
 
         # check that we have the same time grids
         for sta in time_grids.keys():
             np.testing.assert_allclose(time_grids[sta], time_ugrids[sta])
-
 
     def test_syn_ugrid_migration(self):
 
@@ -279,7 +310,7 @@ class UgridMigrationTests(unittest.TestCase):
         f.close()
 
         # compare
-        np.testing.assert_allclose(max_val, max_val_ugrid) 
+        np.testing.assert_allclose(max_val, max_val_ugrid)
 
 
 def run_synthetic_test(outdir, ugrid=False):
