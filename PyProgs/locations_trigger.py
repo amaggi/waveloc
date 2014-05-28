@@ -4,14 +4,15 @@
 import os
 import glob
 import h5py
+import logging
+import matplotlib.pyplot as plt
+import numpy as np
 from obspy.core import utcdatetime, read
 from obspy.signal import trigger
 from OP_waveforms import Waveform
 from filters import smooth
-import matplotlib.pyplot as plt
-import numpy as np
-import logging
-from hdf5_grids import get_interpolated_time_grids
+from hdf5_grids import get_interpolated_time_ugrids
+from ugrids import ugrid_closest_point_index
 
 
 def plot_location_triggers(trace, trig_start, trig_end, trig_95_start,
@@ -49,7 +50,7 @@ def plot_location_triggers(trace, trig_start, trig_end, trig_95_start,
 
 
 def number_good_kurtosis_for_location(kurt_files, data_files, loc, time_dict,
-                                      snr_limit=10.0, snr_tr_limit=10.0,
+                                      ugrid, snr_limit=10.0, snr_tr_limit=10.0,
                                       sn_time=10.0):
     """
     Analyses the filtered data and the kurtosis time-series to determine the
@@ -73,6 +74,7 @@ def number_good_kurtosis_for_location(kurt_files, data_files, loc, time_dict,
     :returns: Numer of stations that have contributed to the location.
     """
 
+    x, y, z = ugrid
     o_time = loc['o_time']
     stack_x = loc['x_mean']
     stack_y = loc['y_mean']
@@ -89,8 +91,14 @@ def number_good_kurtosis_for_location(kurt_files, data_files, loc, time_dict,
         staname = st.traces[0].stats.station
 
         if staname in time_dict.keys():
-            traveltime = time_dict[staname].value_at_point(stack_x, stack_y,
-                                                           stack_z)
+            # approximate the traveltime by the travel-time of the closest
+            # point in the irregular grid. This is a bad approximation, but
+            # as it is only used for a signal to noise calculation, accuracy
+            # is less important than speed
+            ic, xc, yc, zc = ugrid_closest_point_index(x, y, z, stack_x,
+                                                       stack_y, stack_z) 
+            traveltime = time_dict[staname][ic]
+
             start_time = o_time+traveltime-sn_time
             end_time = o_time+traveltime+sn_time
             try:
@@ -185,7 +193,7 @@ def do_locations_trigger_setup_and_run(opdict):
     kurt_files.sort()
     data_files.sort()
 
-    time_grids = get_interpolated_time_grids(opdict)
+    x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
 
     logging.info("Starting log for combine_stacks.")
 
@@ -308,9 +316,10 @@ def do_locations_trigger_setup_and_run(opdict):
 
     n_ok = 0
     locs = []
+    ugrid = (x, y, z)
     for loc in loc_list:
         if number_good_kurtosis_for_location(kurt_files, data_files, loc,
-                                             time_grids, snr_limit,
+                                             time_grids, ugrid, snr_limit,
                                              snr_tr_limit, sn_time) > \
                 n_kurt_min:
             logging.info("Max = %.2f, %s - %.2fs + %.2f s, x=%.4f pm %.4f km,\

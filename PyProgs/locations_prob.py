@@ -10,7 +10,7 @@ import numpy as np
 from locations_trigger import read_locs_from_file, \
     do_locations_trigger_setup_and_run
 from NllGridLib import read_hdr_file
-from hdf5_grids import get_interpolated_time_grids
+from hdf5_grids import get_interpolated_time_ugrids
 from migration import do_migration_loop_continuous
 from OP_waveforms import read_data_compatible_with_time_dict
 from integrate4D import compute_expected_coordinates4D, \
@@ -94,7 +94,7 @@ def do_locations_prob_setup_and_run(opdict):
                                         opdict['search_grid'])
 
     # read time grid information
-    time_grids = get_interpolated_time_grids(opdict)
+    time_grids = get_interpolated_time_ugrids(opdict)
 
     # read locations
     locs = read_locs_from_file(locfile)

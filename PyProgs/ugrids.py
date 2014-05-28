@@ -103,6 +103,21 @@ def read_ugrid(filename):
     return x, y, z
 
 
+def ugrid_closest_point_index(x, y, z, xi, yi, zi):
+    """
+    Returns the index of the closest point to xi, yi, zi.
+
+    :param x: x-coordinates of the unstructured grid
+    :param y: y-coordinates of the unstructured grid
+    :param z: z-coordinates of the unstructured grid
+    """
+
+    dist = (x-xi)**2 + (y-yi)**2 + (z-zi)**2
+    ic = np.argmin(dist)    # index of closest point
+
+    return ic, x[ic], y[ic], z[ic]
+
+
 def nll2random_ugrid(nll_filename, npts):
     """
     Reads a NLL .hdr file, and creates a random unstructured-grid by sampling
@@ -169,7 +184,7 @@ def nll2reg_ugrid(nll_filename):
 
     # fill in the points
     for ib in xrange(npts):
-        ix, iy, iz = np.unravel_index(ib, grid_shape )
+        ix, iy, iz = np.unravel_index(ib, grid_shape)
         x[ib] = x_range[ix]
         y[ib] = y_range[iy]
         z[ib] = z_range[iz]
