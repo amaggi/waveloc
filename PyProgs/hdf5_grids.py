@@ -438,7 +438,7 @@ def get_interpolated_time_grids(opdict):
 
     # fill in the points
     for ib in xrange(npts):
-        ix, iy, iz = np.unravel_index(ib, grid_shape )
+        ix, iy, iz = np.unravel_index(ib, grid_shape)
         x[ib] = x_range[ix]
         y[ib] = y_range[iy]
         z[ib] = z_range[iz]

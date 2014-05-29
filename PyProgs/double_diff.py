@@ -445,11 +445,13 @@ def do_double_diff_setup_and_run(opdict):
             ind += 1
             new_loc_file.write("Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm\
                 %.4f km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n" %
-                (locs[j-1]['max_trig'], locs[j-1]['o_time'].isoformat(),
-                locs[j-1]['o_err_left'], locs[j-1]['o_err_right'],
-                locs[j-1]['x_mean'], locs[j-1]['x_sigma'],
-                locs[j-1]['y_mean'], locs[j-1]['y_sigma'],
-                locs[j-1]['z_mean'], locs[j-1]['z_sigma']))
+                               (locs[j-1]['max_trig'],
+                                locs[j-1]['o_time'].isoformat(),
+                                locs[j-1]['o_err_left'],
+                                locs[j-1]['o_err_right'], locs[j-1]['x_mean'],
+                                locs[j-1]['x_sigma'], locs[j-1]['y_mean'],
+                                locs[j-1]['y_sigma'], locs[j-1]['z_mean'],
+                                locs[j-1]['z_sigma']))
 
     if dd_loc:
         new_loc_file.close()

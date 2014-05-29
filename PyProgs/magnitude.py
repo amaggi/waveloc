@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import os
-import logging
 import glob
 import numpy as np
 from obspy.xseed import Parser

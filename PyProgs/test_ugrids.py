@@ -141,7 +141,6 @@ class UgridTests(unittest.TestCase):
         self.assertLess(np.max(z_close), z_coord+z_dist)
         self.assertGreater(np.min(z_close), z_coord-z_dist)
 
-
     @unittest.expectedFailure
     def test_ugrid_svr(self):
 
@@ -158,7 +157,7 @@ class UgridTests(unittest.TestCase):
         values_i = ugrid_svr(x, y, z, values, x, y, z)
 
         np.testing.assert_allclose(values, values_i, rtol=1e-3)
-        
+
 
 if __name__ == '__main__':
 

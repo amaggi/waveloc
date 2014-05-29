@@ -121,7 +121,7 @@ def latlon2rect(proj_name, lat, lon, proj_info={}):
 
     :type proj_name: string
     :param proj_name: 'TRANS_GLOBAL' | 'TRANS_NONE' | 'TRANS_SIMPLE' Only these
-        projection types are supported. 
+        projection types are supported.
     :raises UserWarning: if unsupported projection type is encountered.
     :type lat: float
     :param lat: Latitude in decimal degrees (positive = North, negative =
@@ -167,7 +167,7 @@ def rect2latlon(proj_name, x, y, proj_info={}):
 
     :type proj_name: string
     :param proj_name: 'TRANS_GLOBAL' | 'TRANS_NONE' | 'TRANS_SIMPLE' Only these
-        projection types are supported. 
+        projection types are supported.
     :raises UserWarning: if unsupported projection type is encountered.
     :type x: float
     :param x: x-coordinate in km wrt to the origin of the projection

@@ -96,7 +96,7 @@ def number_good_kurtosis_for_location(kurt_files, data_files, loc, time_dict,
             # as it is only used for a signal to noise calculation, accuracy
             # is less important than speed
             ic, xc, yc, zc = ugrid_closest_point_index(x, y, z, stack_x,
-                                                       stack_y, stack_z) 
+                                                       stack_y, stack_z)
             traveltime = time_dict[staname][ic]
 
             start_time = o_time+traveltime-sn_time

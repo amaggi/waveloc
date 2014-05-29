@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 
 from filters import sw_kurtosis1, smooth, rec_kurtosis_old
 
-from obspy.core import read, utcdatetime, stream, Stream
+from obspy.core import read, stream, Stream
 from obspy.signal import cosTaper, filter, trigger
 
 
@@ -330,9 +330,9 @@ class Waveform(object):
                 if (not starttime is None) and \
                    ((first_tr.stats.starttime - starttime) > delta):
                     logging.debug("Padding with value %f from %s to first\
-                        point in file at %s." % (pad_value,
-                        starttime.isoformat(),
-                        first_tr.stats.starttime.isoformat()))
+                        point in file at %s." %
+                                  (pad_value, starttime.isoformat(),
+                                   first_tr.stats.starttime.isoformat()))
                     # find the number of points from starttime to
                     # end of the first trace
                     npts_full_trace = \

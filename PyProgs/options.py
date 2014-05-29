@@ -143,7 +143,7 @@ class WavelocOptions(object):
         """
         Verifies that the base_path is set. If the 'base_path' option is not
         directly set in the opdict, its value is read from the environment
-        variable $WAVELOC_PATH. 
+        variable $WAVELOC_PATH.
         """
 
         # if the option base_path is not set, then check the environment
