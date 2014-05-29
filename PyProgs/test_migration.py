@@ -112,10 +112,9 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         # retrieve info
         stack_filename = test_info['stack_file']
-        nx, ny, nz, nt = test_info['grid_shape']
-        dx, dy, dz, dt = test_info['grid_spacing']
-        x_orig, y_orig, z_orig = test_info['grid_orig']
-        ix_true, iy_true, iz_true, it_true = test_info['true_indexes']
+        n_buf, nt = test_info['grid_shape']
+        dt = test_info['dt']
+        x_true, y_true, z_true = test_info['true_loc']
         stack_start_time = test_info['start_time']
 
         # loclevel for triggers
@@ -137,12 +136,9 @@ class SyntheticMigrationTests(unittest.TestCase):
         imax = np.argmax([loc['max_trig'] for loc in locs])
         trig_loc = locs[imax]
         self.assertAlmostEqual(wo.opdict['syn_otime'], trig_loc['o_time'], 2)
-        self.assertAlmostEqual(wo.opdict['syn_ix']*dx+x_orig,
-                               trig_loc['x_mean'])
-        self.assertAlmostEqual(wo.opdict['syn_iy']*dy+y_orig,
-                               trig_loc['y_mean'])
-        self.assertAlmostEqual(wo.opdict['syn_iz']*dz+z_orig,
-                               trig_loc['z_mean'])
+        self.assertAlmostEqual(wo.opdict['syn_x'], trig_loc['x_mean'])
+        self.assertAlmostEqual(wo.opdict['syn_y'], trig_loc['y_mean'])
+        self.assertAlmostEqual(wo.opdict['syn_z'], trig_loc['z_mean'])
 
         f_stack.close()
 
@@ -328,9 +324,9 @@ def run_synthetic_test(outdir, ugrid=False):
     wo.opdict['syn_samplefreq'] = 100.0
     wo.opdict['syn_kwidth'] = 0.1
     wo.opdict['syn_otime'] = 6.0
-    wo.opdict['syn_ix'] = 16
-    wo.opdict['syn_iy'] = 8
-    wo.opdict['syn_iz'] = 6
+    wo.opdict['syn_x'] = 366
+    wo.opdict['syn_y'] = 7650
+    wo.opdict['syn_z'] = -1
     wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
     wo.opdict['ugrid_type'] = 'FULL'
 

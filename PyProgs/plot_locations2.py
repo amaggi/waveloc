@@ -8,7 +8,7 @@ from obspy.core import UTCDateTime
 from locations_trigger import read_locs_from_file
 from locations_prob import read_prob_locs_from_file
 from NllGridLib import read_hdr_file
-from hdf5_grids import get_interpolated_time_grids
+from hdf5_grids import get_interpolated_time_ugrids
 from migration import do_migration_loop_continuous
 from OP_waveforms import read_data_compatible_with_time_dict
 from plot_mpl import plotLocationGrid, plotLocationWaveforms, plotProbLoc
@@ -65,7 +65,7 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
     search_grid_filename = os.path.join(base_path, 'lib',
                                         opdict['search_grid'])
     # read time grid information
-    time_grids = get_interpolated_time_grids(opdict)
+    x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
 
     # read locations
     locs = read_locs_from_file(locfile)
@@ -81,19 +81,18 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
         start_time = o_time-opdict['plot_tbefore']
         end_time = o_time+opdict['plot_tafter']
 
-        # re-read grid info to ensure clean copy
-        grid_info = read_hdr_file(search_grid_filename)
+        # get location coordinates
+        xm = loc['x_mean']
+        ym = loc['y_mean']
+        zm = loc['z_mean']
 
-        x = loc['x_mean']
-        y = loc['y_mean']
-        z = loc['z_mean']
         # get the corresponding travel-times for time-shifting
         ttimes = {}
         for sta in time_grids.keys():
-            ttimes[sta] = time_grids[sta].value_at_point(x, y, z)
+            ic, xc, yc, zc = ugrid_closest_point_index(x, y, z, xm, ym, zm)
+            ttimes[sta] = time_grids[sta][ic]
 
         tshift_migration = max(ttimes.values())
-
         start_time_migration = start_time-tshift_migration
         end_time_migration = end_time+tshift_migration
 
@@ -106,11 +105,12 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
                                                     start_time_migration,
                                                     end_time_migration)
             # do migration
-            do_migration_loop_continuous(opdict, mig_dict, delta,
-                                         start_time_migration, grid_info,
-                                         time_grids, keep_grid=True)
+            grid_filename = \
+                do_migration_loop_continuous(opdict, mig_dict, delta,
+                                             start_time_migration, grid_info,
+                                             time_grids, keep_grid=True)
             # plot
-            plotLocationGrid(loc, grid_info, figdir,
+            plotLocationGrid(loc, grid_info, grid_filename, figdir,
                              opdict['plot_otime_window'])
 
         if plot_wfm:

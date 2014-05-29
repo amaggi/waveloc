@@ -1,10 +1,12 @@
 import os
-import logging
+import glob
 import h5py
+import logging
 import numpy as np
+from hdf5_grids import H5SingleGrid
 
 
-def generateSyntheticDirac(opdict, time_grids=None, ugrid=False):
+def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     """
     Generates a synthetic test and does the migration. All options are given in
     the WavelocOptions.opdict.
@@ -72,41 +74,33 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=False):
             x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
         else:
             x, y, z, time_grids = get_interpolated_time_grids(opdict)
+    n_buf = len(x)
 
     #################################
     # create synthetic data
     #################################
 
-    # choose hypocenter
-    nx = grid_info['nx']
-    ny = grid_info['ny']
-    nz = grid_info['nz']
-
-    dx = grid_info['dx']
-    dy = grid_info['dy']
-    dz = grid_info['dz']
-
-    x_orig = grid_info['x_orig']
-    y_orig = grid_info['y_orig']
-    z_orig = grid_info['z_orig']
-
-    ix = opdict['syn_ix']
-    iy = opdict['syn_iy']
-    iz = opdict['syn_iz']
     it = int(round(s_t0/s_delta))
 
     # retrieve travel times for chosen hypocenter
     # and station list
-    ib = ix*ny*nz + iy*nz + iz
-    n_buf = nx*ny*nz
-    logging.debug('ib for true hypocenter = %d' % ib)
+    syn_x = opdict['syn_x']
+    syn_y = opdict['syn_y']
+    syn_z = opdict['syn_z']
+
+    # get full time grid names
+    full_time_grids = glob.glob(os.path.join(base_path, 'lib',
+                                opdict['time_grid']+'*.hdf5'))
+    full_time_grids.sort()
+
     ttimes = {}
-    for sta in sta_list:
-        if sta in time_grids:
-            ttimes[sta] = time_grids[sta][ib]
-        else:
-            logging.info('Missing travel-time information for station %s.\
-                          Ignoring station...' % sta)
+    for f_timegrid in full_time_grids:
+        tgrid = H5SingleGrid(filename=f_timegrid)
+        sta = tgrid.grid_info['station']
+        if sta in sta_list:
+            ttimes[sta] = tgrid.value_at_point(syn_x, syn_y, syn_z)
+        del(tgrid)
+
     logging.debug('Travel-times for true hypocenter = %s' % ttimes)
 
     # construct data with these travel times
@@ -165,10 +159,10 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=False):
     test_info = {}
     test_info['dat_file'] = test_grid_file
     test_info['stack_file'] = test_stack_file
-    test_info['grid_shape'] = nx, ny, nz, nt
-    test_info['grid_spacing'] = dx, dy, dz, s_delta
-    test_info['grid_orig'] = x_orig, y_orig, z_orig
-    test_info['true_indexes'] = (ix, iy, iz, shifted_it)
+    test_info['grid_shape'] = n_buf, nt
+    test_info['dt'] = s_delta
+    test_info['true_it'] = shifted_it
+    test_info['true_loc'] = syn_x, syn_y, syn_z
     test_info['start_time'] = -stack_shift_time
 
     logging.debug(test_info)

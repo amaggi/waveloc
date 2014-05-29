@@ -215,6 +215,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
     # close the hdf5 file for the grid
     if (not use_ram) or keep_grid:
         f.close()
+        return grid_filename
 
     # remove the grid file unless you want to keep it
     if (not keep_grid) and (not use_ram):

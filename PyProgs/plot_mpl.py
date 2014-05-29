@@ -87,26 +87,24 @@ def plotLocationWaveforms(loc, start_time, dt, data_dict, grad_dict, stack_wfm,
     plt.clf()
 
 
-def plotLocationGrid(loc, grid_info, fig_dir, otime_window):
+def plotLocationGrid(loc, grid_filename, fig_dir, otime_window):
     """
     Plots location grid. TODO : Flesh out this doc-string.
 
     :param loc:
-    :param grid_info:
+    :param grid_filename:
     :param fig_dir:
     :param otime_window:
 
     """
 
-    # set up plot using info from grid_info
-    nx, ny, nz, nt = grid_info['grid_shape']
-    dx, dy, dz, dt = grid_info['grid_spacing']
-    x_orig, y_orig, z_orig = grid_info['grid_orig']
-    stack_starttime = grid_info['start_time']
-
-    # Take much of the information from the grid_info
-    plot_info = deepcopy(grid_info)
-    plot_info['o_time'] = loc['o_time']
+    # get useful information from grid file
+    f = h5py.File(grid_filename, 'r')
+    sg = f['stack_grid']
+    n_buf, nt = sg.shape
+    stack_starttime = sg.attrs['start_time']
+    dt = sg.attrs['dt']
+    f.close()
 
     # get location info
     o_time = loc['o_time']
@@ -121,7 +119,6 @@ def plotLocationGrid(loc, grid_info, fig_dir, otime_window):
 
     #get indexes correponding to location
     it_true = np.int(np.round((o_time-stack_starttime)/dt))
-    nt = plot_info['grid_shape'][3]
     if it_true > nt-1:
         msg = 'Origin time after last time for plot by %3f seconds. \n\
             Increase plot_tafter.' % ((it_true - nt + 1)*dt)
@@ -130,18 +127,6 @@ def plotLocationGrid(loc, grid_info, fig_dir, otime_window):
         msg = 'Origin time before first time for plot by %3f seconds. \n\
             Increase plot_tbefore.' % (-1*it_true*dt)
         raise UserWarning(msg)
-    # zero indexes are default for 2D grids
-    ix_true = 0
-    iy_true = 0
-    iz_true = 0
-    if dx > 0:
-        ix_true = np.int(np.round((x_mean-x_orig)/dx))
-    if dy > 0:
-        iy_true = np.int(np.round((y_mean-y_orig)/dy))
-    if dz > 0:
-        iz_true = np.int(np.round((z_mean-z_orig)/dz))
-    plot_info['true_indexes'] = (ix_true, iy_true, iz_true, it_true)
-    plot_info['true_values'] = (x_mean, y_mean, z_mean, o_time-stack_starttime)
 
     # get indexes corresponding to location uncertainties
     # times are wrt stack_starttime
@@ -155,10 +140,16 @@ def plotLocationGrid(loc, grid_info, fig_dir, otime_window):
     y_high = y_mean + y_sigma
     z_high = z_mean + z_sigma
 
+    plot_info = {}
+    plot_info['dt'] = dt
+    plot_info['start_time'] = loc['dt']
+    plot_info['o_time'] = loc['o_time']
     plot_info['t_err'] = (t_left, t_right)
     plot_info['x_err'] = (x_low, x_high)
     plot_info['y_err'] = (y_low, y_high)
     plot_info['z_err'] = (z_low, z_high)
+    plot_info['true_values'] = (x_mean, y_mean, z_mean, o_time-stack_starttime)
+    plot_info['grid_file'] = grid_filename
 
     plotDiracTest(plot_info, fig_dir, otime_window)
 

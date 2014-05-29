@@ -6,6 +6,7 @@ import os
 import h5py
 import numpy as np
 from NllGridLib import read_hdr_file
+from sklearn import preprocessing
 from sklearn.svm import SVR
 
 
@@ -122,7 +123,24 @@ def ugrid_closest_point_index(x, y, z, xi, yi, zi):
     return ic, x[ic], y[ic], z[ic]
 
 
-def ugrid_svr(x, y, z, values, xi, yi, zi, C=1e3, gamma=0.1):
+def select_points_closeto_plane(x, y, z, p_string, p_coord, p_dist):
+    """
+    Selects points within a certain distance of an x, y, or z plane.
+
+    """
+    if p_string == 'x':
+        result = np.abs(x - p_coord) < p_dist
+    elif p_string == 'y':
+        result = np.abs(y - p_coord) < p_dist
+    elif p_string == 'z':
+        result = np.abs(z - p_coord) < p_dist
+    else:
+        raise UserWarning('Unknown plane %s' % p_string)
+    
+    return result
+
+
+def ugrid_svr(x, y, z, values, xi, yi, zi, C=1.0, epsilon=0.1):
     """
     Uses support vector regression to estimate values at points xi, yi, zi when
     values at irregular points x, y, z are known.
@@ -136,11 +154,13 @@ def ugrid_svr(x, y, z, values, xi, yi, zi, C=1e3, gamma=0.1):
     :param zi: z-corrdinate of point of interest
     """
 
-    svr = SVR(kernel='rbf', C=C, gamma=gamma)
-    X = np.array([x, y, z])
-    Xi = np.array([xi, yi, zi])
+    X = np.array([x, y, z]).T
+    Xi = np.array([xi, yi, zi]).T
 
-    yi = svr.fit(X, values).predict(Xi)
+    scaler = preprocessing.StandardScaler().fit(X)
+
+    svr = SVR(C=C, epsilon=epsilon)
+    yi = svr.fit(scaler.transform(X), values).predict(scaler.transform(Xi))
 
     return yi
 

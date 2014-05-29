@@ -492,17 +492,17 @@ class WavelocOptions(object):
         if not 'syn_otime' in self.opdict:
             raise UserWarning('syn_otime option not set')
 
-    def _verify_syn_ix(self):
-        if not 'syn_ix' in self.opdict:
-            raise UserWarning('syn_ix option not set')
+    def _verify_syn_x(self):
+        if not 'syn_x' in self.opdict:
+            raise UserWarning('syn_x option not set')
 
-    def _verify_syn_iy(self):
-        if not 'syn_iy' in self.opdict:
-            raise UserWarning('syn_iy option not set')
+    def _verify_syn_y(self):
+        if not 'syn_y' in self.opdict:
+            raise UserWarning('syn_y option not set')
 
-    def _verify_syn_iz(self):
-        if not 'syn_iz' in self.opdict:
-            raise UserWarning('syn_iz option not set')
+    def _verify_syn_z(self):
+        if not 'syn_z' in self.opdict:
+            raise UserWarning('syn_z option not set')
 
     def _verify_syn_filename(self):
         if not 'syn_filename' in self.opdict:
@@ -755,9 +755,9 @@ class WavelocOptions(object):
         self._verify_syn_samplefreq()
         self._verify_syn_kwidth()
         self._verify_syn_otime()
-        self._verify_syn_ix()
-        self._verify_syn_iy()
-        self._verify_syn_iz()
+        self._verify_syn_x()
+        self._verify_syn_y()
+        self._verify_syn_z()
         self._verify_syn_filename()
 
     def verify_plotting_options(self):
