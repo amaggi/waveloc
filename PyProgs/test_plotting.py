@@ -54,8 +54,8 @@ class PlottingTests(unittest.TestCase):
         z_range = np.max(z)-np.min(z)
 
         xc = np.min(x)+x_range/2.
-        yc = np.min(y)+y_range/2.
-        zc = np.min(z)+z_range/2.
+        yc = np.min(y)+y_range/3.
+        zc = np.min(z)+z_range/5.
         tc = tlen/2.0
 
         a = 0.75*x_range/2
@@ -103,8 +103,8 @@ class PlottingTests(unittest.TestCase):
         z_range = np.max(z)-np.min(z)
 
         xc = np.min(x)+x_range/2.
-        yc = np.min(y)+y_range/2.
-        zc = np.min(z)+z_range/2.
+        yc = np.min(y)+y_range/3.
+        zc = np.min(z)+z_range/5.
         tc = tlen/2.0
 
         max_val = np.empty(nt, dtype='float')

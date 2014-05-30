@@ -106,7 +106,7 @@ def plotWavelocResults(plotopt):
     pos = list(p.get_position().bounds)
     fig.text(pos[0]-0.08, pos[1]+pos[3], '(d)', fontsize=12)
     plt.imshow(xz_cut.T, origin='upper', interpolation='none',
-               extent=[0, np.max(x)-np.min(x), 0, np.max(z)-np.min(z)],
+               extent=[0, np.max(x)-np.min(x), -np.max(z), -np.min(z)],
                cmap=cmap, norm=norm)
     p.tick_params(labelsize=10)
     p.xaxis.set_ticks_position('top')
@@ -118,7 +118,7 @@ def plotWavelocResults(plotopt):
     pos = list(p.get_position().bounds)
     fig.text(pos[0]-0.08, pos[1]+pos[3], '(f)', fontsize=12)
     plt.imshow(yz_cut.T, origin='upper', interpolation='none',
-               extent=[0, np.max(y)-np.min(y), 0, np.max(z)-np.min(z)],
+               extent=[0, np.max(y)-np.min(y), -np.max(z), -np.min(z)],
                cmap=cmap, norm=norm)
     p.xaxis.set_ticks_position('bottom')
     p.tick_params(labelsize=10)
@@ -195,23 +195,25 @@ def plotWavelocResults(plotopt):
         plt.axvspan(tc-t_left, tc+t_right, facecolor='r', alpha=0.2)
 
     # plot max z
+    # note : for calculation purposes z is posivive down
+    # for plotting, z should be positive up
     p = plt.subplot(428, frameon=False)
     pos = list(p.get_position().bounds)
     fig.text(pos[0]-.05, pos[1]+pos[3], '(g)', fontsize=12)
     p.tick_params(labelsize=10)
-    plt.scatter(t[illim:irlim], max_z[illim:irlim], s=40,
+    plt.scatter(t[illim:irlim], -max_z[illim:irlim], s=40,
                 c=max_val[illim:irlim], marker='.', linewidths=(0, ),
                 clip_on=False, cmap=cmap, norm=norm)
     plt.xlabel('Time (s)', size=10)
     p.xaxis.set_ticks_position('bottom')
-    plt.ylabel('z (km down)', size=10)
+    plt.ylabel('z (km up)', size=10)
     p.yaxis.set_ticks_position('right')
     p.set_xlim(llim, rlim)
-    plt.hlines(zc, llim, rlim, 'r', linewidth=2)
-    plt.vlines(tc, min(max_z), max(max_z), 'r', linewidth=2)
+    plt.hlines(-zc, llim, rlim, 'r', linewidth=2)
+    plt.vlines(tc, -max(max_z), -min(max_z), 'r', linewidth=2)
     if 'z_err' in plotopt.opdict:
         z_low, z_high = plotopt.opdict['z_err']
-        plt.axhspan(zc-z_low, zc+z_high, facecolor='r', alpha=0.2)
+        plt.axhspan(-zc-z_low, -zc+z_high, facecolor='r', alpha=0.2)
     if 't_err' in plotopt.opdict:
         t_left, t_right = plotopt.opdict['t_err']
         plt.axvspan(tc-t_left, tc+t_right, facecolor='r', alpha=0.2)
