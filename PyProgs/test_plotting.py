@@ -49,21 +49,19 @@ class PlottingTests(unittest.TestCase):
         xc = np.min(x)+x_range/2.
         yc = np.min(y)+y_range/2.
         zc = np.min(z)+z_range/2.
+        tc = tlen/2.0
 
-        ax = x_range/20.+0.75*x_range/2*t/tlen
-        ay = y_range/20.+0.75*y_range/2*t/tlen
-        az = y_range/20.+0.75*z_range/2*t/tlen
+        a = 0.75*x_range/2
+        b = 0.75*y_range/2
+        c = 0.75*z_range/2
 
         for it in xrange(nt):
-            a = ax[it]
-            b = ay[it]
-            c = az[it]
             for ib in xrange(n_buf):
-                val = (x[ib]/a)**2 + (y[ib]/b)**2 + (z[ib]/c)**2
+                val = ((x[ib]-xc)/a)**2 + ((y[ib]-yc)/b)**2 + ((z[ib]-zc)/c)**2
                 if val > 1:
                     grid[ib, it] = 0.
                 else:
-                    grid[ib, it] = val
+                    grid[ib, it] = 1-val
 
         # write file
         grid_filename = self.plotopt.getGridFilename()
@@ -82,6 +80,7 @@ class PlottingTests(unittest.TestCase):
         self.plotopt.opdict['x_loc'] = xc
         self.plotopt.opdict['y_loc'] = yc
         self.plotopt.opdict['z_loc'] = zc
+        self.plotopt.opdict['t_loc_rel'] = tc
 
     def test_plotWavelocResults(self):
 

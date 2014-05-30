@@ -23,44 +23,41 @@ def plotWavelocResults(plotopt):
     x, y, z = plotopt.getXYZ()
 
     # get indexes of location
-    it = plotopt.opdict['dt']
+    dt = plotopt.opdict['dt']
     xc = plotopt.opdict['x_loc']
     yc = plotopt.opdict['y_loc']
     zc = plotopt.opdict['z_loc']
+    tc = plotopt.opdict['t_loc_rel']
     ic = ugrid_closest_point_index(x, y, z, xc, yc, zc)
+    it = int(tc/dt)
 
     # open grid_file
     f = h5py.File(grid_filename, 'r')
     grid4D = f['migrated_grid']
-    grid3D = grid4D[:,it]
+    grid1D = grid4D[:,it]
     f.close()
 
     # get max, min values for norm
-    norm = mpl.colors.Normalize(vmin=np.min(grid3D), vmax=np.max(grid3D))
+    min_val = _round_sig(np.min(grid1D))
+    max_val = _round_sig(np.max(grid1D))
+    mean_val = _round_sig((max_val+min_val)/2.)
+    norm = mpl.colors.Normalize(vmin=min_val,
+                                vmax=max_val)
 
     # get xy, xz, yz cuts
     if ugrid_type == 'FULL':
-        x_vector = np.unique(x)
-        y_vector = np.unique(y)
-        z_vector = np.unique(z)
-        x_vector.sort()
-        y_vector.sort()
-        z_vector.sort()
-        dx = x_vector[1]-x_vector[0]
-        dy = y_vector[1]-y_vector[0]
-        dz = z_vector[1]-z_vector[0]
-        nx = len(x_vector)
-        ny = len(y_vector)
-        nz = len(z_vector)
+        # is a regular grid - can treat it as such.
+        nx = len(np.unique(x))
+        ny = len(np.unique(y))
+        nz = len(np.unique(z))
+        grid3D = grid1D.reshape(nx, ny, nz)
 
-        indexes = select_points_closeto_plane(x, y, z, 'z', zc, dz)
-        xy_cut = grid3D[indexes].reshape(nx, ny)
+        # cut the grid
+        ix, iy, iz = np.unravel_index(ic, (nx, ny, nz))
+        xy_cut = grid3D[:, :, iz]
+        xz_cut = grid3D[:, iy, :]
+        yz_cut = grid3D[ix, :, :]
 
-        indexes = select_points_closeto_plane(x, y, z, 'y', yc, dy)
-        xz_cut = grid3D[indexes].reshape(nx, nz)
-
-        indexes = select_points_closeto_plane(x, y, z, 'x', xc, dx)
-        yz_cut = grid3D[indexes].reshape(ny, nz)
     else:
         raise NotImplemented ('Plotting of user grids not implemented yet')
 
@@ -71,7 +68,7 @@ def plotWavelocResults(plotopt):
     cmap = mpl.cm.hot_r
 
     plt.clf()
-    fit = plt.figure()
+    fig = plt.figure()
 
     fig.suptitle('x = %.2fkm  y = %.2fkm  z = %.2fkm' % (xc, yc, zc))
 
@@ -81,7 +78,7 @@ def plotWavelocResults(plotopt):
     fig.text(pos[0]-0.08, pos[1]+pos[3], '(a)', fontsize=12)
     if ugrid_type == 'FULL':
         plt.imshow(xy_cut.T, origin='lower', interpolation='none',
-                   extent=[np.min(x), np.max(x), np.min(y), np.max(y)],
+                   extent=[0, np.max(x)-np.min(x), 0, np.max(y)-np.min(y)],
                    cmap=cmap, norm=norm)
     else:
         raise NotImplemented ('Plotting of user grids not implemented yet')
@@ -90,16 +87,48 @@ def plotWavelocResults(plotopt):
     plt.xlabel('x (km wrt ref)', size=10)
     plt.ylabel('y (km wrt ref)', size=10)
 
+    # plot xz plane
+    p = plt.subplot(425)
+    pos = list(p.get_position().bounds)
+    fig.text(pos[0]-0.08, pos[1]+pos[3], '(d)', fontsize=12)
+    plt.imshow(xz_cut.T, origin='upper', interpolation='none',
+               extent=[0, np.max(x)-np.min(x), 0, np.max(z)-np.min(z)],
+               cmap=cmap, norm=norm)
+    p.tick_params(labelsize=10)
+    p.xaxis.set_ticks_position('top')
+    p.xaxis.set_ticklabels('')
+    plt.ylabel('z (km up)', size=10)
+
+    # plot yz plane
+    p = plt.subplot(427)
+    pos = list(p.get_position().bounds)
+    fig.text(pos[0]-0.08, pos[1]+pos[3], '(f)', fontsize=12)
+    plt.imshow(yz_cut.T, origin='upper', interpolation='none',
+               extent=[0, np.max(y)-np.min(y), 0, np.max(z)-np.min(z)],
+               cmap=cmap, norm=norm)
+    p.xaxis.set_ticks_position('bottom')
+    p.tick_params(labelsize=10)
+    plt.xlabel('y (km wrt ref)', size=10)
+    plt.ylabel('z (km up)', size=10)
+
     # add independent colorbar
     ax1 = fig.add_axes([0.40, 0.03, 0.2, 0.015])
     ax1.tick_params(labelsize=8)
     ax1.xaxis.set_ticks_position('bottom')
     mpl.colorbar.ColorbarBase(ax1, cmap=cmap, norm=norm,
                               orientation='horizontal',
-                              ticks=[0, int(np.max(max_val)/2),
-                                     int(np.max(max_val))])
+                              ticks=[min_val, mean_val, max_val])
     pos = list(ax1.get_position().bounds)
     fig.text(pos[0]+pos[2]/2., pos[1]+pos[3]+0.01, 'Stack max', fontsize=8,
              horizontalalignment='center', verticalalignment='bottom')
 
     plt.savefig(fig_filename)
+
+
+def _round_sig(x, sig=2):
+    from numpy import int, log10, floor, abs
+    if abs(x > 0.):
+        result = round(x, sig-int(floor(log10(abs(x))))-1)
+    else:
+        result = 0.
+    return result
