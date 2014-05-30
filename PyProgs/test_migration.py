@@ -324,9 +324,9 @@ def run_synthetic_test(outdir, ugrid=False):
     wo.opdict['syn_samplefreq'] = 100.0
     wo.opdict['syn_kwidth'] = 0.1
     wo.opdict['syn_otime'] = 6.0
-    wo.opdict['syn_x'] = 366
-    wo.opdict['syn_y'] = 7650
-    wo.opdict['syn_z'] = -1
+    wo.opdict['syn_x'] = 366.
+    wo.opdict['syn_y'] = 7650.
+    wo.opdict['syn_z'] = -1.
     wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
     wo.opdict['ugrid_type'] = 'FULL'
 

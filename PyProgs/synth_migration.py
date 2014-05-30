@@ -134,6 +134,9 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     stack_grid.attrs['nt'] = nt
     stack_grid.attrs['n_buf'] = n_buf
     stack_grid.attrs['start_time'] = -stack_shift_time
+    f.create_dataset('x', data=x)
+    f.create_dataset('y', data=y)
+    f.create_dataset('z', data=z)
 
     # extract max-stack
     logging.info('Extracting max_val etc. to %s' % test_stack_file)
