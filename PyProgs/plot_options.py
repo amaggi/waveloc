@@ -30,6 +30,11 @@ class PlotOptions(object):
             if key in wo_opdict:
                 self.opdict[key] = wo_opdict[key]
 
+        # other stuff
+        for key in 'otime_window',:
+            if key in wo_opdict:
+                self.opdict[key] = wo_opdict[key]
+
     def getXYZ(self):
 
         ugrid_type = self.opdict['ugrid_type']

@@ -84,7 +84,7 @@ def plotWavelocResults(plotopt):
     plt.clf()
     fig = plt.figure()
 
-    fig.suptitle('x = %.2fkm  y = %.2fkm  z = %.2fkm' % (xc, yc, zc))
+    fig.suptitle('x = %.2fkm  y = %.2fkm  z = %.2fkm' % (xc, yc, -zc))
 
     # plot xy plane
     p = plt.subplot(221)
@@ -230,6 +230,7 @@ def plotWavelocResults(plotopt):
              horizontalalignment='center', verticalalignment='bottom')
 
     plt.savefig(fig_filename)
+    print(fig_filename)
 
 
 def _round_sig(x, sig=2):

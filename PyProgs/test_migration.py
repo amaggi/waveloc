@@ -7,6 +7,7 @@ import numpy as np
 from options import WavelocOptions
 from migration import do_migration_setup_and_run
 from synth_migration import generateSyntheticDirac
+from plotting import plotWavelocResults
 
 
 def suite():
@@ -108,14 +109,17 @@ class SyntheticMigrationTests(unittest.TestCase):
         outdir = 'TEST_Dirac'
 
         # run the synthetic test (call external function to avoid copying code)
-        wo, test_info = run_synthetic_test(outdir, ugrid=True)
+        wo, plotopt = run_synthetic_test(outdir, ugrid=True)
 
         # retrieve info
-        stack_filename = test_info['stack_file']
-        n_buf, nt = test_info['grid_shape']
-        dt = test_info['dt']
-        x_true, y_true, z_true = test_info['true_loc']
-        stack_start_time = test_info['start_time']
+        stack_filename = plotopt.getStackFilename()
+        n_buf = plotopt.opdict['n_buf']
+        nt = plotopt.opdict['nt']
+        dt = plotopt.opdict['dt']
+        x_true = plotopt.opdict['x_loc']
+        y_true = plotopt.opdict['y_loc']
+        z_true = plotopt.opdict['z_loc']
+        stack_start_time = plotopt.opdict['start_time']
 
         # loclevel for triggers
         loclevel = wo.opdict['loclevel']
@@ -142,7 +146,11 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         f_stack.close()
 
+        # run the plotting
+        plotWavelocResults(plotopt)
 
+
+@unittest.skip('Skip for rapidity')
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -254,7 +262,7 @@ class MigrationTests(unittest.TestCase):
         self.assertAlmostEqual(d, 0.0)
         self.assertAlmostEqual(l, 0.0)
 
-
+@unittest.skip('Skip for rapidity')
 class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):
@@ -329,6 +337,7 @@ def run_synthetic_test(outdir, ugrid=False):
     wo.opdict['syn_z'] = -1.
     wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
     wo.opdict['ugrid_type'] = 'FULL'
+    wo.opdict['otime_window'] = 5.0
 
     wo.verify_base_path
     wo.verify_synthetic_options()
@@ -338,10 +347,10 @@ def run_synthetic_test(outdir, ugrid=False):
     ##########################
 
     if ugrid:
-        test_info = generateSyntheticDirac(wo.opdict, ugrid=True)
+        plotopt = generateSyntheticDirac(wo.opdict, ugrid=True)
     else:
-        test_info = generateSyntheticDirac(wo.opdict, ugrid=False)
-    return wo, test_info
+        plotopt = generateSyntheticDirac(wo.opdict, ugrid=False)
+    return wo, plotopt
 
 
 if __name__ == '__main__':

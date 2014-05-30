@@ -4,6 +4,7 @@ import h5py
 import logging
 import numpy as np
 from hdf5_grids import H5SingleGrid
+from plot_options import PlotOptions
 
 
 def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
@@ -27,11 +28,15 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     if time_grids is None:
         load_time_grids = True
 
+    # create plot-options
+    plotopt = PlotOptions(opdict)
+
     #define length and sampling frequency of synthetic data
     s_amplitude = opdict['syn_amplitude']
     s_data_length = opdict['syn_datalength']
     s_sample_freq = opdict['syn_samplefreq']
     s_filename = opdict['syn_filename']
+
 
     s_npts = int(s_data_length*s_sample_freq)
     s_delta = 1/s_sample_freq
@@ -46,7 +51,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
                                   s_filename)
     test_stack_file = os.path.join(base_path, 'out', opdict['outdir'], 'stack',
                                    'stack_all_'+s_filename)
-    test_info_file = os.path.join(base_path, 'out', opdict['outdir'], 'grid',
+    plotopt_file = os.path.join(base_path, 'out', opdict['outdir'], 'grid',
                                   '%s.info' % s_filename)
 
     # get filenames for time-grids and search grids
@@ -124,7 +129,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
 
     logging.info('Doing migration to %s' % test_grid_file)
     f = h5py.File(test_grid_file, 'w')
-    stack_grid = f.create_dataset('stack_grid', (n_buf, s_npts), 'f',
+    stack_grid = f.create_dataset('migrated_grid', (n_buf, s_npts), 'f',
                                   chunks=(1, s_npts))
     stack_shift_time = migrate_4D_stack(data, s_delta, time_grids, stack_grid)
     n_buf, nt = stack_grid.shape
@@ -159,17 +164,19 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     shifted_it = it+int(round(stack_shift_time/s_delta))
 
     # SETUP information to pass back
-    test_info = {}
-    test_info['dat_file'] = test_grid_file
-    test_info['stack_file'] = test_stack_file
-    test_info['grid_shape'] = n_buf, nt
-    test_info['dt'] = s_delta
-    test_info['true_it'] = shifted_it
-    test_info['true_loc'] = syn_x, syn_y, syn_z
-    test_info['start_time'] = -stack_shift_time
+    plotopt.opdict['grid_filename'] = s_filename
+    plotopt.opdict['stack_filename'] = 'stack_all_'+s_filename 
+    plotopt.opdict['n_buf'] = n_buf
+    plotopt.opdict['nt'] = nt
+    plotopt.opdict['dt'] = s_delta
+    plotopt.opdict['t_loc_rel'] = s_t0+stack_shift_time
+    plotopt.opdict['x_loc'] = syn_x
+    plotopt.opdict['y_loc'] = syn_y
+    plotopt.opdict['z_loc'] = syn_z
+    plotopt.opdict['start_time'] = -stack_shift_time
 
-    logging.debug(test_info)
-    f = open(test_info_file, 'w')
-    f.write(str(test_info))
+    logging.debug(plotopt.opdict)
+    f = open(plotopt_file, 'w')
+    f.write(str(plotopt.opdict))
 
-    return test_info
+    return plotopt
