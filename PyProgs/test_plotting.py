@@ -30,6 +30,13 @@ class PlottingTests(unittest.TestCase):
         self.plotopt.opdict['stack_filename'] = 'STACK_FNAME.hdf5'
 
         self._create_dummy_grid()
+        self._create_dummy_stack()
+
+        self.plotopt.opdict['otime_window'] = 5.
+        self.plotopt.opdict['t_err'] = (0.5, 0.5)
+        self.plotopt.opdict['x_err'] = (0.5, 0.5)
+        self.plotopt.opdict['y_err'] = (0.5, 0.5)
+        self.plotopt.opdict['z_err'] = (0.1, 0.1)
 
     def _create_dummy_grid(self):
         
@@ -77,10 +84,49 @@ class PlottingTests(unittest.TestCase):
 
         # save stuff that needs to be saved in plot options
         self.plotopt.opdict['dt'] = dt
+        self.plotopt.opdict['nt'] = nt
         self.plotopt.opdict['x_loc'] = xc
         self.plotopt.opdict['y_loc'] = yc
         self.plotopt.opdict['z_loc'] = zc
         self.plotopt.opdict['t_loc_rel'] = tc
+
+    def _create_dummy_stack(self):
+
+        x, y, z = self.plotopt.getXYZ()
+        dt = 0.5
+        tlen = 50
+        nt = int(tlen/dt)
+        t = np.arange(0, tlen, dt)
+
+        x_range = np.max(x)-np.min(x)
+        y_range = np.max(y)-np.min(y)
+        z_range = np.max(z)-np.min(z)
+
+        xc = np.min(x)+x_range/2.
+        yc = np.min(y)+y_range/2.
+        zc = np.min(z)+z_range/2.
+        tc = tlen/2.0
+
+        max_val = np.empty(nt, dtype='float')
+        max_x = np.empty(nt, dtype='float')
+        max_y = np.empty(nt, dtype='float')
+        max_z = np.empty(nt, dtype='float')
+
+        sig=tlen/30.
+        max_val = np.exp(-(t-tc)**2/(2*sig**2))
+        max_x = np.random.normal(loc=xc, scale=0.5, size=nt)
+        max_y = np.random.normal(loc=yc, scale=0.5, size=nt)
+        max_z = np.random.normal(loc=zc, scale=0.1, size=nt)
+
+        stack_filename = self.plotopt.getStackFilename()
+        f = h5py.File(stack_filename, 'w')
+        f.create_dataset('max_val', data=max_val)
+        mv = f.create_dataset('max_val_smooth', data=max_val)
+        f.create_dataset('max_x', data=max_x)
+        f.create_dataset('max_y', data=max_y)
+        f.create_dataset('max_z', data=max_z)
+        f.create_dataset('t', data=t)
+        f.close()
 
     def test_plotWavelocResults(self):
 

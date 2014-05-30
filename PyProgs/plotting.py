@@ -24,12 +24,14 @@ def plotWavelocResults(plotopt):
 
     # get indexes of location
     dt = plotopt.opdict['dt']
+    nt = plotopt.opdict['nt']
     xc = plotopt.opdict['x_loc']
     yc = plotopt.opdict['y_loc']
     zc = plotopt.opdict['z_loc']
     tc = plotopt.opdict['t_loc_rel']
     ic = ugrid_closest_point_index(x, y, z, xc, yc, zc)
     it = int(tc/dt)
+    t = np.arange(0, dt*nt, dt)
 
     # open grid_file
     f = h5py.File(grid_filename, 'r')
@@ -38,11 +40,11 @@ def plotWavelocResults(plotopt):
     f.close()
 
     # get max, min values for norm
-    min_val = _round_sig(np.min(grid1D))
-    max_val = _round_sig(np.max(grid1D))
-    mean_val = _round_sig((max_val+min_val)/2.)
-    norm = mpl.colors.Normalize(vmin=min_val,
-                                vmax=max_val)
+    val_min = _round_sig(np.min(grid1D))
+    val_max = _round_sig(np.max(grid1D))
+    val_mean = _round_sig((val_min+val_max)/2.)
+    norm = mpl.colors.Normalize(vmin=val_min,
+                                vmax=val_max)
 
     # get xy, xz, yz cuts
     if ugrid_type == 'FULL':
@@ -61,6 +63,18 @@ def plotWavelocResults(plotopt):
     else:
         raise NotImplemented ('Plotting of user grids not implemented yet')
 
+    # get max_val etc
+    max_val = np.empty(nt, dtype='float')
+    max_x = np.empty(nt, dtype='float')
+    max_y = np.empty(nt, dtype='float')
+    max_z = np.empty(nt, dtype='float')
+    f = h5py.File(stack_filename, 'r')
+    max_val = f['max_val_smooth'][:]
+    max_x = f['max_x'][:]
+    max_y = f['max_y'][:]
+    max_z = f['max_z'][:]
+
+    f.close()
     ###########
     # do plot #
     ###########
@@ -111,13 +125,104 @@ def plotWavelocResults(plotopt):
     plt.xlabel('y (km wrt ref)', size=10)
     plt.ylabel('z (km up)', size=10)
 
+    # choose portion of time series to plot
+    otime_window = plotopt.opdict['otime_window']
+    llim = max(tc-otime_window, t[0])
+    rlim = min(tc+otime_window, t[-1])
+    illim = int((llim-t[0])/dt)
+    irlim = int((rlim-t[0])/dt)
+
+    # plot max value
+    p = plt.subplot(422, frameon=False)
+    pos = list(p.get_position().bounds)
+    fig.text(pos[0]-.05, pos[1]+pos[3], '(b)', fontsize=12)
+    p.tick_params(labelsize=10)
+    plt.plot(t, max_val, 'k')
+    p.xaxis.set_ticks_position('bottom')
+    p.xaxis.set_ticklabels('')
+    plt.ylabel('Stack max', size=10)
+    p.yaxis.set_ticks_position('right')
+    p.set_xlim(llim, rlim)
+    p.set_ylim(np.min(max_val[illim:irlim]), max(max_val))
+    plt.vlines(tc, np.min(max_val[illim:irlim]), max(max_val), 'r',
+               linewidth=2)
+    if 't_err' in plotopt.opdict:
+        t_left, t_right = plotopt.opdict['t_err']
+        plt.axvspan(tc-t_left, tc+t_right, facecolor='r', alpha=0.2)
+
+    # plot max x
+    p = plt.subplot(424, frameon=False)
+    pos = list(p.get_position().bounds)
+    fig.text(pos[0]-.05, pos[1]+pos[3], '(c)', fontsize=12)
+    p.tick_params(labelsize=10)
+    plt.scatter(t[illim:irlim], max_x[illim:irlim], s=40,
+                c=max_val[illim:irlim], marker='.', linewidths=(0, ),
+                clip_on=False, cmap=cmap, norm=norm)
+    p.xaxis.set_ticks_position('bottom')
+    p.xaxis.set_ticklabels('')
+    plt.ylabel('x (km)', size=10)
+    p.yaxis.set_ticks_position('right')
+    p.set_xlim(llim, rlim)
+    plt.hlines(xc, llim, rlim, 'r', linewidth=2)
+    plt.vlines(tc, min(max_x), max(max_x), 'r', linewidth=2)
+    if 'x_err' in plotopt.opdict:
+        x_low, x_high = plotopt.opdict['x_err']
+        plt.axhspan(xc-x_low, xc+x_high, facecolor='r', alpha=0.2)
+    if 't_err' in plotopt.opdict:
+        t_left, t_right = plotopt.opdict['t_err']
+        plt.axvspan(tc-t_left, tc+t_right, facecolor='r', alpha=0.2)
+
+    # plot max y
+    p = plt.subplot(426, frameon=False)
+    pos = list(p.get_position().bounds)
+    fig.text(pos[0]-.05, pos[1]+pos[3], '(e)', fontsize=12)
+    p.tick_params(labelsize=10)
+    plt.scatter(t[illim:irlim], max_y[illim:irlim], s=40,
+                c=max_val[illim:irlim], marker='.', linewidths=(0, ),
+                clip_on=False, cmap=cmap, norm=norm)
+    p.xaxis.set_ticks_position('bottom')
+    p.xaxis.set_ticklabels('')
+    plt.ylabel('y (km)', size=10)
+    p.yaxis.set_ticks_position('right')
+    p.set_xlim(llim, rlim)
+    plt.hlines(yc, llim, rlim, 'r', linewidth=2)
+    plt.vlines(tc, min(max_y), max(max_y), 'r', linewidth=2)
+    if 'y_err' in plotopt.opdict:
+        y_low, y_high = plotopt.opdict['y_err']
+        plt.axhspan(yc-y_low, yc+y_high, facecolor='r', alpha=0.2)
+    if 't_err' in plotopt.opdict:
+        t_left, t_right = plotopt.opdict['t_err']
+        plt.axvspan(tc-t_left, tc+t_right, facecolor='r', alpha=0.2)
+
+    # plot max z
+    p = plt.subplot(428, frameon=False)
+    pos = list(p.get_position().bounds)
+    fig.text(pos[0]-.05, pos[1]+pos[3], '(g)', fontsize=12)
+    p.tick_params(labelsize=10)
+    plt.scatter(t[illim:irlim], max_z[illim:irlim], s=40,
+                c=max_val[illim:irlim], marker='.', linewidths=(0, ),
+                clip_on=False, cmap=cmap, norm=norm)
+    plt.xlabel('Time (s)', size=10)
+    p.xaxis.set_ticks_position('bottom')
+    plt.ylabel('z (km down)', size=10)
+    p.yaxis.set_ticks_position('right')
+    p.set_xlim(llim, rlim)
+    plt.hlines(zc, llim, rlim, 'r', linewidth=2)
+    plt.vlines(tc, min(max_z), max(max_z), 'r', linewidth=2)
+    if 'z_err' in plotopt.opdict:
+        z_low, z_high = plotopt.opdict['z_err']
+        plt.axhspan(zc-z_low, zc+z_high, facecolor='r', alpha=0.2)
+    if 't_err' in plotopt.opdict:
+        t_left, t_right = plotopt.opdict['t_err']
+        plt.axvspan(tc-t_left, tc+t_right, facecolor='r', alpha=0.2)
+
     # add independent colorbar
     ax1 = fig.add_axes([0.40, 0.03, 0.2, 0.015])
     ax1.tick_params(labelsize=8)
     ax1.xaxis.set_ticks_position('bottom')
     mpl.colorbar.ColorbarBase(ax1, cmap=cmap, norm=norm,
                               orientation='horizontal',
-                              ticks=[min_val, mean_val, max_val])
+                              ticks=[val_min, val_mean, val_max])
     pos = list(ax1.get_position().bounds)
     fig.text(pos[0]+pos[2]/2., pos[1]+pos[3]+0.01, 'Stack max', fontsize=8,
              horizontalalignment='center', verticalalignment='bottom')
