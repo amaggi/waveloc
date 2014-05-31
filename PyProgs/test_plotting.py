@@ -13,6 +13,7 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(PlottingTests('test_plotOptions'))
     suite.addTest(PlottingTests('test_plotWavelocResults'))
+    suite.addTest(FullPlottingTests('test_waveloc_example'))
 
     return suite
 
@@ -32,7 +33,7 @@ class PlottingTests(unittest.TestCase):
         self._create_dummy_grid()
         self._create_dummy_stack()
 
-        self.plotopt.opdict['otime_window'] = 5.
+        self.plotopt.opdict['plot_otime_window'] = 5.
         self.plotopt.opdict['t_err'] = (0.5, 0.5)
         self.plotopt.opdict['x_err'] = (0.5, 0.5)
         self.plotopt.opdict['y_err'] = (0.5, 0.5)
@@ -158,6 +159,83 @@ class PlottingTests(unittest.TestCase):
         self.assertEqual(fig_filename, exp_fig_filename)
         self.assertEqual(wfm_fig_filename, exp_wfm_fig_filename)
 
+class FullPlottingTests(unittest.TestCase):
+
+    def test_waveloc_example(self):
+        from options import WavelocOptions
+        from SDS_processing import do_SDS_processing_setup_and_run
+        from migration import do_migration_setup_and_run
+        from locations_trigger import do_locations_trigger_setup_and_run
+        from plot_locations2 import do_plotting_setup_and_run
+
+        # set up default parameters
+        wo = WavelocOptions()
+        wo.verify_base_path()
+
+        wo.opdict['time'] = True
+        wo.opdict['verbose'] = False
+
+        wo.opdict['test_datadir'] = 'test_data'
+        wo.opdict['datadir'] = 'TEST'
+        wo.opdict['outdir'] = 'TEST_fullRes'
+
+        wo.opdict['net_list'] = 'YA'
+        wo.opdict['sta_list'] = "FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,\
+                                 UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
+        wo.opdict['comp_list'] = "HHZ"
+
+        wo.opdict['starttime'] = "2010-10-14T00:14:00.0Z"
+        wo.opdict['endtime'] = "2010-10-14T00:18:00.0Z"
+
+        wo.opdict['time_grid'] = 'Slow_len.100m.P'
+        wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
+        wo.opdict['stations'] = 'coord_stations_test'
+
+        wo.opdict['resample'] = False
+        wo.opdict['fs'] = None
+
+        wo.opdict['c1'] = 4.0
+        wo.opdict['c2'] = 10.0
+
+        wo.opdict['kwin'] = 4
+        wo.opdict['krec'] = False
+        wo.opdict['kderiv'] = True
+
+        wo.opdict['data_length'] = 300
+        wo.opdict['data_overlap'] = 20
+
+        wo.opdict['dataglob'] = '*filt.mseed'
+        wo.opdict['kurtglob'] = '*kurt.mseed'
+        wo.opdict['gradglob'] = '*grad.mseed'
+
+        wo.opdict['load_ttimes_buf'] = True
+
+        wo.opdict['loclevel'] = 5000.0
+        wo.opdict['snr_limit'] = 10.0
+        wo.opdict['sn_time'] = 10.0
+        wo.opdict['n_kurt_min'] = 4
+
+        wo.opdict['plot_tbefore'] = 4
+        wo.opdict['plot_tafter'] = 6
+        wo.opdict['plot_otime_window'] = 2
+
+        ##########################################
+        # end of option setting - start processing
+        ##########################################
+
+        wo.verify_SDS_processing_options()
+        #do_SDS_processing_setup_and_run(wo.opdict)
+
+        wo.verify_migration_options()
+        #do_migration_setup_and_run(wo.opdict)
+
+        # do trigger location
+        wo.verify_location_options()
+        #do_locations_trigger_setup_and_run(wo.opdict)
+
+        # This will do plotting of grids and stacks for locations
+        wo.verify_plotting_options()
+        do_plotting_setup_and_run(wo.opdict, plot_wfm=True, plot_grid=True)
 
 if __name__ == '__main__':
 

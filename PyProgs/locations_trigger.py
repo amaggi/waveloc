@@ -13,6 +13,7 @@ from OP_waveforms import Waveform
 from filters import smooth
 from hdf5_grids import get_interpolated_time_ugrids
 from ugrids import ugrid_closest_point_index
+from plot_options import PlotOptions
 
 
 def plot_location_triggers(trace, trig_start, trig_end, trig_95_start,
@@ -95,7 +96,8 @@ def number_good_kurtosis_for_location(kurt_files, data_files, loc, time_dict,
             # point in the irregular grid. This is a bad approximation, but
             # as it is only used for a signal to noise calculation, accuracy
             # is less important than speed
-            ic, xc, yc, zc = ugrid_closest_point_index(x, y, z, stack_x,
+
+            ic = ugrid_closest_point_index(x, y, z, stack_x,
                                                        stack_y, stack_z)
             traveltime = time_dict[staname][ic]
 
@@ -186,7 +188,7 @@ def do_locations_trigger_setup_and_run(opdict):
     """
 
     base_path = opdict['base_path']
-    # parse command line
+
     data_dir = os.path.join(base_path, 'data', opdict['datadir'])
     kurt_files = glob.glob(os.path.join(data_dir, opdict['kurtglob']))
     data_files = glob.glob(os.path.join(data_dir, opdict['dataglob']))

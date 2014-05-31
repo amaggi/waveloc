@@ -165,7 +165,7 @@ class LocationTests(unittest.TestCase):
                                      'TEST_locations.dat')
         exp_locs = read_locs_from_file(exp_loc_fname)
 
-        do_locations_trigger_setup_and_run(self.wo.opdict)
+        locs = do_locations_trigger_setup_and_run(self.wo.opdict)
 
         loc_fname = os.path.join(base_path, 'out', outdir, 'loc',
                                  'locations.dat')

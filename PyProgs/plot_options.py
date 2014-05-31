@@ -31,7 +31,7 @@ class PlotOptions(object):
                 self.opdict[key] = wo_opdict[key]
 
         # other stuff
-        for key in 'otime_window',:
+        for key in 'plot_otime_window',:
             if key in wo_opdict:
                 self.opdict[key] = wo_opdict[key]
 

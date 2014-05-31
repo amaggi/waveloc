@@ -144,7 +144,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
     # if running on small memory machine write to hdf5 file
     if not use_ram:
         f = h5py.File(grid_filename, 'w')
-        stack_grid = f.create_dataset('stack_grid', (n_buf, min_npts), 'f',
+        stack_grid = f.create_dataset('migrated_grid', (n_buf, min_npts), 'f',
                                       chunks=(1, min_npts))
         stack_grid[...] = 0.
         f.create_dataset('x', data=x)
@@ -202,7 +202,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
             # working on big-ram machine
             #create the hdf5 file
             f = h5py.File(grid_filename, 'w')
-            sg = f.create_dataset('stack_grid', data=stack_grid)
+            sg = f.create_dataset('migrated_grid', data=stack_grid)
             f.create_dataset('x', data=x)
             f.create_dataset('y', data=y)
             f.create_dataset('z', data=z)
@@ -215,7 +215,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
     # close the hdf5 file for the grid
     if (not use_ram) or keep_grid:
         f.close()
-        return grid_filename
+        return grid_filename, stack_shift_time
 
     # remove the grid file unless you want to keep it
     if (not keep_grid) and (not use_ram):

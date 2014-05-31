@@ -79,6 +79,8 @@ def plotWavelocResults(plotopt):
     # do plot #
     ###########
 
+    import pdb; pdb.set_trace()
+
     cmap = mpl.cm.hot_r
 
     plt.clf()
@@ -126,11 +128,11 @@ def plotWavelocResults(plotopt):
     plt.ylabel('z (km up)', size=10)
 
     # choose portion of time series to plot
-    otime_window = plotopt.opdict['otime_window']
-    llim = max(tc-otime_window, t[0])
-    rlim = min(tc+otime_window, t[-1])
-    illim = int((llim-t[0])/dt)
-    irlim = int((rlim-t[0])/dt)
+    otime_window = plotopt.opdict['plot_otime_window']
+    illim = max(it-int(otime_window/dt), 0)
+    irlim = min(it+int(otime_window/dt), nt-1)
+    llim = illim*dt
+    rlim = irlim*dt
 
     # plot max value
     p = plt.subplot(422, frameon=False)

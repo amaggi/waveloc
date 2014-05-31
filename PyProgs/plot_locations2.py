@@ -11,6 +11,9 @@ from hdf5_grids import get_interpolated_time_ugrids
 from migration import do_migration_loop_continuous
 from OP_waveforms import read_data_compatible_with_time_dict
 from plot_mpl import plotLocationGrid, plotLocationWaveforms, plotProbLoc
+from ugrids import ugrid_closest_point_index
+from plot_options import PlotOptions
+from plotting import plotWavelocResults
 
 
 def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
@@ -65,6 +68,7 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
                                         opdict['search_grid'])
     # read time grid information
     x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
+    grid_info = (x, y, z)
 
     # read locations
     locs = read_locs_from_file(locfile)
@@ -73,6 +77,8 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
     f_stack = h5py.File(stackfile, 'r')
     max_val = f_stack['max_val_smooth']
     stack_start_time = UTCDateTime(max_val.attrs['start_time'])
+    dt = max_val.attrs['dt']
+    nt = len(max_val)
 
     for loc in locs:
         # generate the grids
@@ -88,7 +94,7 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
         # get the corresponding travel-times for time-shifting
         ttimes = {}
         for sta in time_grids.keys():
-            ic, xc, yc, zc = ugrid_closest_point_index(x, y, z, xm, ym, zm)
+            ic = ugrid_closest_point_index(x, y, z, xm, ym, zm)
             ttimes[sta] = time_grids[sta][ic]
 
         tshift_migration = max(ttimes.values())
@@ -104,13 +110,31 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
                                                     start_time_migration,
                                                     end_time_migration)
             # do migration
-            grid_filename = \
+            grid_filename, stack_shift_time = \
                 do_migration_loop_continuous(opdict, mig_dict, delta,
                                              start_time_migration, grid_info,
                                              time_grids, keep_grid=True)
             # plot
-            plotLocationGrid(loc, grid_info, grid_filename, figdir,
-                             opdict['plot_otime_window'])
+            # create plotopts 
+            plotopt = PlotOptions(opdict)
+            plotopt.opdict['x_loc'] = loc['x_mean'] 
+            plotopt.opdict['y_loc'] = loc['y_mean'] 
+            plotopt.opdict['z_loc'] = loc['z_mean'] 
+            plotopt.opdict['x_err'] = (loc['x_sigma'], loc['x_sigma'])
+            plotopt.opdict['y_err'] = (loc['y_sigma'], loc['y_sigma'])
+            plotopt.opdict['z_err'] = (loc['z_sigma'], loc['z_sigma'])
+            plotopt.opdict['grid_filename'] = os.path.basename(grid_filename)
+            plotopt.opdict['stack_filename'] = os.path.basename(stackfile)
+            plotopt.opdict['start_time'] = 0.
+            plotopt.opdict['dt'] = dt
+            plotopt.opdict['nt'] = nt
+            plotopt.opdict['t_loc_rel'] = (o_time - start_time_migration)
+
+            # do plot
+            plotWavelocResults(plotopt)
+
+            #plotLocationGrid(loc, grid_info, grid_filename, figdir,
+            #                 opdict['plot_otime_window'])
 
         if plot_wfm:
             logging.info('Plotting waveforms for location %s' %
