@@ -21,13 +21,21 @@ class Graph(object):
     """
     Class of Graph objects. Contains 4 attributes:
 
-    * flag
-    * cluster_index
-    * voisins (neighbours)
-    * nb_voisins (number of neighbours)
+    ** Attributes **
 
-    TODO: Flesh out this doc-string. The structure of this object is very
-    obscure...
+    .. attribute:: flag
+
+        Indicates if an event already belongs to a cluster (1) or not (0).
+
+    .. attribute:: cluster_index
+
+        Indicates the cluster number of all events. 0 means the event does not belong
+        to any cluster.
+
+    .. attribute:: neighbours
+
+        Lists the indexes of the neighbour events for each event. 
+        GRAPH.neighbours is then a list of lists.
 
     """
 
@@ -37,12 +45,11 @@ class Graph(object):
         """
         self.flag = []
         self.cluster_index = []
-        self.voisins = []
-        self.nb_voisins = []
+        self.neighbours = []
 
     def set_flag(self, value):
         """
-        Appends value to flag attribute
+        Appends value to flag attribute. 
 
         :param value: Value to append (0=False, 1=True).
         :type value: integer
@@ -58,41 +65,40 @@ class Graph(object):
         """
         self.cluster_index.append(value)
 
-    def set_voisins(self, value):
+    def set_neighbours(self, value):
         """
-        Appends value to voisins attribute
+        Appends value to neighbours attribute
 
         :param value: Value to append (list of integers)
         :type value: list
         """
-        self.voisins.append(value)
+        self.neighbours.append(value)
 
 
-def DFS(GRAPH, sommet_first, cluster_ind):
+def DFS(GRAPH, summit_first, cluster_ind):
     """
-    Implementation of the depth first search algorithm. This is a recursive
-    algorithm.
-    TODO : flesh out this doc-string.
-
-    :param GRAPH: 
-    :param sommet_first: event index by which the research of neighbours begins
+    Implementation of the depth first search (DFS) algorithm. This is a recursive
+    algorithm. See detailed description in ``do_clustering function``.
+    
+    :param GRAPH: the algorithm updates GRAPH.flag and GRAPH.cluster_index
+    :param summit_first: event index by which the research of neighbours begins
     :param cluster_ind: cluster index
 
     :type GRAPH: Graph object
-    :type sommet_first: integer
+    :type summit_first: integer
     :type cluster_ind: integer
 
     """
 
-    GRAPH.flag[sommet_first] = 1
-    GRAPH.cluster_index[sommet_first] = cluster_ind
+    GRAPH.flag[summit_first] = 1
+    GRAPH.cluster_index[summit_first] = cluster_ind
 
-    for ind_sommet_fils in range(len(GRAPH.voisins[sommet_first])):
-        sommet_fils = GRAPH.voisins[sommet_first][ind_sommet_fils]
-        if GRAPH.flag[sommet_fils] == 0:
-            GRAPH, cluster_ind = DFS(GRAPH, sommet_fils, cluster_ind)
+    for ind_summit_fils in range(len(GRAPH.neighbours[summit_first])):
+        summit_fils = GRAPH.neighbours[summit_first][ind_summit_fils]
+        if GRAPH.flag[summit_fils] == 0:
+            cluster_ind = DFS(GRAPH, summit_fils, cluster_ind)
 
-    return GRAPH, cluster_ind
+    return cluster_ind
 
 
 def waveval(stack_time, t_before, t_after, dt, tdeb):
@@ -246,17 +252,20 @@ def do_clustering(event, nbsta, nbmin):
     """
     First step: all events are examined one by one. For each of them, the indexes of the events 
     where there is a sufficient number of stations (i.e. the number exceeds or equals nbmin) are 
-    kept in GRAPH.voisins. All events are flagged to 0 and belong to cluster 0 by default. The 
-    indexes of the events for which neighbours were found are written in the list sommets.
+    kept in GRAPH.neighbours. All events are flagged to 0 and belong to cluster 0 by default. The 
+    indexes of the events for which neighbours were found are written in the list ``summits``.
 
-    From this list (sommets), we extract the event which has the greatest number of neighbours. 
+    From this list (summits), we extract the event which has the greatest number of neighbours. 
     The clustering process will start with that event.
 
     Then the DFS algorithm is applied: when an event is examined, it is flagged to 1 and its 
-    cluster number is also written (GRAPH.cluster_index). The DFS algorithm is recursive and 
-    explores each possible path until it ends.
+    cluster number is also updated (GRAPH.cluster_index). The DFS algorithm is recursive and 
+    explores each possible path until it ends: it means that when the research starts with a 
+    given event, it will search for the the first neighbour, and then the first neighbour of 
+    this first neighbour and so on... When all the ``first neighbours`` are found, the research 
+    can concentrates on second neighbours, and so on until all the neighbours are found.
 
-    Once the DFS algorithm has found all events linked to sommet_first, we write the corresponding 
+    Once the DFS algorithm has found all events linked to summit_first, we write the corresponding 
     indexes into the dictionary CLUSTER (where the keys are the cluster indexes) and look for 
     events with neighbours which are still not flagged to 1. The process keeps going until the 
     whole events with neighbours belong to a cluster.
@@ -278,46 +287,46 @@ def do_clustering(event, nbsta, nbmin):
     """
 
     # CODE CHRISTOPHE - CLUSTERING : DEPTH FIRST SEARCH
-    voisins_du_sommet_I__horiz = []
-    voisins_du_sommet_I__verti = []
+    neighbours_of_I_summit__horiz = []
+    neighbours_of_I_summit__verti = []
 
     GRAPH = Graph()
-    sommets = []
+    summits = []
 
     for I in range(event):
-        voisins_du_sommet_I__verti = \
+        neighbours_of_I_summit__verti = \
             (np.where(nbsta[:, I] >= nbmin)[0]).tolist()[0]
-        voisins_du_sommet_I__horiz = \
+        neighbours_of_I_summit__horiz = \
             (np.where(nbsta[I, :] >= nbmin)[1]).tolist()[0]
-        GRAPH.set_voisins(voisins_du_sommet_I__verti +
-                          voisins_du_sommet_I__horiz)
+        GRAPH.set_neighbours(neighbours_of_I_summit__verti +
+                          neighbours_of_I_summit__horiz)
         GRAPH.set_flag(0)
         GRAPH.set_cluster_index(0)
-        if voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz:
-            sommets.append(I)
+        if neighbours_of_I_summit__verti + neighbours_of_I_summit__horiz:
+            summits.append(I)
 
-    if sommets:
-        NB_MAX_VOISINS = 0
-        for ind_sommet in range(len(sommets)):
-            l = len(GRAPH.voisins[sommets[ind_sommet]])
-            if l > NB_MAX_VOISINS:
-                sommet_first = sommets[ind_sommet]
-                NB_MAX_VOISINS = l
+    if summits:
+        nb_max_neighbours = 0
+        for ind_summit in range(len(summits)):
+            l = len(GRAPH.neighbours[summits[ind_summit]])
+            if l > nb_max_neighbours:
+                summit_first = summits[ind_summit]
+                nb_max_neighbours = l
 
-        ind_sommet_first = 0
+        ind_summit_first = 0
         cluster_ind = 0
         CLUSTER = {}
         while 1:
             event_index_flagged = []
             event_index_non_flagged_with_neighbours = []
-            ind_sommet_first = ind_sommet_first+1
+            ind_summit_first = ind_summit_first+1
             cluster_ind = cluster_ind+1
-            GRAPH, cluster_ind = DFS(GRAPH, sommet_first, cluster_ind)
-            for k in range(len(GRAPH.voisins)):
+            cluster_ind = DFS(GRAPH, summit_first, cluster_ind)
+            for k in range(len(GRAPH.neighbours)):
                 if GRAPH.flag[k] == 1 and \
-                   GRAPH.cluster_index[k] == ind_sommet_first:
+                   GRAPH.cluster_index[k] == ind_summit_first:
                     event_index_flagged.append(k)
-                elif GRAPH.flag[k] == 0 and len(GRAPH.voisins[k]) != 0:
+                elif GRAPH.flag[k] == 0 and len(GRAPH.neighbours[k]) != 0:
                     event_index_non_flagged_with_neighbours.append(k)
 
             # add 1 to each event number as the first one is number one (and
@@ -326,7 +335,7 @@ def do_clustering(event, nbsta, nbmin):
                                         np.ones(len(event_index_flagged),
                                                 dtype=np.int))
             if len(event_index_non_flagged_with_neighbours) > 1:
-                sommet_first = event_index_non_flagged_with_neighbours[0]
+                summit_first = event_index_non_flagged_with_neighbours[0]
             else:
                 break
 
