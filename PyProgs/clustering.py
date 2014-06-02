@@ -3,7 +3,6 @@
 """
 Provides classes and functions for clustering of earthquakes based on the
 depth-first algorithm.
-
 """
 
 import os
@@ -75,8 +74,8 @@ def DFS(GRAPH, sommet_first, cluster_ind):
     algorithm.
     TODO : flesh out this doc-string.
 
-    :param GRAPH:
-    :param sommet_first: 
+    :param GRAPH: 
+    :param sommet_first: event index by which the research of neighbours begins
     :param cluster_ind: cluster index
 
     :type GRAPH: Graph object
@@ -203,52 +202,6 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, datadir,
                              (str(i), str(e1), str(e2), co))
                 plt.show()
 
-# TODO : Are the following lines still necessary ? What do they do ?
-#                # Plot location
-#                fig = plt.figure()
-#                x1 = locs[e1-1]['x_mean']
-#                y1 = locs[e1-1]['y_mean']
-#                z1 = -locs[e1-1]['z_mean']
-#                x2 = locs[e2-1]['x_mean']
-#                y2 = locs[e2-1]['y_mean']
-#                z2 = -locs[e2-1]['z_mean']
-#                ax1 = fig.add_subplot(221,xlabel='x' ,ylabel='y')
-#                ax1.plot(x1, y1, 'bo', x2, y2, 'ro')
-#                ax1.axis(rg_x+rg_y)
-#                ax1.text(367.5, 7652.5, "dx=%.03f" % np.abs(x1-x2))
-#                ax2 = fig.add_subplot(222, xlabel='x', ylabel='z')
-#                ax2.plot(x1,z1, 'bo', x2, z2, 'ro')
-#                ax2.axis(rg_x+rg_z)
-#                ax2.text(367.5, 2, "dz=%.03f" % np.abs(z1-z2))
-#                ax3 = fig.add_subplot(223, xlabel='y', ylabel='z')
-#                ax3.plot(y1, z1, 'bo', y2, z2, 'ro')
-#                ax3.axis(rg_y+rg_z)
-#                ax3.text(7651, 2, "dy=%.03f" % np.abs(y1-y2))
-#                #plt.show()
-#
-#                fig = plt.figure()
-#                fig.set_facecolor('white')
-#                for l in range(len(list_name)):
-#                    name = list_name[l]
-#                    if delay[name][e1-1][e2-1] != 'NaN' and \
-#                    coeff[name][e1-1][e2-1]>0.8:
-#                        stack_time_1 = locs[e1-1]['o_time']
-#                        i_start_1, i_end_1 = waveval(stack_time_1, t_before,
-#                                                     t_after, dt, tdeb)
-#                        val1 = tr[name][i_start_1-1:i_end_1]
-#                        stack_time_2 = locs[e2-1]['o_time']
-#                        i_start_2, i_end_2 = \
-#                            waveval(stack_time_2-delay[name][e1-1][e2-1],
-#                                    t_before, t_after, dt, tdeb)
-#                        val2 = tr[name][i_start_2-1:i_end_2]
-#                        t = np.linspace(0, t_after+t_before,
-#                                        (t_after+t_before)/dt+1)
-#                        plt.plot(t,val1/max(val1))
-#                        plt.plot(t,val2/max(val2), 'r')
-#                        plt.title("%s - coeff: %s" %
-#                                  (name,coeff[name][e1-1][e2-1]))
-#                        #plt.show()
-
 
 def compute_nbsta(event, coeff, threshold):
     """
@@ -303,6 +256,13 @@ def do_clustering(event, nbsta, nbmin):
     cluster number is also written (GRAPH.cluster_index). The DFS algorithm is recursive and 
     explores each possible path until it ends.
 
+    Once the DFS algorithm has found all events linked to sommet_first, we write the corresponding 
+    indexes into the dictionary CLUSTER (where the keys are the cluster indexes) and look for 
+    events with neighbours which are still not flagged to 1. The process keeps going until the 
+    whole events with neighbours belong to a cluster.
+
+    The function finally returns the dictionary CLUSTER.
+
     :param event: total number of events in the Waveloc location file
     :param nbsta: 2-D matrix containing the number of stations where the cross-correlation value 
     is greater than a given threshold for all possible event pairs
@@ -353,7 +313,7 @@ def do_clustering(event, nbsta, nbmin):
             ind_sommet_first = ind_sommet_first+1
             cluster_ind = cluster_ind+1
             GRAPH, cluster_ind = DFS(GRAPH, sommet_first, cluster_ind)
-            for k in range(len(GRAPH.voisins)):  # ???? à revoir...
+            for k in range(len(GRAPH.voisins)):
                 if GRAPH.flag[k] == 1 and \
                    GRAPH.cluster_index[k] == ind_sommet_first:
                     event_index_flagged.append(k)
