@@ -314,7 +314,7 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
 def do_double_diff(x, y, z, to, stations, coeff, delay, cluster, threshold,
                    t_th,  arr_times):
     """
-    Do double difference location (inner routine) and returns the new coordinates. 
+    Do double difference location (inner routine) and return new coordinates. 
 
     :param x: x-coordinates of events of a given cluster
     :param y: y-coordinates of events of a given cluster
