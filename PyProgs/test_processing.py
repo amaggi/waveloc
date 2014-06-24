@@ -127,6 +127,8 @@ class ProcessingTests(unittest.TestCase):
                                           'data_signature.dat')
         signature_file = open(signature_filename, 'r')
         lines = signature_file.readlines()
+        lines.sort()
+        expected_lines.sort()
         self.assertSequenceEqual(lines, expected_lines)
 
 if __name__ == '__main__':
