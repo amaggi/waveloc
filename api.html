@@ -1484,24 +1484,25 @@ determined</p>
 <dl class="function">
 <dt id="kurtogram.DBFB">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">DBFB</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#DBFB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.DBFB" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Double-band filter-bank.</dt>
-<dd>[a,d] = DBFB(x,h,g) computes the approximation
+<dd><p>Double-band filter-bank.
+[a,d] = DBFB(x,h,g) computes the approximation
 coefficients vector a and detail coefficients vector d,
-obtained by passing signal x though a two-band analysis filter-bank.</dd>
-</dl>
+obtained by passing signal x though a two-band analysis filter-bank.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>h</strong> &#8211; The decomposition low-pass filter and</li>
-<li><strong>g</strong> &#8211; The decomposition high-pass filter.</li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>h</strong> (<em>numpy array</em>) &#8211; The decomposition low-pass filter and</li>
+<li><strong>g</strong> (<em>numpy array</em>) &#8211; The decomposition high-pass filter.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a, d</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a, d</p>
 </td>
 </tr>
 </tbody>
@@ -1511,9 +1512,12 @@ obtained by passing signal x though a two-band analysis filter-bank.</dd>
 <dl class="function">
 <dt id="kurtogram.Fast_Kurtogram">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">Fast_Kurtogram</tt><big>(</big><em>x</em>, <em>nlevel</em>, <em>verbose=False</em>, <em>Fs=1</em>, <em>NFIR=16</em>, <em>fcut=0.4</em>, <em>opt1=1</em>, <em>opt2=1</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#Fast_Kurtogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.Fast_Kurtogram" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes the fast kurtogram of signal x up to level &#8216;nlevel&#8217;
+<dd><p>Computes the fast kurtogram Kwav of signal x up to level &#8216;nlevel&#8217;
 Maximum number of decomposition levels is log2(length(x)), but it is
-recommended to stay by a factor 1/8 below this.</p>
+recommended to stay by a factor 1/8 below this.
+Also returns the vector of k-levels Level_w, the frequency vector 
+freq_w, the complex envelope of the signal c and the extreme 
+frequencies of the &#8220;best&#8221; bandpass f_lower and f_upper.</p>
 <p>J. Antoni : 02/2005
 Translation to Python: T. Lecocq 02/2012</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1521,17 +1525,17 @@ Translation to Python: T. Lecocq 02/2012</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; signal to analyse</li>
-<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal to analyse</li>
+<li><strong>nlevel</strong> (<em>integer</em>) &#8211; number of decomposition levels</li>
 <li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
-<li><strong>Fs</strong> &#8211; Sampling frequency of signal x</li>
-<li><strong>NFIR</strong> &#8211; Length of FIR filter</li>
-<li><strong>fcut</strong> &#8211; Fraction of Nyquist for filter</li>
+<li><strong>Fs</strong> (<em>integer</em>) &#8211; Sampling frequency of signal x</li>
+<li><strong>NFIR</strong> (<em>integer</em>) &#8211; Length of FIR filter</li>
+<li><strong>fcut</strong> (<em>float</em>) &#8211; Fraction of Nyquist for filter</li>
 <li><strong>opt1</strong> &#8211; [1 | 2]:
-* opt1=1: classical kurtosis based on 4th order statistics
+* opt1 = 1: classical kurtosis based on 4th order statistics
 * opt1 = 2: robust kurtosis based on 2nd order statistics of the
 envelope (if there is any difference in the kurtogram between the
-two measures, this is  due to the presence of impulsive additive
+two measures, this is due to the presence of impulsive additive
 noise)</li>
 <li><strong>opt2</strong> &#8211; [1 | 2]:
 * opt2=1: the kurtogram is computed via a fast decimated filterbank
@@ -1542,7 +1546,13 @@ gives virtually the same results as option 2)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Kwav, Level_w, freq_w, c, f_lower, f_upper</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Kwav, Level_w, freq_w, c, f_lower, f_upper
+* Kwav: kurtogram
+* Level_w: vector of levels
+* freq_w: frequency vector
+* c: complex envelope of the signal filtered in the frequency band that maximizes the kurtogram
+* f_lower: lower frequency of the band pass
+* f_upper: upper frequency of the band pass</p>
 </td>
 </tr>
 </tbody>
@@ -1559,19 +1569,25 @@ Translation to Python: T. Lecocq 02/2012</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>h</strong> &#8211; lowpass filter</li>
-<li><strong>g</strong> &#8211; higpass filter</li>
-<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>h</strong> (<em>numpy array</em>) &#8211; lowpass filter</li>
+<li><strong>g</strong> (<em>numpy array</em>) &#8211; highpass filter</li>
+<li><strong>h1</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>nlevel</strong> (<em>integer</em>) &#8211; number of decomposition levels</li>
 <li><strong>Sc</strong> &#8211; Sc = -log2(Bw)-1 with Bw the bandwidth of the filter</li>
-<li><strong>Fr</strong> &#8211; in the range [0, 0.5]</li>
+<li><strong>Fr</strong> (<em>float</em>) &#8211; in the range [0, 0.5]</li>
 <li><strong>Fs</strong> &#8211; Sampling frequency of signal x</li>
 <li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first">Fs: integer</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">c, s, threshold, Bw, fc</p>
 </td>
 </tr>
 </tbody>
@@ -1581,10 +1597,10 @@ Translation to Python: T. Lecocq 02/2012</p>
 <dl class="function">
 <dt id="kurtogram.K_wpQ">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>nlevel</em>, <em>verbose</em>, <em>opt</em>, <em>level=0</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the kurtosis K of the complete quinte wavelet packet transform w
-of signal x, up to nlevel, using the lowpass and highpass filters h and g,
-respectively.  The WP coefficients are sorted according to the frequency
-decomposition.  This version handles both real and analytical filters, but
+<dd><p>Calculates the kurtosis K (2-D matrix) of the complete quinte wavelet packet 
+transform w of signal x, up to nlevel, using the lowpass and highpass filters 
+h and g, respectively. The WP coefficients are sorted according to the frequency
+decomposition. This version handles both real and analytical filters, but
 does not yield WP coefficients suitable for signal synthesis.</p>
 <p>J. Antoni : 12/2004
 Translation to Python: T. Lecocq 02/2012</p>
@@ -1593,15 +1609,15 @@ Translation to Python: T. Lecocq 02/2012</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>h</strong> &#8211; lowpass filter</li>
-<li><strong>g</strong> &#8211; higpass filter</li>
-<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>h</strong> (<em>numpy array</em>) &#8211; lowpass filter</li>
+<li><strong>g</strong> (<em>numpy array</em>) &#8211; higpass filter</li>
+<li><strong>h1</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>nlevel</strong> (<em>integer</em>) &#8211; number of decomposition levels</li>
 <li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
-<li><strong>opt</strong> &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
+<li><strong>opt</strong> (<em>string</em>) &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
 * &#8216;kurt1&#8217; = variance of the envelope magnitude
 * &#8216;kurt2&#8217; = kurtosis of the complex envelope</li>
 <li><strong>level</strong> &#8211; decomposition level for this call</li>
@@ -1620,7 +1636,7 @@ Translation to Python: T. Lecocq 02/2012</p>
 <tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ_filt</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>acoeff</em>, <em>bcoeff</em>, <em>level=0</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ_filt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ_filt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the kurtosis K of the complete quinte wavelet packet transform w
 of signal x, up to nlevel, using the lowpass and highpass filters h and g,
-respectively.  The WP coefficients are sorted according to the frequency
+respectively. The WP coefficients are sorted according to the frequency
 decomposition.
 This version handles both real and analytical filters, but does not yield
 WP coefficients suitable for signal synthesis.</p>
@@ -1633,7 +1649,7 @@ Translation to Python: T. Lecocq 02/2012</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>x</strong> &#8211; signal</li>
 <li><strong>h</strong> &#8211; lowpass filter</li>
-<li><strong>g</strong> &#8211; higpass filter</li>
+<li><strong>g</strong> &#8211; highpass filter</li>
 <li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
 <li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
 <li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
@@ -1676,24 +1692,29 @@ TODO : flesh out this doc-string</p>
 <dl class="function">
 <dt id="kurtogram.K_wpQ_local">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">K_wpQ_local</tt><big>(</big><em>x</em>, <em>h</em>, <em>g</em>, <em>h1</em>, <em>h2</em>, <em>h3</em>, <em>nlevel</em>, <em>verbose</em>, <em>opt</em>, <em>level</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#K_wpQ_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.K_wpQ_local" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string. Is a recursive funtion.</p>
+<dd><p>Is a recursive funtion. 
+Computes and returns the 2-D vector K, which contains the kurtosis value of the signal as 
+well as the 2 kurtosis values corresponding to the signal filtered into 2 different 
+band-passes.
+Also returns and computes the 2-D vector KQ which contains the 3 kurtosis values corresponding 
+to the signal filtered into 3 different band-passes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>h</strong> &#8211; lowpass filter</li>
-<li><strong>g</strong> &#8211; higpass filter</li>
-<li><strong>h1</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>h2</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>h3</strong> &#8211; filter parameter returned by get_h_parameters</li>
-<li><strong>nlevel</strong> &#8211; number of decomposition levels</li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>h</strong> (<em>numpy array</em>) &#8211; lowpass filter</li>
+<li><strong>g</strong> (<em>numpy array</em>) &#8211; highpass filter</li>
+<li><strong>h1</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h2</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>h3</strong> (<em>numpy array</em>) &#8211; filter parameter returned by get_h_parameters</li>
+<li><strong>nlevel</strong> (<em>integer</em>) &#8211; number of decomposition levels</li>
 <li><strong>verbose</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> outputs debugging information</li>
-<li><strong>opt</strong> &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
+<li><strong>opt</strong> (<em>string</em>) &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
 * &#8216;kurt1&#8217; = variance of the envelope magnitude
 * &#8216;kurt2&#8217; = kurtosis of the complex envelope</li>
-<li><strong>level</strong> &#8211; decomposition level for this call</li>
+<li><strong>level</strong> (<em>integer</em>) &#8211; decomposition level for this call</li>
 </ul>
 </td>
 </tr>
@@ -1707,23 +1728,24 @@ TODO : flesh out this doc-string</p>
 <dl class="function">
 <dt id="kurtogram.TBFB">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">TBFB</tt><big>(</big><em>x</em>, <em>h1</em>, <em>h2</em>, <em>h3</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#TBFB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.TBFB" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Trible-band filter-bank.</dt>
-<dd>[a1,a2,a3] = TBFB(x,h1,h2,h3)</dd>
-</dl>
+<dd><p>Triple-band filter-bank.
+[a1,a2,a3] = TBFB(x,h1,h2,h3)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>h1</strong> &#8211; filter parameter</li>
-<li><strong>h2</strong> &#8211; filter parameter</li>
-<li><strong>h3</strong> &#8211; filter parameter</li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>h1</strong> (<em>numpy array</em>) &#8211; filter parameter</li>
+<li><strong>h2</strong> (<em>numpy array</em>) &#8211; filter parameter</li>
+<li><strong>h3</strong> (<em>numpy array</em>) &#8211; filter parameter</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a1, a2, a3</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a1, a2, a3</p>
 </td>
 </tr>
 </tbody>
@@ -1733,10 +1755,8 @@ TODO : flesh out this doc-string</p>
 <dl class="function">
 <dt id="kurtogram.binary">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">binary</tt><big>(</big><em>i</em>, <em>k</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.binary" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Computes the coefficients of the binary expansion of i:</dt>
-<dd>i = a(1)*2^(k-1) + a(2)*2^(k-2) + ... + a(k)</dd>
-</dl>
+<dd><p>Computes the coefficients of the binary expansion of i:
+i = a(1)*2^(k-1) + a(2)*2^(k-2) + ... + a(k)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1778,20 +1798,27 @@ WavelocOptions.opdict.</p>
 <dl class="function">
 <dt id="kurtogram.getBandwidthAndFrequency">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">getBandwidthAndFrequency</tt><big>(</big><em>nlevel</em>, <em>Fs</em>, <em>level_w</em>, <em>freq_w</em>, <em>level_index</em>, <em>freq_index</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#getBandwidthAndFrequency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.getBandwidthAndFrequency" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets bandwidth and frequency parameters.
-TODO : flesh out this doc-string</p>
+<dd><p>Gets bandwidth bw and frequency parameters knowing the 
+level and the frequency indexes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nlevel</strong> &#8211; </li>
-<li><strong>Fs</strong> &#8211; </li>
-<li><strong>level_w</strong> &#8211; </li>
-<li><strong>freq_w</strong> &#8211; </li>
-<li><strong>level_index</strong> &#8211; </li>
-<li><strong>freq_index</strong> &#8211; </li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nlevel</strong> (<em>integer</em>) &#8211; number of decomposition levels</li>
+<li><strong>Fs</strong> (<em>integer</em>) &#8211; sampling frequency of the signal</li>
+<li><strong>level_w</strong> (<em>numpy array</em>) &#8211; vector of decomposition levels</li>
+<li><strong>freq_w</strong> (<em>numpy array</em>) &#8211; vector of frequencies</li>
+<li><strong>level_index</strong> (<em>integer</em>) &#8211; index of the level</li>
+<li><strong>freq_index</strong> (<em>integer</em>) &#8211; index of the frequency</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">bw, fc, fi, l1
+* bw: bandwidth
+* fc: central frequency
+* fi: index of the frequency sequence within the level l1
+* l1: level</p>
 </td>
 </tr>
 </tbody>
@@ -1824,14 +1851,14 @@ TODO : flesh out this doc-string</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>grid</strong> &#8211; an nD-grid</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
-<li>M : grid maximum</li>
-<li>index : index of maximum in unraveled grid</li>
-</ul>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
 </tbody>
 </table>
+<ul class="simple">
+<li>M : grid maximum</li>
+<li>index : index of maximum in unraveled grid</li>
+</ul>
 </dd></dl>
 
 <dl class="function">
@@ -1848,7 +1875,10 @@ TODO : flesh out this doc-string</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">h-parameters: h, g, h1, h2, h3</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">h-parameters: h, g, h1, h2, h3</p>
 </td>
 </tr>
 </tbody>
@@ -1864,8 +1894,8 @@ TODO : flesh out this doc-string</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>opt</strong> &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>opt</strong> (<em>string</em>) &#8211; [&#8216;kurt1&#8217; | &#8216;kurt2&#8217;]
 * &#8216;kurt1&#8217; = variance of the envelope magnitude
 * &#8216;kurt2&#8217; = kurtosis of the complex envelope</li>
 </ul>
@@ -1884,16 +1914,24 @@ TODO : flesh out this doc-string</p>
 <dl class="function">
 <dt id="kurtogram.kurto">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">kurto</tt><big>(</big><em>origin_time</em>, <em>info</em>, <em>opdict</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#kurto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.kurto" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>Finds for each Waveloc event and for each station the best filtering 
+parameters for kurtosis computation.
+Writes them into the dictionary info.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>origin_time</strong> &#8211; </li>
-<li><strong>info</strong> &#8211; </li>
-<li><strong>opdict</strong> &#8211; </li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>origin_time</strong> (<em>utcdatetime</em>) &#8211; origin time of the signal</li>
+<li><strong>info</strong> (<em>dictionary</em>) &#8211; dictionary of parameters</li>
+<li><strong>opdict</strong> (<em>dictionary</em>) &#8211; dictionary of the Waveloc parameters and options</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dictionary</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">info</p>
 </td>
 </tr>
 </tbody>
@@ -1919,6 +1957,29 @@ TODO : flesh out this doc-string</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="kurtogram.plotKurtogram">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">plotKurtogram</tt><big>(</big><em>Kwav</em>, <em>freq_w</em>, <em>nlevel</em>, <em>Level_w</em>, <em>Fs</em>, <em>fi</em>, <em>I</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plotKurtogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plotKurtogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the kurtogram.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Kwav</strong> (<em>numpy array</em>) &#8211; kurtogram</li>
+<li><strong>freq_w</strong> (<em>numpy array</em>) &#8211; frequency vector</li>
+<li><strong>nlevel</strong> (<em>integer</em>) &#8211; number of decomposition levels</li>
+<li><strong>level_w</strong> (<em>numpy array</em>) &#8211; vector of levels</li>
+<li><strong>Fs</strong> (<em>integer</em>) &#8211; sampling frequency of the signal</li>
+<li><strong>fi</strong> &#8211; </li>
+<li><strong>I</strong> (<em>integer</em>) &#8211; level index</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="kurtogram.plot_envelope">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">plot_envelope</tt><big>(</big><em>x</em>, <em>Fs</em>, <em>c</em>, <em>fc</em>, <em>level</em>, <em>spec=False</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_envelope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_envelope" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots envelope (with or without its spectrum)</p>
@@ -1927,11 +1988,11 @@ TODO : flesh out this doc-string</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; signal</li>
-<li><strong>Fs</strong> &#8211; sampling frequency of signal</li>
-<li><strong>c</strong> &#8211; </li>
-<li><strong>fc</strong> &#8211; </li>
-<li><strong>level</strong> &#8211; </li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
+<li><strong>Fs</strong> (<em>float</em>) &#8211; sampling frequency of signal</li>
+<li><strong>c</strong> (<em>numpy array</em>) &#8211; complex envelope of signal</li>
+<li><strong>fc</strong> (<em>float</em>) &#8211; central frequency of the bandpass in Hz</li>
+<li><strong>level</strong> (<em>float</em>) &#8211; index of the decomposition level</li>
 <li><strong>spec</strong> &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> also plots the envelope spectrum</li>
 </ul>
 </td>
@@ -1941,23 +2002,29 @@ TODO : flesh out this doc-string</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="kurtogram.plot_kurtogram">
-<tt class="descclassname">kurtogram.</tt><tt class="descname">plot_kurtogram</tt><big>(</big><em>Kwav</em>, <em>freq_w</em>, <em>nlevel</em>, <em>Level_w</em>, <em>Fs</em>, <em>fi</em>, <em>index</em>, <em>opt1=None</em>, <em>opt2=None</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_kurtogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_kurtogram" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots the kurtogram. TODO : flesh out this doc-string.</p>
+<dt id="kurtogram.plot_trace">
+<tt class="descclassname">kurtogram.</tt><tt class="descname">plot_trace</tt><big>(</big><em>fig</em>, <em>G</em>, <em>x</em>, <em>xfilt</em>, <em>kurtx</em>, <em>tr</em>, <em>info</em>, <em>f_lower</em>, <em>f_upper</em>, <em>snr</em>, <em>snr_ref</em>, <em>snr_kurt</em>, <em>kmax</em>, <em>kmax_ref</em>, <em>tstack</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots both signal and kurtosis for comparison. TODO : flesh out this doc-string.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Kwav</strong> &#8211; </li>
-<li><strong>freq_w</strong> &#8211; </li>
-<li><strong>nlevel</strong> &#8211; </li>
-<li><strong>level_w</strong> &#8211; </li>
-<li><strong>Fs</strong> &#8211; </li>
-<li><strong>fi</strong> &#8211; </li>
-<li><strong>index</strong> &#8211; </li>
-<li><strong>opt1</strong> &#8211; </li>
-<li><strong>opt2</strong> &#8211; </li>
+<li><strong>fig</strong> (<em>matplotlib.pyplot.figure</em>) &#8211; figure</li>
+<li><strong>G</strong> (<em>matplotlib.gridspec</em>) &#8211; location of the subplot in the figure</li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; initial signal</li>
+<li><strong>xfilt</strong> (<em>numpy array</em>) &#8211; signal filtered in bandpass determined after the kurtogram analysis</li>
+<li><strong>kurtx</strong> (<em>numpy array</em>) &#8211; kurtosis of the initial signal</li>
+<li><strong>tr</strong> (<em>numpy array</em>) &#8211; kurtosis of the filtered signal</li>
+<li><strong>info</strong> (<em>dictionary</em>) &#8211; dictionary of parameters</li>
+<li><strong>f_lower</strong> (<em>float</em>) &#8211; lower frequency of the filtering bandpass</li>
+<li><strong>f_upper</strong> (<em>flaot</em>) &#8211; upper frequency of the filtering bandpass</li>
+<li><strong>snr</strong> (<em>float</em>) &#8211; signal-to-noise ratio of xfilt</li>
+<li><strong>snr_ref</strong> (<em>float</em>) &#8211; signal-to-noise ratio of x</li>
+<li><strong>snr_kurt</strong> (<em>float</em>) &#8211; signal-to-noise ratio of tr</li>
+<li><strong>kmax</strong> (<em>float</em>) &#8211; maximum value of tr</li>
+<li><strong>kmax_ref</strong> (<em>float</em>) &#8211; maximum value of kurtx</li>
+<li><strong>tstack</strong> (<em>utcdatetime</em>) &#8211; origin time of the signal</li>
 </ul>
 </td>
 </tr>
@@ -1966,19 +2033,11 @@ TODO : flesh out this doc-string</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="kurtogram.plot_trace">
-<tt class="descclassname">kurtogram.</tt><tt class="descname">plot_trace</tt><big>(</big><em>G</em>, <em>fig</em>, <em>x</em>, <em>xfilt</em>, <em>kurtx</em>, <em>tr</em>, <em>c</em>, <em>info</em>, <em>f_lower</em>, <em>f_upper</em>, <em>snr</em>, <em>snr_ref</em>, <em>snr_kurt</em>, <em>kmax</em>, <em>kmax_ref</em>, <em>tstack</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#plot_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.plot_trace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot signal and kurtosis for comparison. TODO : flesh out this doc-string.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="kurtogram.raylinv">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">raylinv</tt><big>(</big><em>p</em>, <em>b</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#raylinv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.raylinv" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Inverse of the Rayleigh cumulative distribution function (cdf).</dt>
-<dd>X = RAYLINV(P,B) returns the Rayleigh cumulative distribution function
-with parameter B at the probabilities in P.</dd>
-</dl>
+<dd><p>Inverse of the Rayleigh cumulative distribution function (cdf).
+X = RAYLINV(P,B) returns the Rayleigh cumulative distribution function
+with parameter B at the probabilities in P.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1996,12 +2055,15 @@ with parameter B at the probabilities in P.</dd>
 <dl class="function">
 <dt id="kurtogram.read_kurtogram_frequencies">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">read_kurtogram_frequencies</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#read_kurtogram_frequencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.read_kurtogram_frequencies" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads and plots binary file of kurtogram frequencies.</p>
+<dd><p>Reads the binary file with kurtogram frequencies.
+Plots the histograms of lower and upper frequencies 
+for each station.
+Aims at determining the best filtering parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> &#8211; File to read</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>string</em>) &#8211; File to read</td>
 </tr>
 </tbody>
 </table>
@@ -2010,18 +2072,24 @@ with parameter B at the probabilities in P.</dd>
 <dl class="function">
 <dt id="kurtogram.waveval">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">waveval</tt><big>(</big><em>xall</em>, <em>tstart</em>, <em>tend</em>, <em>dt</em>, <em>tdeb</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#waveval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.waveval" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>Returns the part of signal corresponding to a given event.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>xall</strong> &#8211; </li>
-<li><strong>tstart</strong> &#8211; </li>
-<li><strong>tend</strong> &#8211; </li>
-<li><strong>dt</strong> &#8211; </li>
-<li><strong>tdeb</strong> &#8211; </li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xall</strong> (<em>numpy array</em>) &#8211; complete signal</li>
+<li><strong>tstart</strong> (<em>utcdatetime</em>) &#8211; start time of the signal</li>
+<li><strong>tend</strong> (<em>utcdatetime</em>) &#8211; end time of the signal</li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; time sampling in seconds</li>
+<li><strong>tdeb</strong> (<em>utcdateime</em>) &#8211; start time of the whole data</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">val</p>
 </td>
 </tr>
 </tbody>
@@ -2031,17 +2099,25 @@ with parameter B at the probabilities in P.</dd>
 <dl class="function">
 <dt id="kurtogram.write_file">
 <tt class="descclassname">kurtogram.</tt><tt class="descname">write_file</tt><big>(</big><em>info</em>, <em>tstart</em>, <em>tend</em>, <em>tr</em><big>)</big><a class="reference internal" href="_modules/kurtogram.html#write_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#kurtogram.write_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Writes kurtosis file.</p>
+<dd><p>Replaces the initial kurtosis by a new one (from 
+the signal filtered in the preferred band pass).
+Writes it in the dictionary info.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>info</strong> &#8211; dictionary of parameters</li>
-<li><strong>tstart</strong> &#8211; start-time</li>
-<li><strong>tend</strong> &#8211; end-time</li>
-<li><strong>tr</strong> &#8211; trace to write</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>info</strong> (<em>dictionary</em>) &#8211; dictionary of parameters</li>
+<li><strong>tstart</strong> (<em>utcdatetime</em>) &#8211; start-time</li>
+<li><strong>tend</strong> (<em>utcdatetime</em>) &#8211; end-time</li>
+<li><strong>tr</strong> (<em>numpy array</em>) &#8211; trace to write</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">dictionary</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">info</p>
 </td>
 </tr>
 </tbody>
@@ -2906,13 +2982,14 @@ time-lag</li>
 <dl class="function">
 <dt id="correlation.cum">
 <tt class="descclassname">correlation.</tt><tt class="descname">cum</tt><big>(</big><em>x</em>, <em>v</em><big>)</big><a class="reference internal" href="_modules/correlation.html#cum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.cum" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>Determines the minimum and maximum indices of the most significative part of a signal.
+(Here, determines the part of the amplitude spectrum which is useful)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> (<em>numpy array</em>) &#8211; </li>
+<li><strong>x</strong> (<em>numpy array</em>) &#8211; signal</li>
 <li><strong>v</strong> (<em>boolean</em>) &#8211; If <tt class="docutils literal"><span class="pre">True</span></tt> then plot x and cumulative sum of x</li>
 </ul>
 </td>
@@ -2920,7 +2997,7 @@ time-lag</li>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">int</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">mini, max_i</p>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">mini, maxi</p>
 </td>
 </tr>
 </tbody>
@@ -2929,7 +3006,7 @@ time-lag</li>
 
 <dl class="function">
 <dt id="correlation.display">
-<tt class="descclassname">correlation.</tt><tt class="descname">display</tt><big>(</big><em>Cxy</em>, <em>f</em>, <em>a</em>, <em>f_min_max</em><big>)</big><a class="reference internal" href="_modules/correlation.html#display"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.display" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">correlation.</tt><tt class="descname">display</tt><big>(</big><em>Cxy</em>, <em>f</em>, <em>f_min_max</em><big>)</big><a class="reference internal" href="_modules/correlation.html#display"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.display" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays amplitude and phase of the frequency domain cross-correlation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2938,7 +3015,6 @@ time-lag</li>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>Cxy</strong> (<em>numpy array</em>) &#8211; frequency domain cross-correlation</li>
 <li><strong>f</strong> (<em>numpy array</em>) &#8211; frequency vector</li>
-<li><strong>a</strong> &#8211; </li>
 <li><strong>f_min_max</strong> (<em>numpy array</em>) &#8211; </li>
 </ul>
 </td>
@@ -2952,7 +3028,12 @@ time-lag</li>
 <tt class="descclassname">correlation.</tt><tt class="descname">do_correlation_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/correlation.html#do_correlation_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.do_correlation_setup_and_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs correlation using options contained in a WavelocOptions.opdict
 dictionary.</p>
-<p>TODO : Flesh out this doc-string by explaining the sequence of operations</p>
+<p>Explores and cross-correlates all possible event pairs of the Waveloc location file at all stations.
+Writes the correlation coefficients and time delays in 2-D numpy arrays for each station and saves 
+the final dictionaries into 2 binary files.</p>
+<p>The correlation first takes place in the time domain. If the correlation value is over a given 
+threshold, the correlation is also performed in the frequency domain so that a subsample precision 
+can be obtained on the time delay.</p>
 </dd></dl>
 
 <dl class="function">
@@ -2984,7 +3065,9 @@ the frequency domain.</p>
 <dl class="function">
 <dt id="correlation.plot_waveform">
 <tt class="descclassname">correlation.</tt><tt class="descname">plot_waveform</tt><big>(</big><em>x</em>, <em>y</em>, <em>dt</em>, <em>tau</em>, <em>ev1</em>, <em>ev2</em><big>)</big><a class="reference internal" href="_modules/correlation.html#plot_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#correlation.plot_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots the waveforms.</p>
+<dd><p>Plots the waveforms.
+On the first plot, both waveforms are superimposed.
+On the second plot, they are plotted separately.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3032,19 +3115,18 @@ station name and start-time</p>
 <span class="target" id="module-clustering"></span><p>Provides classes and functions for clustering of earthquakes based on the
 depth-first algorithm.</p>
 <dl class="function">
-<dt id="clustering.CZ_DFS">
-<tt class="descclassname">clustering.</tt><tt class="descname">CZ_DFS</tt><big>(</big><em>GRAPH</em>, <em>sommet_first</em>, <em>cluster_ind</em><big>)</big><a class="reference internal" href="_modules/clustering.html#CZ_DFS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.CZ_DFS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implementation of the depth first search algorithm. This is a recursive
-algorithm.
-TODO : flesh out this doc-string.</p>
+<dt id="clustering.DFS">
+<tt class="descclassname">clustering.</tt><tt class="descname">DFS</tt><big>(</big><em>GRAPH</em>, <em>summit_first</em>, <em>cluster_ind</em><big>)</big><a class="reference internal" href="_modules/clustering.html#DFS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.DFS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the depth first search (DFS) algorithm. This is a recursive
+algorithm. See detailed description in <tt class="docutils literal"><span class="pre">do_clustering</span> <span class="pre">function</span></tt>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>GRAPH</strong> (<em>Graph object</em>) &#8211; </li>
-<li><strong>sommet_first</strong> (<em>integer</em>) &#8211; </li>
-<li><strong>cluster_ind</strong> (<em>integer</em>) &#8211; </li>
+<li><strong>GRAPH</strong> (<em>Graph object</em>) &#8211; the algorithm updates GRAPH.flag and GRAPH.cluster_index</li>
+<li><strong>summit_first</strong> (<em>integer</em>) &#8211; event index by which the research of neighbours begins</li>
+<li><strong>cluster_ind</strong> (<em>integer</em>) &#8211; cluster index</li>
 </ul>
 </td>
 </tr>
@@ -3056,14 +3138,27 @@ TODO : flesh out this doc-string.</p>
 <dt id="clustering.Graph">
 <em class="property">class </em><tt class="descclassname">clustering.</tt><tt class="descname">Graph</tt><a class="reference internal" href="_modules/clustering.html#Graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class of Graph objects. Contains 4 attributes:</p>
-<ul class="simple">
-<li>flag</li>
-<li>cluster_index</li>
-<li>voisins (neighbours)</li>
-<li>nb_voisins (number of neighbours)</li>
-</ul>
-<p>TODO: Flesh out this doc-string. The structure of this object is very
-obscure...</p>
+<p>** Attributes **</p>
+<dl class="attribute">
+<dt id="clustering.Graph.flag">
+<tt class="descname">flag</tt><a class="headerlink" href="#clustering.Graph.flag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates if an event already belongs to a cluster (1) or not (0).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="clustering.Graph.cluster_index">
+<tt class="descname">cluster_index</tt><a class="headerlink" href="#clustering.Graph.cluster_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates the cluster number of all events. 0 means the event does not belong
+to any cluster.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="clustering.Graph.neighbours">
+<tt class="descname">neighbours</tt><a class="headerlink" href="#clustering.Graph.neighbours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists the indexes of the neighbour events for each event. 
+GRAPH.neighbours is then a list of lists.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="clustering.Graph.set_cluster_index">
 <tt class="descname">set_cluster_index</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_cluster_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_cluster_index" title="Permalink to this definition">¶</a></dt>
@@ -3072,7 +3167,7 @@ obscure...</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>integer ??</em>) &#8211; Value to append.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>integer</em>) &#8211; Value to append.</td>
 </tr>
 </tbody>
 </table>
@@ -3081,26 +3176,26 @@ obscure...</p>
 <dl class="method">
 <dt id="clustering.Graph.set_flag">
 <tt class="descname">set_flag</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_flag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_flag" title="Permalink to this definition">¶</a></dt>
-<dd><p>Appends value to flag attribute</p>
+<dd><p>Appends value to flag attribute.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>int</em>) &#8211; Value to append (0=False, 1=True).</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>integer</em>) &#8211; Value to append (0=False, 1=True).</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="method">
-<dt id="clustering.Graph.set_voisins">
-<tt class="descname">set_voisins</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_voisins"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_voisins" title="Permalink to this definition">¶</a></dt>
-<dd><p>Appends value to voisins attribute</p>
+<dt id="clustering.Graph.set_neighbours">
+<tt class="descname">set_neighbours</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/clustering.html#Graph.set_neighbours"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.Graph.set_neighbours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends value to neighbours attribute</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>integer ??</em>) &#8211; Value to append.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>value</strong> (<em>list</em>) &#8211; Value to append (list of integers)</td>
 </tr>
 </tbody>
 </table>
@@ -3111,19 +3206,20 @@ obscure...</p>
 <dl class="function">
 <dt id="clustering.compute_nbsta">
 <tt class="descclassname">clustering.</tt><tt class="descname">compute_nbsta</tt><big>(</big><em>event</em>, <em>coeff</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#compute_nbsta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.compute_nbsta" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>Computes the number of stations where the correlation value is greater than the threshold 
+for every event pair</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>event</strong> &#8211; </li>
-<li><strong>coeff</strong> &#8211; </li>
-<li><strong>threshold</strong> &#8211; </li>
+<li><strong>event</strong> (<em>integer</em>) &#8211; total number of events located by Waveloc</li>
+<li><strong>coeff</strong> (<em>dictionary</em>) &#8211; cross-correlation coefficients of all possible event pairs for all stations</li>
+<li><strong>threshold</strong> (<em>float</em>) &#8211; correlation value threshold set to form a cluster</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy maxtrix containing integers</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy matrix containing integers</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">matrix of number of stations</p>
@@ -3136,17 +3232,45 @@ obscure...</p>
 <dl class="function">
 <dt id="clustering.do_clustering">
 <tt class="descclassname">clustering.</tt><tt class="descname">do_clustering</tt><big>(</big><em>event</em>, <em>nbsta</em>, <em>nbmin</em><big>)</big><a class="reference internal" href="_modules/clustering.html#do_clustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.do_clustering" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>First step: all events are examined one by one. For each of them, the indexes of the events 
+where there is a sufficient number of stations (i.e. the number exceeds or equals nbmin) are 
+kept in GRAPH.neighbours. All events are flagged to 0 and belong to cluster 0 by default. The 
+indexes of the events for which neighbours were found are written in the list <tt class="docutils literal"><span class="pre">summits</span></tt>.</p>
+<p>From this list (summits), we extract the event which has the greatest number of neighbours. 
+The clustering process will start with that event.</p>
+<p>Then the DFS algorithm is applied: when an event is examined, it is flagged to 1 and its 
+cluster number is also updated (GRAPH.cluster_index). The DFS algorithm is recursive and 
+explores each possible path until it ends: it means that when the research starts with a 
+given event, it will search for the the first neighbour, and then the first neighbour of 
+this first neighbour and so on... When all the <tt class="docutils literal"><span class="pre">first</span> <span class="pre">neighbours</span></tt> are found, the research 
+can concentrates on second neighbours, and so on until all the neighbours are found.</p>
+<p>Once the DFS algorithm has found all events linked to summit_first, we write the corresponding 
+indexes into the dictionary CLUSTER (where the keys are the cluster indexes) and look for 
+events with neighbours which are still not flagged to 1. The process keeps going until the 
+whole events with neighbours belong to a cluster.</p>
+<p>The function finally returns the dictionary CLUSTER.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>event</strong> &#8211; </li>
-<li><strong>nbsta</strong> (<em>integer</em>) &#8211; </li>
-<li><strong>nbmin</strong> (<em>integer</em>) &#8211; </li>
+<li><strong>event</strong> &#8211; total number of events in the Waveloc location file</li>
+<li><strong>nbsta</strong> &#8211; 2-D matrix containing the number of stations where the cross-correlation value</li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+<p>is greater than a given threshold for all possible event pairs
+:param nbmin: minimum number of stations where the cross-correlation value should be greater 
+than a given threshold to form a cluster</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dictionary</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">indexes of events forming each cluster</td>
 </tr>
 </tbody>
 </table>
@@ -3155,7 +3279,11 @@ obscure...</p>
 <dl class="function">
 <dt id="clustering.do_clustering_setup_and_run">
 <tt class="descclassname">clustering.</tt><tt class="descname">do_clustering_setup_and_run</tt><big>(</big><em>opdict</em><big>)</big><a class="reference internal" href="_modules/clustering.html#do_clustering_setup_and_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.do_clustering_setup_and_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>Does clustering by applying the depth first search algorithm and saves the result 
+(= a dictionary containing the event indexes forming each cluster) in a binary file.
+Needs to define the correlation value threshold and the minimum number of stations 
+where this threshold should be reached to form a cluster (should be done in the options
+dictionary)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -3169,43 +3297,57 @@ obscure...</p>
 <dl class="function">
 <dt id="clustering.plot_graphs">
 <tt class="descclassname">clustering.</tt><tt class="descname">plot_graphs</tt><big>(</big><em>locs</em>, <em>stations</em>, <em>nbsta</em>, <em>CLUSTER</em>, <em>nbmin</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#plot_graphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.plot_graphs" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string
+<dd><p>Displays two figures.
+On the first plot, all events are represented. Those belonging to a cluster are color-coded 
+and labelled with the cluster index.
+On the second plot, all events are also represented, but those belonging to a cluster are 
+colored in black. The links between events of a same cluster are also plotted and color-coded 
+in function of the number of stations where the correlation value exceeds the threshold.
 Uses mlab from mayavi</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>locs</strong> &#8211; </li>
-<li><strong>stations</strong> &#8211; </li>
-<li><strong>nbsta</strong> &#8211; </li>
-<li><strong>CLUSTER</strong> &#8211; </li>
-<li><strong>nbmin</strong> &#8211; </li>
-<li><strong>threshold</strong> &#8211; </li>
+<li><strong>locs</strong> &#8211; list of the whole Waveloc locations (each element of the list is a dictionary)</li>
+<li><strong>stations</strong> &#8211; dictionary of stations</li>
 </ul>
 </td>
 </tr>
+</tbody>
+</table>
+<p>:param nbsta:2-D matrix containing the number of stations where the cross-correlation value 
+is greater than a given threshold for all possible event pairs
+:param CLUSTER: dictionary containing the indexes of the events for each cluster
+:param nbmin: minimum number of stations where the cross-correlation value should be greater 
+than a given threshold to form a cluster
+:param threshold: correlation value threshold set to form a cluster</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="function">
 <dt id="clustering.plot_traces">
-<tt class="descclassname">clustering.</tt><tt class="descname">plot_traces</tt><big>(</big><em>CLUSTER</em>, <em>delay_file</em>, <em>coeff</em>, <em>locs</em>, <em>stations</em>, <em>datadir</em>, <em>data_files</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#plot_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.plot_traces" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<tt class="descclassname">clustering.</tt><tt class="descname">plot_traces</tt><big>(</big><em>CLUSTER</em>, <em>delay_file</em>, <em>coeff</em>, <em>locs</em>, <em>datadir</em>, <em>data_files</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/clustering.html#plot_traces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.plot_traces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the waveforms of all possible event pairs within a cluster.
+On the same figure, displays the superimposed waveforms of the event pair for all stations.
+Also displays the correlation value.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>CLUSTER</strong> &#8211; </li>
-<li><strong>delay_file</strong> &#8211; </li>
-<li><strong>coeff</strong> &#8211; </li>
-<li><strong>locs</strong> &#8211; </li>
-<li><strong>statons</strong> &#8211; </li>
-<li><strong>datadir</strong> &#8211; </li>
-<li><strong>data_files</strong> &#8211; </li>
-<li><strong>threshold</strong> &#8211; </li>
+<li><strong>CLUSTER</strong> (<em>dictionary</em>) &#8211; dictionary containing the event indexes belonging to each cluster</li>
+<li><strong>delay_file</strong> (<em>string</em>) &#8211; file name of the file containing the time delays</li>
+<li><strong>coeff</strong> (<em>dictionary</em>) &#8211; cross-correlation values of all possible event pairs for all stations</li>
+<li><strong>locs</strong> (<em>list</em>) &#8211; list of the whole Waveloc locations (each element of the list is a dictionary)</li>
+<li><strong>datadir</strong> (<em>string</em>) &#8211; data directory path</li>
+<li><strong>data_files</strong> (<em>list</em>) &#8211; list of paths of data files</li>
+<li><strong>threshold</strong> (<em>float</em>) &#8211; correlation coefficient threshold</li>
 </ul>
 </td>
 </tr>
@@ -3216,17 +3358,17 @@ Uses mlab from mayavi</p>
 <dl class="function">
 <dt id="clustering.waveval">
 <tt class="descclassname">clustering.</tt><tt class="descname">waveval</tt><big>(</big><em>stack_time</em>, <em>t_before</em>, <em>t_after</em>, <em>dt</em>, <em>tdeb</em><big>)</big><a class="reference internal" href="_modules/clustering.html#waveval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clustering.waveval" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO : flesh out this doc-string</p>
+<dd><p>Finds the indexes corresponding to t_before and t_after</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>stack_time</strong> (<em>float?</em>) &#8211; </li>
-<li><strong>t_before</strong> (<em>float?</em>) &#8211; </li>
-<li><strong>t_after</strong> (<em>float?</em>) &#8211; </li>
-<li><strong>dt</strong> (<em>float</em>) &#8211; </li>
-<li><strong>tdeb</strong> (<em>float ?</em>) &#8211; </li>
+<li><strong>stack_time</strong> (<em>UTCDateTime</em>) &#8211; origin time of the event</li>
+<li><strong>t_before</strong> (<em>float</em>) &#8211; time taken before the origin time</li>
+<li><strong>t_after</strong> (<em>float</em>) &#8211; time taken after the origin time</li>
+<li><strong>dt</strong> (<em>float</em>) &#8211; waveform sample distance in seconds</li>
+<li><strong>tdeb</strong> (<em>UTCDateTime</em>) &#8211; start time of the waveform</li>
 </ul>
 </td>
 </tr>
@@ -3269,19 +3411,21 @@ Uses mlab from mayavi</p>
 <dl class="function">
 <dt id="double_diff.coord_cluster">
 <tt class="descclassname">double_diff.</tt><tt class="descname">coord_cluster</tt><big>(</big><em>cluster</em>, <em>locs</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#coord_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.coord_cluster" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extract the coordinates of the events of a given cluster
-TODO : flesh out this doc-string</p>
+<dd><p>Extract the coordinates of the events of a given cluster</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>cluster</strong> &#8211; </li>
-<li><strong>locs</strong> &#8211; </li>
+<li><strong>cluster</strong> (<em>list</em>) &#8211; indices of events in the cluster</li>
+<li><strong>locs</strong> (<em>list</em>) &#8211; list of the whole locations (each element of the list is a dictionary)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">xini, yini, zini, zini_ph, to_ini</p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">list</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">xini, yini, zini, zini_ph, to_ini</p>
 </td>
 </tr>
 </tbody>
@@ -3291,25 +3435,30 @@ TODO : flesh out this doc-string</p>
 <dl class="function">
 <dt id="double_diff.do_double_diff">
 <tt class="descclassname">double_diff.</tt><tt class="descname">do_double_diff</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>to</em>, <em>stations</em>, <em>coeff</em>, <em>delay</em>, <em>cluster</em>, <em>threshold</em>, <em>t_th</em>, <em>arr_times</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#do_double_diff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.do_double_diff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do double difference location (inner routine)
-TODO : flesh out this doc-string explaining the sequence of operations</p>
+<dd><p>Do double difference location (inner routine) and return new coordinates.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>x</strong> &#8211; </li>
-<li><strong>y</strong> &#8211; </li>
-<li><strong>z</strong> &#8211; </li>
-<li><strong>to</strong> &#8211; </li>
-<li><strong>stations</strong> &#8211; </li>
-<li><strong>coeff</strong> &#8211; </li>
-<li><strong>delay</strong> &#8211; </li>
-<li><strong>cluster</strong> &#8211; </li>
-<li><strong>threshold</strong> &#8211; </li>
-<li><strong>t_th</strong> &#8211; </li>
-<li><strong>arr_times</strong> &#8211; </li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>list</em>) &#8211; x-coordinates of events of a given cluster</li>
+<li><strong>y</strong> (<em>list</em>) &#8211; y-coordinates of events of a given cluster</li>
+<li><strong>z</strong> (<em>list</em>) &#8211; z-coordinates of events of a given cluster</li>
+<li><strong>to</strong> (<em>list</em>) &#8211; origin times of events of a given cluster</li>
+<li><strong>stations</strong> (<em>dictionary</em>) &#8211; dictionary of stations</li>
+<li><strong>coeff</strong> (<em>dictionary</em>) &#8211; cross-correlation coefficients between all possible pairs of events</li>
+<li><strong>delay</strong> (<em>dictionary</em>) &#8211; time delays measured between all possible pairs of events</li>
+<li><strong>cluster</strong> (<em>list</em>) &#8211; indices of events in the cluster</li>
+<li><strong>threshold</strong> (<em>float</em>) &#8211; minimum value of cross-correlation coefficient used to form a cluster</li>
+<li><strong>t_th</strong> (<em>dictionary</em>) &#8211; theoretical traveltimes</li>
+<li><strong>arr_times</strong> (<em>dictionary</em>) &#8211; theoretical arrival times</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">list</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">x, y, z, to</p>
 </td>
 </tr>
 </tbody>
@@ -3335,24 +3484,23 @@ WavelocOptions.opdict dictionary.</p>
 <dt id="double_diff.fill_matrix">
 <tt class="descclassname">double_diff.</tt><tt class="descname">fill_matrix</tt><big>(</big><em>cluster</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>t_orig</em>, <em>stations</em>, <em>t_th</em>, <em>t_arr</em>, <em>coeff</em>, <em>delay</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#fill_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.fill_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fills in matrix G (partial derivatives) data-vector d (double differences)
-and matrix W (weights)
-TODO : flesh out this doc-string</p>
+and matrix W (weights)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>cluster</strong> &#8211; </li>
-<li><strong>x</strong> &#8211; </li>
-<li><strong>y</strong> &#8211; </li>
-<li><strong>z</strong> &#8211; </li>
-<li><strong>t_orig</strong> &#8211; </li>
-<li><strong>stations</strong> &#8211; </li>
-<li><strong>t_th</strong> &#8211; </li>
-<li><strong>t_arr</strong> &#8211; </li>
-<li><strong>coeff</strong> &#8211; </li>
-<li><strong>delay</strong> &#8211; </li>
-<li><strong>threshold</strong> &#8211; </li>
+<li><strong>cluster</strong> (<em>list</em>) &#8211; indices of events in the cluster</li>
+<li><strong>x</strong> (<em>list</em>) &#8211; x-coordinates of all events</li>
+<li><strong>y</strong> (<em>list</em>) &#8211; y-coordinates of all events</li>
+<li><strong>z</strong> (<em>list</em>) &#8211; z-coordinates of all events</li>
+<li><strong>t_orig</strong> (<em>list</em>) &#8211; origin times of all events</li>
+<li><strong>stations</strong> (<em>dictionary</em>) &#8211; dictionary of station coordinates</li>
+<li><strong>t_th</strong> (<em>dictionary</em>) &#8211; dictionary of theoretical traveltimes</li>
+<li><strong>t_arr</strong> (<em>dictionary</em>) &#8211; dictionary of theoretical arrival times</li>
+<li><strong>coeff</strong> (<em>dictionary</em>) &#8211; cross-correlation coefficients between all possible pairs of events</li>
+<li><strong>delay</strong> (<em>dictionary</em>) &#8211; time delays measured between all possible pairs of events</li>
+<li><strong>threshold</strong> (<em>float</em>) &#8211; </li>
 </ul>
 </td>
 </tr>
@@ -3385,20 +3533,19 @@ TODO : flesh out this doc-string</p>
 <dl class="function">
 <dt id="double_diff.partial_deriv">
 <tt class="descclassname">double_diff.</tt><tt class="descname">partial_deriv</tt><big>(</big><em>coord</em>, <em>ev</em>, <em>tth</em><big>)</big><a class="reference internal" href="_modules/double_diff.html#partial_deriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#double_diff.partial_deriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes partial derivatives
-TODO flesh out this doc-string</p>
+<dd><p>Computes partial derivatives</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>coord</strong> &#8211; </li>
-<li><strong>ev</strong> &#8211; </li>
-<li><strong>tth</strong> &#8211; </li>
+<li><strong>coord</strong> (<em>list</em>) &#8211; list of coordinates [x,y,z] of a given station</li>
+<li><strong>ev</strong> (<em>list</em>) &#8211; list of coordinates [x,y,z] of the event</li>
+<li><strong>tth</strong> (<em>float</em>) &#8211; theoretical traveltime from the event to the station</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"></p>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">list</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">dpx, dpy, dpz</p>
@@ -3417,17 +3564,17 @@ TODO flesh out this doc-string</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>cluster</strong> &#8211; </li>
-<li><strong>locs</strong> &#8211; </li>
-<li><strong>stations</strong> &#8211; </li>
-<li><strong>x</strong> &#8211; </li>
-<li><strong>y</strong> &#8211; </li>
-<li><strong>z</strong> &#8211; </li>
-<li><strong>i</strong> &#8211; </li>
-<li><strong>threshold</strong> &#8211; </li>
-<li><strong>nbmin</strong> &#8211; </li>
-<li><strong>area</strong> &#8211; </li>
-<li><strong>nbsta</strong> &#8211; </li>
+<li><strong>cluster</strong> (<em>numpy array</em>) &#8211; indices of events composing all clusters</li>
+<li><strong>locs</strong> (<em>list</em>) &#8211; list of the whole locations (each element of the list is a dictionary)</li>
+<li><strong>stations</strong> (<em>dictionary</em>) &#8211; dictionary of stations</li>
+<li><strong>x</strong> (<em>list</em>) &#8211; new x-coordinates of events</li>
+<li><strong>y</strong> (<em>list</em>) &#8211; new y-coordinates of events</li>
+<li><strong>z</strong> (<em>list</em>) &#8211; new z-coordinates of events</li>
+<li><strong>i</strong> (<em>int</em>) &#8211; cluster index</li>
+<li><strong>threshold</strong> (<em>float</em>) &#8211; minimum value of cross-correlation coefficient used to form a cluster</li>
+<li><strong>nbmin</strong> (<em>int</em>) &#8211; minimum number of stations required to form a cluster</li>
+<li><strong>area</strong> (<em>list</em>) &#8211; coordinates of the study area</li>
+<li><strong>nbsta</strong> (<em>numpy array</em>) &#8211; number of stations where the measured correlation coefficient was greater than the given threshold for all possible event pairs</li>
 </ul>
 </td>
 </tr>
@@ -3596,7 +3743,7 @@ stations using pre-calculated time-grids</p>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Alessia Maggi.
-      Last updated on May 28, 2014.
+      Last updated on Jun 24, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

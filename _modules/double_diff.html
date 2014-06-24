@@ -113,17 +113,16 @@
 <div class="viewcode-block" id="partial_deriv"><a class="viewcode-back" href="../api.html#double_diff.partial_deriv">[docs]</a><span class="k">def</span> <span class="nf">partial_deriv</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="n">ev</span><span class="p">,</span> <span class="n">tth</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes partial derivatives</span>
-<span class="sd">    TODO flesh out this doc-string</span>
 
-<span class="sd">    :param coord:</span>
-<span class="sd">    :param ev:</span>
-<span class="sd">    :param tth:</span>
+<span class="sd">    :param coord: list of coordinates [x,y,z] of a given station</span>
+<span class="sd">    :param ev: list of coordinates [x,y,z] of the event</span>
+<span class="sd">    :param tth: theoretical traveltime from the event to the station</span>
 
-<span class="sd">    :type coord:</span>
-<span class="sd">    :type ev:</span>
-<span class="sd">    :type tth:</span>
+<span class="sd">    :type coord: list</span>
+<span class="sd">    :type ev: list</span>
+<span class="sd">    :type tth: float</span>
 
-<span class="sd">    :rtype:</span>
+<span class="sd">    :rtype: list</span>
 <span class="sd">    :returns: dpx, dpy, dpz</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -141,20 +140,30 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Fills in matrix G (partial derivatives) data-vector d (double differences)</span>
 <span class="sd">    and matrix W (weights)</span>
-<span class="sd">    TODO : flesh out this doc-string</span>
 
-<span class="sd">    :param cluster:</span>
-<span class="sd">    :param x:</span>
-<span class="sd">    :param y:</span>
-<span class="sd">    :param z:</span>
-<span class="sd">    :param t_orig:</span>
-<span class="sd">    :param stations:</span>
-<span class="sd">    :param t_th:</span>
-<span class="sd">    :param t_arr:</span>
-<span class="sd">    :param coeff:</span>
-<span class="sd">    :param delay:</span>
-<span class="sd">    :param threshold:</span>
+<span class="sd">    :param cluster: indices of events in the cluster</span>
+<span class="sd">    :param x: x-coordinates of all events</span>
+<span class="sd">    :param y: y-coordinates of all events</span>
+<span class="sd">    :param z: z-coordinates of all events</span>
+<span class="sd">    :param t_orig: origin times of all events</span>
+<span class="sd">    :param stations: dictionary of station coordinates</span>
+<span class="sd">    :param t_th: dictionary of theoretical traveltimes</span>
+<span class="sd">    :param t_arr: dictionary of theoretical arrival times</span>
+<span class="sd">    :param coeff: cross-correlation coefficients between all possible pairs of events</span>
+<span class="sd">    :param delay: time delays measured between all possible pairs of events</span>
+<span class="sd">    :param threshold: </span>
 
+<span class="sd">    :type cluster: list</span>
+<span class="sd">    :type x: list</span>
+<span class="sd">    :type y: list</span>
+<span class="sd">    :type z: list</span>
+<span class="sd">    :type t_orig: list</span>
+<span class="sd">    :type stations: dictionary</span>
+<span class="sd">    :type t_th: dictionary</span>
+<span class="sd">    :type t_arr: dictionary</span>
+<span class="sd">    :type coeff: dictionary</span>
+<span class="sd">    :type delay: dictionary</span>
+<span class="sd">    :type threshold: float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">G</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster</span><span class="p">)</span>
@@ -248,11 +257,14 @@
 <div class="viewcode-block" id="coord_cluster"><a class="viewcode-back" href="../api.html#double_diff.coord_cluster">[docs]</a><span class="k">def</span> <span class="nf">coord_cluster</span><span class="p">(</span><span class="n">cluster</span><span class="p">,</span> <span class="n">locs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Extract the coordinates of the events of a given cluster</span>
-<span class="sd">    TODO : flesh out this doc-string</span>
 
-<span class="sd">    :param cluster:</span>
-<span class="sd">    :param locs:</span>
+<span class="sd">    :param cluster: indices of events in the cluster</span>
+<span class="sd">    :param locs: list of the whole locations (each element of the list is a dictionary)</span>
 
+<span class="sd">    :type cluster: list</span>
+<span class="sd">    :type locs: list</span>
+
+<span class="sd">    :rtype: list</span>
 <span class="sd">    :returns: xini, yini, zini, zini_ph, to_ini</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -273,18 +285,29 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plot old and new locations (uses mayavi)</span>
 
-<span class="sd">    :param cluster:</span>
-<span class="sd">    :param locs:</span>
-<span class="sd">    :param stations:</span>
-<span class="sd">    :param x:</span>
-<span class="sd">    :param y:</span>
-<span class="sd">    :param z:</span>
-<span class="sd">    :param i:</span>
-<span class="sd">    :param threshold:</span>
-<span class="sd">    :param nbmin:</span>
-<span class="sd">    :param area:</span>
-<span class="sd">    :param nbsta:</span>
+<span class="sd">    :param cluster: indices of events composing all clusters</span>
+<span class="sd">    :param locs: list of the whole locations (each element of the list is a dictionary)</span>
+<span class="sd">    :param stations: dictionary of stations</span>
+<span class="sd">    :param x: new x-coordinates of events</span>
+<span class="sd">    :param y: new y-coordinates of events</span>
+<span class="sd">    :param z: new z-coordinates of events</span>
+<span class="sd">    :param i: cluster index</span>
+<span class="sd">    :param threshold: minimum value of cross-correlation coefficient used to form a cluster</span>
+<span class="sd">    :param nbmin: minimum number of stations required to form a cluster</span>
+<span class="sd">    :param area: coordinates of the study area</span>
+<span class="sd">    :param nbsta: number of stations where the measured correlation coefficient was greater than the given threshold for all possible event pairs</span>
 
+<span class="sd">    :type cluster: numpy array</span>
+<span class="sd">    :type locs: list</span>
+<span class="sd">    :type stations: dictionary</span>
+<span class="sd">    :type x: list</span>
+<span class="sd">    :type y: list</span>
+<span class="sd">    :type z: list</span>
+<span class="sd">    :type i: int</span>
+<span class="sd">    :type threshold: float</span>
+<span class="sd">    :type nbmin: int</span>
+<span class="sd">    :type area: list</span>
+<span class="sd">    :type nbsta: numpy array</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">mayavi</span> <span class="kn">import</span> <span class="n">mlab</span>
     <span class="kn">from</span> <span class="nn">CZ_color</span> <span class="kn">import</span> <span class="n">CZ_W_2_color</span>
@@ -340,21 +363,34 @@
 <div class="viewcode-block" id="do_double_diff"><a class="viewcode-back" href="../api.html#double_diff.do_double_diff">[docs]</a><span class="k">def</span> <span class="nf">do_double_diff</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">stations</span><span class="p">,</span> <span class="n">coeff</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span>
                    <span class="n">t_th</span><span class="p">,</span>  <span class="n">arr_times</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Do double difference location (inner routine)</span>
-<span class="sd">    TODO : flesh out this doc-string explaining the sequence of operations</span>
+<span class="sd">    Do double difference location (inner routine) and return new coordinates. </span>
 
-<span class="sd">    :param x:</span>
-<span class="sd">    :param y:</span>
-<span class="sd">    :param z:</span>
-<span class="sd">    :param to:</span>
-<span class="sd">    :param stations:</span>
-<span class="sd">    :param coeff:</span>
-<span class="sd">    :param delay:</span>
-<span class="sd">    :param cluster:</span>
-<span class="sd">    :param threshold:</span>
-<span class="sd">    :param t_th:</span>
-<span class="sd">    :param arr_times:</span>
+<span class="sd">    :param x: x-coordinates of events of a given cluster</span>
+<span class="sd">    :param y: y-coordinates of events of a given cluster</span>
+<span class="sd">    :param z: z-coordinates of events of a given cluster</span>
+<span class="sd">    :param to: origin times of events of a given cluster</span>
+<span class="sd">    :param stations: dictionary of stations</span>
+<span class="sd">    :param coeff: cross-correlation coefficients between all possible pairs of events</span>
+<span class="sd">    :param delay: time delays measured between all possible pairs of events</span>
+<span class="sd">    :param cluster: indices of events in the cluster</span>
+<span class="sd">    :param threshold: minimum value of cross-correlation coefficient used to form a cluster</span>
+<span class="sd">    :param t_th: theoretical traveltimes</span>
+<span class="sd">    :param arr_times: theoretical arrival times</span>
 
+<span class="sd">    :type x: list</span>
+<span class="sd">    :type y: list</span>
+<span class="sd">    :type z: list</span>
+<span class="sd">    :type to: list</span>
+<span class="sd">    :type stations: dictionary</span>
+<span class="sd">    :type coeff: dictionary</span>
+<span class="sd">    :type delay: dictionary</span>
+<span class="sd">    :type cluster: list</span>
+<span class="sd">    :type threshold: float</span>
+<span class="sd">    :type t_th: dictionary</span>
+<span class="sd">    :type arr_times: dictionary</span>
+
+<span class="sd">    :rtype: list</span>
+<span class="sd">    :returns: x, y, z, to</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster</span><span class="p">)</span>
 
@@ -541,7 +577,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, Alessia Maggi.
-      Last updated on May 28, 2014.
+      Last updated on Jun 24, 2014.
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
