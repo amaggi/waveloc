@@ -147,7 +147,7 @@ class MigrationTests(unittest.TestCase):
 
     def test_migration(self):
 
-        self.wo.opdict['load_ttimes_buf'] = True
+        self.wo.opdict['load_ttimes_buf'] = False
         self.wo.opdict['data_length'] = 300
 
         base_path = self.wo.opdict['base_path']
@@ -216,11 +216,12 @@ class MigrationTests(unittest.TestCase):
         # verify that the two give the same result
         np.testing.assert_allclose(lines_use_ram, lines_no_ram)
 
+    @unittest.skip('Time-consuming and uninteresting for code checking')
     def test_migration_fullRes(self):
 
         self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
         self.wo.opdict['outdir'] = 'TEST_fullRes'
-        self.wo.opdict['load_ttimes_buf'] = True
+        self.wo.opdict['load_ttimes_buf'] = False
         self.wo.opdict['data_length'] = 300
         self.wo.opdict['use_ram'] = True
         self.wo.verify_migration_options()
