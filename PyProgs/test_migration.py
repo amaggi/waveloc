@@ -150,7 +150,7 @@ class SyntheticMigrationTests(unittest.TestCase):
         plotWavelocResults(plotopt)
 
 
-@unittest.skip('Skip for rapidity')
+#@unittest.skip('Skip for rapidity')
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -263,7 +263,7 @@ class MigrationTests(unittest.TestCase):
         self.assertAlmostEqual(d, 0.0)
         self.assertAlmostEqual(l, 0.0)
 
-@unittest.skip('Skip for rapidity')
+#@unittest.skip('Skip for rapidity')
 class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):
@@ -301,14 +301,14 @@ class UgridMigrationTests(unittest.TestCase):
                                                        ugrid=True)
 
         # get old-style max_val
-        stack_filename = test_info['stack_file']
+        stack_filename = test_info.getStackFilename()
         f = h5py.File(stack_filename, 'r')
         mv = f['max_val']
         max_val = mv[:]
         f.close()
 
         # get new-style max_val
-        stack_filename = test_info_ugrid['stack_file']
+        stack_filename = test_info_ugrid.getStackFilename()
         f = h5py.File(stack_filename, 'r')
         mv = f['max_val']
         max_val_ugrid = mv[:]
