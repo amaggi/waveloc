@@ -129,7 +129,17 @@ class ProcessingTests(unittest.TestCase):
         lines = signature_file.readlines()
         lines.sort()
         expected_lines.sort()
-        self.assertSequenceEqual(lines, expected_lines)
+        nlines = len(lines)
+        for i in xrange(nlines) :
+            line = lines[i]
+            exp_line = expected_lines[i]
+            self.assertSequenceEqual(line.split()[0], exp_line.split()[0])
+            np.testing.assert_array_almost_equal(\
+                np.float(line.split()[1]), np.float(exp_line.split()[1]),
+                decimal=3)
+            np.testing.assert_array_almost_equal(\
+                np.float(line.split()[2]), np.float(exp_line.split()[2]),
+                decimal=3)
 
 if __name__ == '__main__':
 
