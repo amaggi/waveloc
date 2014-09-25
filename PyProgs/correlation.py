@@ -162,7 +162,7 @@ def corr_freq(f, Cxy, v):
     f_min_max = f[mini:maxi]
     # Plot
     if v:
-        display(Cxy, f, 0, f_min_max)
+        display(Cxy, f, f_min_max)
         plt.show()
 
     # Compute the slope of the phase spectrum where the amplitude is strong...
@@ -176,18 +176,19 @@ def corr_freq(f, Cxy, v):
     return tau_f
 
 
-def cum(x, v):
+def cum(x,v):
     """
-    TODO : flesh out this doc-string
+    Determines the minimum and maximum indices of the most significative part of a signal.
+    (Here, determines the part of the amplitude spectrum which is useful)
 
-    :param x:
+    :param x: signal
     :param v: If ``True`` then plot x and cumulative sum of x
 
     :type x: numpy array
     :type v: boolean
 
     :rtype: int
-    :returns: mini, max_i
+    :returns: mini, maxi
 
     """
 
@@ -245,6 +246,8 @@ def waveform(filename):
 def plot_waveform(x, y, dt, tau, ev1, ev2):
     """
     Plots the waveforms.
+    On the first plot, both waveforms are superimposed.
+    On the second plot, they are plotted separately.
 
     :param x: waveform
     :param y: waveform
@@ -282,18 +285,16 @@ def plot_waveform(x, y, dt, tau, ev1, ev2):
     ax2.plot(t, y)
 
 
-def display(Cxy, f, a, f_min_max):
+def display(Cxy, f, f_min_max):
     """
     Displays amplitude and phase of the frequency domain cross-correlation.
 
     :param Cxy: frequency domain cross-correlation
     :param f: frequency vector
-    :param a:
-    :param f_min_max:
+    :param f_min_max: 
 
     :type Cxy: numpy array
     :type f: numpy array
-    :type a:
     :type f_min_max: numpy array
 
     """
@@ -303,7 +304,7 @@ def display(Cxy, f, a, f_min_max):
     ax1.plot(f[0:len(f)/2], np.abs(Cxy[0:len(f)/2]))
     ax2 = fig.add_subplot(212, title="Phase spectrum")
     ax2.plot(f[0:len(f)/2], np.angle(Cxy[0:len(f)/2], deg=False), '+')
-    ax2.plot(f_min_max, a*f_min_max, 'r')
+    ax2.plot(f_min_max, np.zeros(len(f_min_max)), 'r')
 
 
 def correlate(x, y, dt, v, a):
@@ -345,8 +346,13 @@ def do_correlation_setup_and_run(opdict):
     Runs correlation using options contained in a WavelocOptions.opdict
     dictionary.
 
-    TODO : Flesh out this doc-string by explaining the sequence of operations
+    Explores and cross-correlates all possible event pairs of the Waveloc location file at all stations.
+    Writes the correlation coefficients and time delays in 2-D numpy arrays for each station and saves 
+    the final dictionaries into 2 binary files.
 
+    The correlation first takes place in the time domain. If the correlation value is over a given 
+    threshold, the correlation is also performed in the frequency domain so that a subsample precision 
+    can be obtained on the time delay.
     """
 
     base_path = opdict['base_path']

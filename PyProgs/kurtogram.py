@@ -50,6 +50,7 @@ def get_h_parameters(NFIR, fcut):
     :type NFIR: integer
     :type fcut: float
 
+    :rtype: numpy array
     :returns: h-parameters: h, g, h1, h2, h3
 
     """
@@ -65,24 +66,26 @@ def get_h_parameters(NFIR, fcut):
     return (h, g, h1, h2, h3)
 
 
-def plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index,
-                   opt1=None, opt2=None):
+def plotKurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, I):
     """
-    Plots the kurtogram. TODO : flesh out this doc-string.
+    Plots the kurtogram.
 
-    :param Kwav:
-    :param freq_w:
-    :param nlevel:
-    :param level_w:
-    :param Fs:
-    :param fi:
-    :param index:
-    :param opt1:
-    :param opt2:
+    :param Kwav: kurtogram
+    :param freq_w: frequency vector
+    :param nlevel: number of decomposition levels
+    :param level_w: vector of levels
+    :param Fs: sampling frequency of the signal
+    :param fi: 
+    :param I: level index
 
+    :type Kwav: numpy array
+    :type freq_w: numpy array
+    :type nlevel: integer
+    :type level_w: numpy array
+    :type Fs: integer
+    :type fi:
+    :type I: integer
     """
-
-    I = index[0]
 
     plt.imshow(Kwav, aspect='auto', extent=(0, freq_w[-1], range(2*nlevel)[-1],
                                             range(2*nlevel)[0]),
@@ -91,15 +94,11 @@ def plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index,
     xx = np.arange(0, int(freq_w[len(freq_w)-1]), step=5)
     plt.xticks(xx)
     plt.yticks(range(2*nlevel), np.round(Level_w*10)/10)
-    #plt.plot(Fs*fi,I,'yo')
+    plt.plot(Fs*fi,I,'yo')
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Level k")
-    plt.figtext(0.075, 0.90, "(a)", fontsize=15)
-    if opt2 == 1:
-        plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz" %
-                  (np.round(10*Level_w[I])/10, Fs*2**(-(Level_w[I]+1)), Fs*fi))
-    else:
-        plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz" %
+    #plt.figtext(0.075, 0.90, "(a)", fontsize=15)
+    plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz" %
                   (np.round(10*Level_w[I])/10, Fs*2**(-(Level_w[I]+1)), Fs*fi))
     plt.colorbar()
     plt.show()
@@ -108,16 +107,28 @@ def plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index,
 def getBandwidthAndFrequency(nlevel, Fs, level_w, freq_w, level_index,
                              freq_index):
     """
-    Gets bandwidth and frequency parameters.
-    TODO : flesh out this doc-string
+    Gets bandwidth bw and frequency parameters knowing the 
+    level and the frequency indexes.
 
-    :param nlevel:
-    :param Fs:
-    :param level_w:
-    :param freq_w:
-    :param level_index:
-    :param freq_index:
+    :param nlevel: number of decomposition levels
+    :param Fs: sampling frequency of the signal
+    :param level_w: vector of decomposition levels
+    :param freq_w: vector of frequencies
+    :param level_index: index of the level 
+    :param freq_index: index of the frequency
 
+    :type nlevel: integer
+    :type Fs: integer
+    :type level_w: numpy array
+    :type freq_w: numpy array
+    :type level_index: integer
+    :type freq_index: integer
+
+    :returns: bw, fc, fi, l1
+        * bw: bandwidth
+        * fc: central frequency
+        * fi: index of the frequency sequence within the level l1
+        * l1: level
     """
 
     #f1 = freq_w[freq_index]
@@ -138,8 +149,8 @@ def get_GridMax(grid):
     :type param: numpy array
 
     :returns:
-        * M : grid maximum
-        * index : index of maximum in unraveled grid
+    * M : grid maximum
+    * index : index of maximum in unraveled grid
     """
 
     index = np.argmax(grid)
@@ -152,9 +163,12 @@ def get_GridMax(grid):
 def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
                    opt1=1, opt2=1):
     """
-    Computes the fast kurtogram of signal x up to level 'nlevel'
+    Computes the fast kurtogram Kwav of signal x up to level 'nlevel'
     Maximum number of decomposition levels is log2(length(x)), but it is
     recommended to stay by a factor 1/8 below this.
+    Also returns the vector of k-levels Level_w, the frequency vector 
+    freq_w, the complex envelope of the signal c and the extreme 
+    frequencies of the "best" bandpass f_lower and f_upper.
 
     J. Antoni : 02/2005
     Translation to Python: T. Lecocq 02/2012
@@ -166,10 +180,10 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
     :param NFIR: Length of FIR filter
     :param fcut: Fraction of Nyquist for filter
     :param opt1: [1 | 2]:
-        * opt1=1: classical kurtosis based on 4th order statistics
+        * opt1 = 1: classical kurtosis based on 4th order statistics
         * opt1 = 2: robust kurtosis based on 2nd order statistics of the
         envelope (if there is any difference in the kurtogram between the
-        two measures, this is  due to the presence of impulsive additive
+        two measures, this is due to the presence of impulsive additive
         noise)
     :param opt2: [1 | 2]:
         * opt2=1: the kurtogram is computed via a fast decimated filterbank
@@ -178,7 +192,19 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
         2 in the design of the analysis filter: a short filter in option 1
         gives virtually the same results as option 2)
 
+    :type x: numpy array
+    :type nlevel: integer
+    :type Fs: integer
+    :type NFIR: integer
+    :type fcut: float
+
     :returns: Kwav, Level_w, freq_w, c, f_lower, f_upper
+        * Kwav: kurtogram
+        * Level_w: vector of levels
+        * freq_w: frequency vector
+        * c: complex envelope of the signal filtered in the frequency band that maximizes the kurtogram
+        * f_lower: lower frequency of the band pass
+        * f_upper: upper frequency of the band pass
     """
 
     N = len(x)
@@ -196,9 +222,9 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
 
         h, g, h1, h2, h3 = get_h_parameters(NFIR, fcut)
 
-        if opt2 == 1:   # kurtosis of the complex envelope
+        if opt2 == 1: # kurtosis of the complex envelope
             Kwav = K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, 'kurt2')
-        else:           # variance of the envelope magnitude
+        else: # variance of the envelope magnitude
             Kwav = K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, 'kurt1')
 
         # keep positive values only!
@@ -217,8 +243,7 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
                                                   level_index, freq_index)
 
         if verbose:
-            plot_kurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, index,
-                           opt1, opt2)
+            plotKurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, level_index)
 
     else:
         logging.error('stft-based is not implemented')
@@ -229,17 +254,11 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
     lev = l1
     while test == 1:
         test = 0
-        if opt2 == 1:
-            c, s, threshold, Bw, fc = Find_wav_kurt(x, h, g, h1, h2, h3,
-                                                    nlevel, lev, fi, Fs=Fs,
-                                                    verbose=verbose)
-        else:
-            c, s, threshold, Bw, fc = Find_wav_kurt(x, h, g, h1, h2, h3,
-                                                    nlevel, lev, fi, Fs=Fs,
-                                                    verbose=verbose)
+        c, s, threshold, Bw, fc = Find_wav_kurt(x, h, g, h1, h2, h3,
+                                                nlevel, lev, fi, Fs=Fs,
+                                                verbose=verbose)
 
-    # Apply appropriate filter and compare with previous results
-    # (i.e. 4-10 Hz filter)
+    # Determine the lowest and the uppest frequencies of the bandpass
     f_lower = Fs*np.round((fc-Bw/2.)*10**3)/10**3
     f_upper = Fs*np.round((fc+Bw/2.)*10**3)/10**3
 
@@ -248,10 +267,10 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
 
 def K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, opt, level=0):
     """
-    Calculates the kurtosis K of the complete quinte wavelet packet transform w
-    of signal x, up to nlevel, using the lowpass and highpass filters h and g,
-    respectively.  The WP coefficients are sorted according to the frequency
-    decomposition.  This version handles both real and analytical filters, but
+    Calculates the kurtosis K (2-D matrix) of the complete quinte wavelet packet 
+    transform w of signal x, up to nlevel, using the lowpass and highpass filters 
+    h and g, respectively. The WP coefficients are sorted according to the frequency
+    decomposition. This version handles both real and analytical filters, but
     does not yield WP coefficients suitable for signal synthesis.
 
     J. Antoni : 12/2004
@@ -269,6 +288,15 @@ def K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, opt, level=0):
         * 'kurt1' = variance of the envelope magnitude
         * 'kurt2' = kurtosis of the complex envelope
     :param level: decomposition level for this call
+
+    :type x: numpy array
+    :type h: numpy array
+    :type g: numpy array
+    :type h1: numpy array
+    :type h2: numpy array
+    :type h3: numpy array
+    :type nlevel: integer
+    :type opt: string
 
     :returns: kurtosis
 
@@ -294,11 +322,16 @@ def K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, opt, level=0):
 
 def K_wpQ_local(x, h, g, h1, h2, h3, nlevel, verbose, opt, level):
     """
-    TODO : flesh out this doc-string. Is a recursive funtion.
+    Is a recursive funtion. 
+    Computes and returns the 2-D vector K, which contains the kurtosis value of the signal as 
+    well as the 2 kurtosis values corresponding to the signal filtered into 2 different 
+    band-passes.
+    Also returns and computes the 2-D vector KQ which contains the 3 kurtosis values corresponding 
+    to the signal filtered into 3 different band-passes.
 
     :param x: signal
     :param h: lowpass filter
-    :param g: higpass filter
+    :param g: highpass filter
     :param h1: filter parameter returned by get_h_parameters
     :param h2: filter parameter returned by get_h_parameters
     :param h3: filter parameter returned by get_h_parameters
@@ -309,6 +342,16 @@ def K_wpQ_local(x, h, g, h1, h2, h3, nlevel, verbose, opt, level):
         * 'kurt2' = kurtosis of the complex envelope
     :param level: decomposition level for this call
 
+    :type x: numpy array
+    :type h: numpy array
+    :type g: numpy array
+    :type h1: numpy array
+    :type h2: numpy array
+    :type h3: numpy array
+    :type nlevel: integer
+    :type opt: string
+    :type level: integer
+
     :returns: K, KQ
 
     """
@@ -316,7 +359,7 @@ def K_wpQ_local(x, h, g, h1, h2, h3, nlevel, verbose, opt, level):
     a, d = DBFB(x, h, g)
 
     N = len(a)
-    d = d*np.power(-1., np.arange(1, N+1))  # indices pairs multipliés par -1
+    d = d*np.power(-1., np.arange(1, N+1)) # indices pairs multipliés par -1
     K1 = kurt(a[len(h)-1:], opt)
     K2 = kurt(d[len(g)-1:], opt)
 
@@ -394,6 +437,9 @@ def kurt(x, opt):
         * 'kurt1' = variance of the envelope magnitude
         * 'kurt2' = kurtosis of the complex envelope
 
+    :type x: numpy array
+    :type opt: string
+
     :rtype: float
     :returns: Kurtosis
     """
@@ -439,14 +485,19 @@ def kurt(x, opt):
 def DBFB(x, h, g):
     """
     Double-band filter-bank.
-        [a,d] = DBFB(x,h,g) computes the approximation
-        coefficients vector a and detail coefficients vector d,
-        obtained by passing signal x though a two-band analysis filter-bank.
+    [a,d] = DBFB(x,h,g) computes the approximation
+    coefficients vector a and detail coefficients vector d,
+    obtained by passing signal x though a two-band analysis filter-bank.
 
     :param x: signal
     :param h: The decomposition low-pass filter and
     :param g: The decomposition high-pass filter.
 
+    :type x: numpy array
+    :type h: numpy array
+    :type g: numpy array
+
+    :rtype: numpy array
     :returns: a, d
 
     """
@@ -466,14 +517,20 @@ def DBFB(x, h, g):
 
 def TBFB(x, h1, h2, h3):
     """
-    Trible-band filter-bank.
-        [a1,a2,a3] = TBFB(x,h1,h2,h3)
+    Triple-band filter-bank.
+    [a1,a2,a3] = TBFB(x,h1,h2,h3)
 
     :param x: signal
     :param h1: filter parameter
     :param h2: filter parameter
     :param h3: filter parameter
 
+    :type x: numpy array
+    :type h1: numpy array
+    :type h2: numpy array
+    :type h3: numpy array
+
+    :rtype: numpy array
     :returns: a1, a2, a3
 
     """
@@ -505,7 +562,7 @@ def Find_wav_kurt(x, h, g, h1, h2, h3, nlevel, Sc, Fr, Fs=1, verbose=False):
 
     :param x: signal
     :param h: lowpass filter
-    :param g: higpass filter
+    :param g: highpass filter
     :param h1: filter parameter returned by get_h_parameters
     :param h2: filter parameter returned by get_h_parameters
     :param h3: filter parameter returned by get_h_parameters
@@ -515,6 +572,17 @@ def Find_wav_kurt(x, h, g, h1, h2, h3, nlevel, Sc, Fr, Fs=1, verbose=False):
     :param Fs: Sampling frequency of signal x
     :param verbose: If ``True`` outputs debugging information
 
+    :type x: numpy array
+    :type h: numpy array
+    :type g: numpy array
+    :type h1: numpy array
+    :type h2: numpy array
+    :type h3: numpy array
+    :type nlevel: integer
+    :type Fr: float
+    :type: Fs: integer
+
+    :returns: c, s, threshold, Bw, fc
     """
     level = np.fix((Sc))+((Sc % 1) >= 0.5)*(np.log2(3)-1)
     Bw = 2**(-level-1)
@@ -567,10 +635,16 @@ def plot_envelope(x, Fs, c, fc, level, spec=False):
 
     :param x: signal
     :param Fs: sampling frequency of signal
-    :param c:
-    :param fc:
-    :param level:
+    :param c: complex envelope of signal
+    :param fc: central frequency of the bandpass in Hz
+    :param level: index of the decomposition level
     :param spec: If ``True`` also plots the envelope spectrum
+
+    :type x: numpy array
+    :type Fs: float
+    :type c: numpy array
+    :type fc: float
+    :type level: float
     """
 
     fig = plt.figure()
@@ -587,7 +661,7 @@ def plot_envelope(x, Fs, c, fc, level, spec=False):
     else:
         plt.subplot(2, 1, 2)
     plt.plot(tc, np.abs(c), 'k')
-    plt.title("Envelope of the filtered signal,  Bw=Fs/2^%.1f,  fc=%.2f Hz" %
+    plt.title("Envelope of the filtered signal, Bw=Fs/2^%.1f, fc=%.2f Hz" %
               (np.round(level*10)/10, Fs*fc))
     plt.xlabel('time [s]')
     if spec == 1:
@@ -607,7 +681,7 @@ def plot_envelope(x, Fs, c, fc, level, spec=False):
 def binary(i, k):
     """
     Computes the coefficients of the binary expansion of i:
-        i = a(1)*2^(k-1) + a(2)*2^(k-2) + ... + a(k)
+    i = a(1)*2^(k-1) + a(2)*2^(k-2) + ... + a(k)
 
     :param i: integer to expand
     :param k: nummber of coefficients
@@ -631,7 +705,7 @@ def K_wpQ_filt(x, h, g, h1, h2, h3, acoeff, bcoeff, level=0):
     """
     Calculates the kurtosis K of the complete quinte wavelet packet transform w
     of signal x, up to nlevel, using the lowpass and highpass filters h and g,
-    respectively.  The WP coefficients are sorted according to the frequency
+    respectively. The WP coefficients are sorted according to the frequency
     decomposition.
     This version handles both real and analytical filters, but does not yield
     WP coefficients suitable for signal synthesis.
@@ -641,7 +715,7 @@ def K_wpQ_filt(x, h, g, h1, h2, h3, acoeff, bcoeff, level=0):
 
     :param x: signal
     :param h: lowpass filter
-    :param g: higpass filter
+    :param g: highpass filter
     :param h1: filter parameter returned by get_h_parameters
     :param h2: filter parameter returned by get_h_parameters
     :param h3: filter parameter returned by get_h_parameters
@@ -724,8 +798,8 @@ def K_wpQ_filt_local(x, h, g, h1, h2, h3, acoeff, bcoeff, level):
 def raylinv(p, b):
     """
     Inverse of the Rayleigh cumulative distribution function (cdf).
-        X = RAYLINV(P,B) returns the Rayleigh cumulative distribution function
-        with parameter B at the probabilities in P.
+    X = RAYLINV(P,B) returns the Rayleigh cumulative distribution function
+    with parameter B at the probabilities in P.
 
     :param p: probabilities
     :param b:
@@ -757,10 +831,42 @@ def raylinv(p, b):
     return x
 
 
-def plot_trace(G, fig, x, xfilt, kurtx, tr, c, info, f_lower, f_upper, snr,
+def plot_trace(fig, G, x, xfilt, kurtx, tr, info, f_lower, f_upper, snr,
                snr_ref, snr_kurt, kmax, kmax_ref, tstack):
     """
-    Plot signal and kurtosis for comparison. TODO : flesh out this doc-string.
+    Plots both signal and kurtosis for comparison. TODO : flesh out this doc-string.
+
+    :param fig: figure
+    :param G: location of the subplot in the figure
+    :param x: initial signal
+    :param xfilt: signal filtered in bandpass determined after the kurtogram analysis
+    :param kurtx: kurtosis of the initial signal
+    :param tr: kurtosis of the filtered signal
+    :param info: dictionary of parameters
+    :param f_lower: lower frequency of the filtering bandpass
+    :param f_upper: upper frequency of the filtering bandpass
+    :param snr: signal-to-noise ratio of xfilt
+    :param snr_ref: signal-to-noise ratio of x
+    :param snr_kurt: signal-to-noise ratio of tr
+    :param kmax: maximum value of tr
+    :param kmax_ref: maximum value of kurtx
+    :param tstack: origin time of the signal
+
+    :type fig: matplotlib.pyplot.figure
+    :type G: matplotlib.gridspec
+    :type x: numpy array
+    :type xfilt: numpy array
+    :type kurtx: numpy array
+    :type tr: numpy array
+    :type info: dictionary
+    :type f_lower: float
+    :type f_upper: flaot
+    :type snr: float
+    :type snr_ref: float
+    :type snr_kurt: float
+    :type kmax: float
+    :type kmax_ref: float
+    :type tstack: utcdatetime
     """
 
     sta = info['station']
@@ -784,8 +890,8 @@ def plot_trace(G, fig, x, xfilt, kurtx, tr, c, info, f_lower, f_upper, snr,
     ax3 = fig.add_subplot(G[2, 1], title="Kurtosis comparison")
     ax3.plot(tr, 'r--', label="new")
     ax3.plot(kurtx, 'y', label="initial", lw=2)
-    handles,  labels = ax3.get_legend_handles_labels()
-    ax3.legend(handles,  labels)
+    handles, labels = ax3.get_legend_handles_labels()
+    ax3.legend(handles, labels)
     ax3.text(-0.15, 1.02, "(d)", transform=ax3.transAxes, fontsize=15)
     ax3.set_xlabel("Time sample")
 
@@ -796,13 +902,22 @@ def plot_trace(G, fig, x, xfilt, kurtx, tr, c, info, f_lower, f_upper, snr,
 
 def write_file(info, tstart, tend, tr):
     """
-    Writes kurtosis file.
+    Replaces the initial kurtosis by a new one (from 
+    the signal filtered in the preferred band pass).
+    Writes it in the dictionary info.
 
     :param info: dictionary of parameters
     :param tstart: start-time
     :param tend: end-time
     :param tr: trace to write
 
+    :type info: dictionary
+    :type tstart: utcdatetime
+    :type tend: utcdatetime
+    :type tr: numpy array
+
+    :rtype: dictionary
+    :returns: info
     """
 
     print "Writing a new kurtosis file..."
@@ -824,14 +939,22 @@ def write_file(info, tstart, tend, tr):
 
 def waveval(xall, tstart, tend, dt, tdeb):
     """
-    TODO : flesh out this doc-string
+    Returns the part of signal corresponding to a given event.
 
-    :param xall:
-    :param tstart:
-    :param tend:
-    :param dt:
-    :param tdeb:
+    :param xall: complete signal
+    :param tstart: start time of the signal
+    :param tend: end time of the signal
+    :param dt: time sampling in seconds
+    :param tdeb: start time of the whole data
 
+    :type xall: numpy array
+    :type tstart: utcdatetime
+    :type tend: utcdatetime
+    :type dt: float
+    :type tdeb: utcdateime
+
+    :rtype: numpy array
+    :returns: val
     """
     tstart = tstart-tdeb
     tend = tend-tdeb
@@ -844,12 +967,20 @@ def waveval(xall, tstart, tend, dt, tdeb):
 
 def kurto(origin_time, info, opdict):
     """
-    TODO : flesh out this doc-string
+    Finds for each Waveloc event and for each station the best filtering 
+    parameters for kurtosis computation.
+    Writes them into the dictionary info.
 
-    :param origin_time:
-    :param info:
-    :param opdict:
+    :param origin_time: origin time of the signal
+    :param info: dictionary of parameters
+    :param opdict: dictionary of the Waveloc parameters and options
 
+    :type origin_time: utcdatetime
+    :type info: dictionary
+    :type opdict: dictionary
+
+    :rtype: dictionary
+    :returns: info
     """
     verbose = opdict['verbose']
     kwin = opdict['kwin']
@@ -874,7 +1005,7 @@ def kurto(origin_time, info, opdict):
 
     snr_ref = np.max(np.abs(x))/np.mean(np.abs(x))
     snr_kurt_ref = np.max(np.abs(kurtx))/np.mean(np.abs(kurtx))
-    kmax_ref = np.max(kurtx)  # maximum of the kurtosis
+    kmax_ref = np.max(kurtx) # maximum of the kurtosis
 
     # Compute the kurtogram and keep best frequencies
     if verbose:
@@ -926,7 +1057,7 @@ def kurto(origin_time, info, opdict):
         print "snr new kurtosis:", snr_kurt, " ; snr kurtosis reference:",\
             snr_kurt_ref
         print "kurtosis max, kurt_ref :", kmax, kmax_ref
-        plot_trace(G, fig, x, x_filt, kurtx, new_kurtx, c, info, f_lower,
+        plot_trace(fig, G, x, x_filt, kurtx, new_kurtx, info, f_lower,
                    f_upper, snr, snr_ref, snr_kurt, kmax, kmax_ref,
                    origin_time)
         plt.show()
@@ -936,9 +1067,14 @@ def kurto(origin_time, info, opdict):
 
 def read_kurtogram_frequencies(filename):
     """
-    Reads and plots binary file of kurtogram frequencies.
+    Reads the binary file with kurtogram frequencies.
+    Plots the histograms of lower and upper frequencies 
+    for each station.
+    Aims at determining the best filtering parameters.
 
     :param filename: File to read
+
+    :type filename: string
     """
     a = BinaryFile(filename)
     freqs = a.read_binary_file()
@@ -1045,7 +1181,7 @@ def do_kurtogram_setup_and_run(opdict):
         logging.info('Processing station %s' % info['station'])
 
         if opdict['new_kurtfile']:
-            new_filename = 'filt_kurtogram.sac'
+            new_filename = 'filt_kurtogram'
             new_kurt_filename = \
                 os.path.join("%s%s" % (data[station].split(data_glob[1:])[0],
                                        new_filename))
@@ -1077,7 +1213,7 @@ def do_kurtogram_setup_and_run(opdict):
     # Write the dictionnary 'param' in a binary file
     if os.path.isfile(kurto_file):
         ans = raw_input('%s file already exists. Do you really want to replace\
-            it ? (y or n):\n' % kurto_file)
+it ? (y or n):\n' % kurto_file)
         if ans != 'y':
             kurto_file = "%s_1" % kurto_file
 
