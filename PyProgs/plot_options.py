@@ -9,13 +9,19 @@ class PlotOptions(object):
     the options and parameters to control the plotting of waveloc results.
     """
 
-    def __init__(self, wo_opdict):
+    def __init__(self, wo_opdict, syn=False):
     
         self.opdict = {}
 
         # paths
-        for key in 'base_path', 'outdir', 'datadir':
+        for key in 'base_path', 'outdir':
             self.opdict[key] = wo_opdict[key]
+
+        # if not synthetic test, also need the datadir
+        if not syn:
+            for key in 'datadir', :
+                self.opdict[key] = wo_opdict[key]
+            
 
         # the waveforms that are needed for the plot
         if wo_opdict['gauss']:

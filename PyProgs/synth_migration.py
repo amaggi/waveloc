@@ -29,7 +29,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
         load_time_grids = True
 
     # create plot-options
-    plotopt = PlotOptions(opdict)
+    plotopt = PlotOptions(opdict, syn=True)
 
     #define length and sampling frequency of synthetic data
     s_amplitude = opdict['syn_amplitude']

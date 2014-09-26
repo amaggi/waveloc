@@ -2,7 +2,7 @@ import os
 import logging
 from waveloc.options import WavelocOptions
 from waveloc.synth_migration import generateSyntheticDirac
-from waveloc.plot_mpl import plotDiracTest
+from waveloc.plotting import plotWavelocResults
 
 logging.basicConfig(level=logging.INFO,
                     format='%(levelname)s : %(asctime)s : %(message)s')
@@ -18,7 +18,7 @@ wo.opdict['time'] = True
 wo.opdict['verbose'] = False
 wo.opdict['outdir'] = 'EXAMPLE_Dirac'
 wo.opdict['time_grid'] = 'Slow_len.100m.P'
-wo.opdict['load_ttimes_buf'] = True
+wo.opdict['load_ttimes_buf'] = False
 wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
 wo.opdict['stations'] = 'coord_stations_test'
 
@@ -37,7 +37,8 @@ wo.opdict['syn_z'] = -1.
 wo.opdict['syn_filename'] = 'test_grid4D_hires.hdf5'
 wo.opdict['ugrid_type'] = 'FULL'
 
-wo.opdict['plot_otime_window'] = 5.0
+# for plot
+wo.opdict['otime_window'] = 5.0
 
 # sanity check on synthetic options
 wo.verify_synthetic_options()
@@ -48,4 +49,4 @@ test_info = generateSyntheticDirac(wo.opdict)
 # Plot the synthetic migration
 base_path = wo.opdict['base_path']
 figdir = os.path.join(base_path, 'out', wo.opdict['outdir'], 'fig')
-plotDiracTest(test_info, figdir, wo.opdict['plot_otime_window'])
+plotWavelocResults(test_info)
