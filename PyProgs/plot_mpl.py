@@ -3,7 +3,7 @@ import h5py
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from copy import deepcopy
+from obspy.core import utcdatetime
 
 
 def plotLocationWaveforms(loc, start_time, dt, data_dict, grad_dict, stack_wfm,
@@ -102,7 +102,7 @@ def plotLocationGrid(loc, grid_filename, fig_dir, otime_window):
     f = h5py.File(grid_filename, 'r')
     sg = f['stack_grid']
     n_buf, nt = sg.shape
-    stack_starttime = sg.attrs['start_time']
+    stack_starttime = utcdatetime.UTCDateTime(sg.attrs['start_time'])
     dt = sg.attrs['dt']
     f.close()
 
@@ -142,8 +142,8 @@ def plotLocationGrid(loc, grid_filename, fig_dir, otime_window):
 
     plot_info = {}
     plot_info['dt'] = dt
-    plot_info['start_time'] = loc['dt']
-    plot_info['o_time'] = loc['o_time']
+    plot_info['start_time'] = stack_starttime
+    plot_info['o_time'] = o_time
     plot_info['t_err'] = (t_left, t_right)
     plot_info['x_err'] = (x_low, x_high)
     plot_info['y_err'] = (y_low, y_high)

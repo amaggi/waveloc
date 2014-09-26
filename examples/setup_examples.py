@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 import os
 import glob
-import logging
 from waveloc.make_SDS_data_links import make_SDS_data_links
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(levelname)s : %(asctime)s : %(message)s')
 
 # get basic information
 base_path = os.getenv('WAVELOC_PATH')
@@ -26,27 +22,27 @@ for tfile in test_files:
     try:
         os.symlink(os.path.join(base_path, 'test_data', tfile),
                    os.path.join(base_path, 'lib', tfile))
-        logging.info("Linked %s" % tfile)
+        print "Linked %s" % tfile
     except OSError:
-        logging.info("File %s already linked" % 'tfile')
-        logging.info("Removing old %s" % tfile)
+        print "File %s already linked" % tfile
+        print "Removing old %s" % tfile
         os.remove(os.path.join(base_path, 'lib', tfile))
         os.symlink(os.path.join(base_path, 'test_data', tfile),
                    os.path.join(base_path, 'lib', tfile))
-        logging.info("Linked %s" % tfile)
+        print "Linked %s" % tfile
 
 # make links for PDF time grids
 test_files = glob.glob(os.path.join(base_path, 'test_data',
                                     'time_grids', 'Slow*'))
 if test_files == []:
-    logging.error('Dowload \
+    print 'Dowload \
     https://github.com/downloads/amaggi/waveloc/test_data.tgz and \
-    unpack it in the %s directory, then re-run' % (base_path))
+    unpack it in the %s directory, then re-run' % (base_path)
 for tfile in test_files:
     try:
         os.symlink(os.path.join(base_path, 'test_data', 'time_grids',
                                 os.path.basename(tfile)),
                    os.path.join(base_path, 'lib', os.path.basename(tfile)))
-        logging.info("Linked %s" % tfile)
+        print "Linked %s" % tfile
     except OSError:
         pass

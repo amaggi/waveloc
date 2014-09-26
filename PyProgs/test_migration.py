@@ -113,12 +113,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         # retrieve info
         stack_filename = plotopt.getStackFilename()
-        n_buf = plotopt.opdict['n_buf']
-        nt = plotopt.opdict['nt']
         dt = plotopt.opdict['dt']
-        x_true = plotopt.opdict['x_loc']
-        y_true = plotopt.opdict['y_loc']
-        z_true = plotopt.opdict['z_loc']
         stack_start_time = plotopt.opdict['start_time']
 
         # loclevel for triggers

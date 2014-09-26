@@ -1,9 +1,16 @@
 import os
 import h5py
+import glob
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from obspy.core import UTCDateTime
 from ugrids import ugrid_closest_point_index, select_points_closeto_plane
+from hdf5_grids import get_interpolated_time_ugrids
+from locations_trigger import read_locs_from_file
+from OP_waveforms import read_data_compatible_with_time_dict
+from migration import do_migration_loop_continuous
+from plot_options import PlotOptions
 
 
 def plotWavelocResults(plotopt):
@@ -36,7 +43,7 @@ def plotWavelocResults(plotopt):
     # open grid_file
     f = h5py.File(grid_filename, 'r')
     grid4D = f['migrated_grid']
-    grid1D = grid4D[:,it]
+    grid1D = grid4D[:, it]
     f.close()
 
     # get max, min values for norm
@@ -61,7 +68,7 @@ def plotWavelocResults(plotopt):
         yz_cut = grid3D[ix, :, :]
 
     else:
-        raise NotImplemented ('Plotting of user grids not implemented yet')
+        raise NotImplemented('Plotting of user grids not implemented yet')
 
     # get max_val etc
     max_val = np.empty(nt, dtype='float')
@@ -95,7 +102,7 @@ def plotWavelocResults(plotopt):
                    extent=[0, np.max(x)-np.min(x), 0, np.max(y)-np.min(y)],
                    cmap=cmap, norm=norm)
     else:
-        raise NotImplemented ('Plotting of user grids not implemented yet')
+        raise NotImplemented('Plotting of user grids not implemented yet')
     p.tick_params(labelsize=10)
     p.xaxis.set_ticks_position('bottom')
     plt.xlabel('x (km wrt ref)', size=10)
@@ -240,3 +247,175 @@ def _round_sig(x, sig=2):
     else:
         result = 0.
     return result
+
+
+def plotLocationWaveforms(plotopt):
+    """
+    Plots the waveforms re-aligned after a waveloc location.
+    Uses information in the plotopt object
+    """
+    raise NotImplemented('Plotting waveforms not implemented yet')
+
+
+def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
+    """
+    Plot the results of a wavloc run (migration and location). All options and
+    parameters are taken from an opdict.
+
+    :param opdict: WavlocOptions.opdict that contains the options / parameters.
+    :param plot_wfm: If ``True`` plots waveforms after location (filtered data
+        and kurtosis).
+    :param plot_grid: If ``True``plots the migration grid.
+
+    :type plot_wfm: boolean
+    :type plot_grid: boolean
+    """
+
+    # get / set info
+    base_path = opdict['base_path']
+
+    locfile = os.path.join(base_path, 'out', opdict['outdir'], 'loc',
+                           'locations.dat')
+    stackfile = os.path.join(base_path, 'out', opdict['outdir'], 'stack',
+                             'combined_stack_all.hdf5')
+
+    data_dir = os.path.join(base_path, 'data', opdict['datadir'])
+
+    data_glob = opdict['dataglob']
+    data_files = glob.glob(os.path.join(data_dir, data_glob))
+    data_files.sort()
+
+    kurt_glob = opdict['kurtglob']
+    kurt_files = glob.glob(os.path.join(data_dir, kurt_glob))
+    kurt_files.sort()
+    mig_files = kurt_files
+
+    if opdict['kderiv']:
+        grad_glob = opdict['gradglob']
+        grad_files = glob.glob(os.path.join(data_dir, grad_glob))
+        grad_files.sort()
+        mig_files = grad_files
+
+        if opdict['gauss']:
+            gauss_glob = opdict['gaussglob']
+            gauss_files = glob.glob(os.path.join(data_dir, gauss_glob))
+            gauss_files.sort()
+            mig_files = gauss_files
+
+    figdir = os.path.join(base_path, 'out', opdict['outdir'], 'fig')
+
+    # read time grid information
+    x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
+    grid_info = (x, y, z)
+
+    # read locations
+    locs = read_locs_from_file(locfile)
+
+    # open stack file
+    f_stack = h5py.File(stackfile, 'r')
+    max_val = f_stack['max_val_smooth']
+    stack_start_time = UTCDateTime(max_val.attrs['start_time'])
+
+    for loc in locs:
+        # generate the grids
+        o_time = loc['o_time']
+        start_time = o_time-opdict['plot_tbefore']
+        end_time = o_time+opdict['plot_tafter']
+
+        # get location coordinates
+        xm = loc['x_mean']
+        ym = loc['y_mean']
+        zm = loc['z_mean']
+
+        # get the corresponding travel-times for time-shifting
+        ttimes = {}
+        for sta in time_grids.keys():
+            ic = ugrid_closest_point_index(x, y, z, xm, ym, zm)
+            ttimes[sta] = time_grids[sta][ic]
+
+        tshift_migration = max(ttimes.values())
+        start_time_migration = start_time-tshift_migration
+        end_time_migration = end_time+tshift_migration
+
+        if plot_grid:
+
+            # read data
+            mig_dict, delta = \
+                read_data_compatible_with_time_dict(mig_files, time_grids,
+                                                    start_time_migration,
+                                                    end_time_migration)
+            # do migration
+            grid_filename, n_buf, nt, stack_shift_time = \
+                do_migration_loop_continuous(opdict, mig_dict, delta,
+                                             start_time_migration, grid_info,
+                                             time_grids, keep_grid=True)
+            # plot
+            plotopt = PlotOptions(opdict)
+            grid_filename = os.path.basename(grid_filename)
+            stack_filename = 'stack_all_' + grid_filename.split('_')[-1]
+            plotopt.opdict['grid_filename'] = grid_filename
+            plotopt.opdict['stack_filename'] = stack_filename
+
+            plotopt.opdict['dt'] = delta
+            plotopt.opdict['n_buf'] = n_buf
+            plotopt.opdict['nt'] = nt
+            plotopt.opdict['t_loc_rel'] = \
+                o_time - start_time_migration + stack_shift_time
+            plotopt.opdict['x_loc'] = xm
+            plotopt.opdict['y_loc'] = ym
+            plotopt.opdict['z_loc'] = zm
+            plotopt.opdict['start_time'] = \
+                start_time_migration - stack_shift_time
+            plotWavelocResults(plotopt)
+
+        if plot_wfm:
+
+            # read data
+            data_dict, delta = \
+                read_data_compatible_with_time_dict(data_files, time_grids,
+                                                    start_time_migration,
+                                                    end_time_migration)
+            mig_dict, delta = \
+                read_data_compatible_with_time_dict(mig_files, time_grids,
+                                                    start_time_migration,
+                                                    end_time_migration)
+            # cut desired portion out of data
+            for sta in data_dict.keys():
+                tmp = data_dict[sta]
+
+                # alignment on origin time
+                istart = np.int(np.round((start_time + ttimes[sta] -
+                                          start_time_migration) / delta))
+                iend = istart + np.int(np.round((opdict['plot_tbefore'] +
+                                                 opdict['plot_tafter']) /
+                                                delta))
+
+                # sanity check in case event is close to start or end of data
+                if istart < 0:
+                    istart = 0
+                if iend > len(tmp):
+                    iend = len(tmp)
+                data_dict[sta] = tmp[istart:iend]
+                # do slice
+                tmp = mig_dict[sta]
+                mig_dict[sta] = tmp[istart:iend]
+
+            # retrieve relevant portion of stack max
+            istart = np.int(np.round((o_time - opdict['plot_tbefore'] -
+                                      stack_start_time) / delta))
+            iend = istart + np.int(np.round((opdict['plot_tbefore'] +
+                                             opdict['plot_tafter']) / delta))
+            # sanity check in case event is close to start or end of data
+            if istart < 0:
+                start_time = start_time + np.abs(istart)*delta
+                istart = 0
+            if iend > len(max_val):
+                iend = len(max_val)
+            # do slice
+            stack_wfm = max_val[istart:iend]
+
+            # plot
+            plotLocationWaveforms(loc, start_time, delta, data_dict, mig_dict,
+                                  stack_wfm, figdir)
+
+    f_stack.close()

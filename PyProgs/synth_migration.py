@@ -161,8 +161,6 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     f.close()
     logging.info('Saved 4D grid to file %s' % test_grid_file)
 
-    shifted_it = it+int(round(stack_shift_time/s_delta))
-
     # SETUP information to pass back
     plotopt.opdict['grid_filename'] = s_filename
     plotopt.opdict['stack_filename'] = 'stack_all_'+s_filename 

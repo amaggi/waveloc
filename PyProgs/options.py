@@ -516,9 +516,9 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
         if not 'plot_tafter' in self.opdict:
             raise UserWarning('plot_tafter option not set')
 
-    def _verify_plot_otime_window(self):
-        if not 'plot_otime_window' in self.opdict:
-            raise UserWarning('plot_otime_window option not set')
+    def _verify_otime_window(self):
+        if not 'otime_window' in self.opdict:
+            raise UserWarning('otime_window option not set')
 
     def _verify_channel_net_sta_comp(self):
         # if have channel_file option, check that
@@ -783,7 +783,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
 
         self._verify_plot_tbefore()
         self._verify_plot_tafter()
-        self._verify_plot_otime_window()
+        self._verify_otime_window()
 
         self._verify_search_grid()
         self._verify_time_grid()

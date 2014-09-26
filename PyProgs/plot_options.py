@@ -1,5 +1,4 @@
 import os
-import logging
 from ugrids import read_ugrid, nll2reg_ugrid
 
 

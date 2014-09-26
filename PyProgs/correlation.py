@@ -158,7 +158,6 @@ def corr_freq(f, Cxy, v):
 
     # Determine the limits of the amplitude spectrum
     mini, maxi = cum(np.abs(Cxy[0:len(f)/2]), v)
-    fmin, fmax = f[mini], f[maxi]
     f_min_max = f[mini:maxi]
     # Plot
     if v:

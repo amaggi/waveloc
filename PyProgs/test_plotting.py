@@ -47,7 +47,6 @@ class PlottingTests(unittest.TestCase):
         n_buf = len(x)
         nt = int(tlen/dt)
         grid = np.empty((n_buf, nt), dtype='float')
-        t = np.arange(0, tlen, dt)
 
         x_range = np.max(x)-np.min(x)
         y_range = np.max(y)-np.min(y)
@@ -121,7 +120,7 @@ class PlottingTests(unittest.TestCase):
         stack_filename = self.plotopt.getStackFilename()
         f = h5py.File(stack_filename, 'w')
         f.create_dataset('max_val', data=max_val)
-        mv = f.create_dataset('max_val_smooth', data=max_val)
+        f.create_dataset('max_val_smooth', data=max_val)
         f.create_dataset('max_x', data=max_x)
         f.create_dataset('max_y', data=max_y)
         f.create_dataset('max_z', data=max_z)

@@ -1,11 +1,7 @@
 import os
-import logging
 from waveloc.options import WavelocOptions
 from waveloc.synth_migration import generateSyntheticDirac
 from waveloc.plotting import plotWavelocResults
-
-logging.basicConfig(level=logging.INFO,
-                    format='%(levelname)s : %(asctime)s : %(message)s')
 
 # set up default parameters
 wo = WavelocOptions()
@@ -22,8 +18,8 @@ wo.opdict['load_ttimes_buf'] = False
 wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
 wo.opdict['stations'] = 'coord_stations_test'
 
-#uncomment remove some stations to test response for fewer stations
-#wo.opdict['sta_list'] = "FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,\
+# uncomment remove some stations to test response for fewer stations
+# wo.opdict['sta_list'] = "FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,\
 #                         UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
 
 wo.opdict['syn_amplitude'] = 1.0
@@ -44,9 +40,7 @@ wo.opdict['otime_window'] = 5.0
 wo.verify_synthetic_options()
 
 # Run the synthetic migration
-test_info = generateSyntheticDirac(wo.opdict)
+plotopt = generateSyntheticDirac(wo.opdict)
 
 # Plot the synthetic migration
-base_path = wo.opdict['base_path']
-figdir = os.path.join(base_path, 'out', wo.opdict['outdir'], 'fig')
-plotWavelocResults(test_info)
+plotWavelocResults(plotopt)
