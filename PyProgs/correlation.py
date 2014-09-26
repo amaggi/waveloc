@@ -175,10 +175,11 @@ def corr_freq(f, Cxy, v):
     return tau_f
 
 
-def cum(x,v):
+def cum(x, v):
     """
-    Determines the minimum and maximum indices of the most significative part of a signal.
-    (Here, determines the part of the amplitude spectrum which is useful)
+    Determines the minimum and maximum indices of the most significative part
+    of a signal.  (Here, determines the part of the amplitude spectrum which is
+    useful)
 
     :param x: signal
     :param v: If ``True`` then plot x and cumulative sum of x
@@ -290,7 +291,7 @@ def display(Cxy, f, f_min_max):
 
     :param Cxy: frequency domain cross-correlation
     :param f: frequency vector
-    :param f_min_max: 
+    :param f_min_max: ??
 
     :type Cxy: numpy array
     :type f: numpy array
@@ -345,13 +346,15 @@ def do_correlation_setup_and_run(opdict):
     Runs correlation using options contained in a WavelocOptions.opdict
     dictionary.
 
-    Explores and cross-correlates all possible event pairs of the Waveloc location file at all stations.
-    Writes the correlation coefficients and time delays in 2-D numpy arrays for each station and saves 
-    the final dictionaries into 2 binary files.
+    Explores and cross-correlates all possible event pairs of the Waveloc
+    location file at all stations.  Writes the correlation coefficients and
+    time delays in 2-D numpy arrays for each station and saves the final
+    dictionaries into 2 binary files.
 
-    The correlation first takes place in the time domain. If the correlation value is over a given 
-    threshold, the correlation is also performed in the frequency domain so that a subsample precision 
-    can be obtained on the time delay.
+    The correlation first takes place in the time domain. If the correlation
+    value is over a given threshold, the correlation is also performed in the
+    frequency domain so that a subsample precision can be obtained on the time
+    delay.
     """
 
     base_path = opdict['base_path']

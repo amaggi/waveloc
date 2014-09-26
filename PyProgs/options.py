@@ -149,7 +149,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
         # if the option base_path is not set, then check the environment
         # variable
         # if the environment variable is not set, quit with error message
-        if not 'base_path' in self.opdict:
+        if 'base_path' not in self.opdict:
             logging.info('No base_path set in options, getting base_path from \
                           $WAVELOC_PATH')
             base_path = os.getenv('WAVELOC_PATH')
@@ -173,7 +173,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
     def _verify_datadir(self):
         self.verify_base_path()
         base_path = self.opdict['base_path']
-        if not 'datadir' in self.opdict:
+        if 'datadir' not in self.opdict:
             raise UserWarning('datadir option not set')
 
         datadir = os.path.join(base_path, 'data', self.opdict['datadir'])
@@ -183,7 +183,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
     def _verify_outdir(self):
         self.verify_base_path()
         base_path = self.opdict['base_path']
-        if not 'outdir' in self.opdict:
+        if 'outdir' not in self.opdict:
             raise UserWarning('outdir option not set')
 
         outdir = os.path.join(base_path, 'out', self.opdict['outdir'])
@@ -204,7 +204,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             os.makedirs(os.path.join(outdir, 'reloc'))
 
     def _verify_net_list(self):
-        if not 'net_list' in self.opdict:
+        if 'net_list' not in self.opdict:
             raise UserWarning('net_list option not set')
 
     def _verify_sta_list(self):
@@ -212,11 +212,11 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('sta_list option not set')
 
     def _verify_comp_list(self):
-        if not 'comp_list' in self.opdict:
+        if 'comp_list' not in self.opdict:
             raise UserWarning('comp_list option not set')
 
     def _verify_channel_file(self):
-        if not 'channel_file' in self.opdict:
+        if 'channel_file' not in self.opdict:
             raise UserWarning('channel_file option not set')
         self._verify_lib_path()
         base_path = self.opdict['base_path']
@@ -225,50 +225,50 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('Cannot find %s' % filename)
 
     def _verify_starttime(self):
-        if not 'starttime' in self.opdict:
+        if 'starttime' not in self.opdict:
             raise UserWarning('starttime option not set')
 
     def _verify_endtime(self):
-        if not 'endtime' in self.opdict:
+        if 'endtime' not in self.opdict:
             raise UserWarning('endtime option not set')
 
     def _verify_resample(self):
-        if not 'resample' in self.opdict:
+        if 'resample' not in self.opdict:
             raise UserWarning('resample option not set')
 
     def _verify_fs(self):
         self._verify_resample()
         resample = self.opdict['resample']
         if resample:
-            if not 'fs' in self.opdict:
+            if 'fs' not in self.opdict:
                 raise UserWarning('fs option not set')
 
     def _verify_c1(self):
-        if not 'c1' in self.opdict:
+        if 'c1' not in self.opdict:
             raise UserWarning('c1 option not set')
 
     def _verify_c2(self):
-        if not 'c2' in self.opdict:
+        if 'c2' not in self.opdict:
             raise UserWarning('c2 option not set')
 
     def _verify_kwin(self):
-        if not 'kwin' in self.opdict:
+        if 'kwin' not in self.opdict:
             raise UserWarning('kwin option not set')
 
     def _verify_gthreshold(self):
-        if not 'gthreshold' in self.opdict:
+        if 'gthreshold' not in self.opdict:
             raise UserWarning('gthreshold option not set')
 
     def _verify_mu(self):
-        if not 'mu' in self.opdict:
+        if 'mu' not in self.opdict:
             raise UserWarning('mu option not set')
 
     def _verify_sigma(self):
-        if not 'sigma' in self.opdict:
+        if 'sigma' not in self.opdict:
             raise UserWarning('sigma option not set')
 
     def _verify_dataless(self):
-        if not 'dataless' in self.opdict:
+        if 'dataless' not in self.opdict:
             raise UserWarning('dataless option not set')
         self._verify_lib_path()
         base_path = self.opdict['base_path']
@@ -279,7 +279,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('No dataless files found: %s' % dataless_names)
 
     def _verify_dataglob(self):
-        if not 'dataglob' in self.opdict:
+        if 'dataglob' not in self.opdict:
             raise UserWarning('dataglob option not set')
         self._verify_datadir()
         base_path = self.opdict['base_path']
@@ -289,7 +289,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('No data files found : %s' % data_names)
 
     def _verify_kurtglob(self):
-        if not 'kurtglob' in self.opdict:
+        if 'kurtglob' not in self.opdict:
             raise UserWarning('kurtglob option not set')
         self._verify_datadir()
         base_path = self.opdict['base_path']
@@ -299,7 +299,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('No kurtosis files found : %s' % kurt_names)
 
     def _verify_gradglob(self):
-        if not 'gradglob' in self.opdict:
+        if 'gradglob' not in self.opdict:
             raise UserWarning('gradglob option not set')
         self._verify_datadir()
         base_path = self.opdict['base_path']
@@ -310,7 +310,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
                               grad_names)
 
     def _verify_gaussglob(self):
-        if not 'gaussglob' in self.opdict:
+        if 'gaussglob' not in self.opdict:
             raise UserWarning('gaussglob option not set')
         self._verify_datadir()
         base_path = self.opdict['base_path']
@@ -321,10 +321,10 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('No gaussian files found : %s' % gauss_names)
 
     def _verify_ugrid_type(self):
-        if not 'ugrid_type' in self.opdict:
+        if 'ugrid_type' not in self.opdict:
             raise UserWarning('ugrid_type option not set')
         utype = self.opdict['ugrid_type']
-        if not utype in ['FULL', 'USER']:
+        if utype not in ['FULL', 'USER']:
             raise UserWarning('Unknown ugrid_type %s' % utype)
         if utype == 'USER':
             self._verify_ugrid_file()
@@ -332,7 +332,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             self._verify_search_grid()
 
     def _verify_time_grid(self):
-        if not 'time_grid' in self.opdict:
+        if 'time_grid' not in self.opdict:
             raise UserWarning('time_grid option not set')
         self._verify_lib_path()
         base_path = self.opdict['base_path']
@@ -343,31 +343,31 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('No time grid files found %s' % tg_glob)
 
     def _verify_data_length(self):
-        if not 'data_length' in self.opdict:
+        if 'data_length' not in self.opdict:
             raise UserWarning('data_length option not set')
 
     def _verify_data_overlap(self):
-        if not 'data_overlap' in self.opdict:
+        if 'data_overlap' not in self.opdict:
             raise UserWarning('data_overlap option not set')
 
     def _verify_snr_limit(self):
-        if not 'snr_limit' in self.opdict:
+        if 'snr_limit' not in self.opdict:
             raise UserWarning('snr_limit option not set')
 
     def _verify_snr_tr_limit(self):
-        if not 'snr_tr_limit' in self.opdict:
+        if 'snr_tr_limit' not in self.opdict:
             raise UserWarning('snr_tr_limit option not set')
 
     def _verify_sn_time(self):
-        if not 'sn_time' in self.opdict:
+        if 'sn_time' not in self.opdict:
             raise UserWarning('sn_time option not set')
 
     def _verify_n_kurt_min(self):
-        if not 'n_kurt_min' in self.opdict:
+        if 'n_kurt_min' not in self.opdict:
             raise UserWarning('n_kurt_min option not set')
 
     def _verify_stations(self):
-        if not 'stations' in self.opdict:
+        if 'stations' not in self.opdict:
             raise UserWarning('stations option not set')
         self._verify_lib_path()
         base_path = self.opdict['base_path']
@@ -376,7 +376,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('Cannot find %s' % stations)
 
     def _verify_search_grid(self):
-        if not 'search_grid' in self.opdict:
+        if 'search_grid' not in self.opdict:
             raise UserWarning('search_grid option not set')
         self._verify_lib_path()
         base_path = self.opdict['base_path']
@@ -386,7 +386,7 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('Cannot find %s' % search_grid)
 
     def _verify_ugrid_file(self):
-        if not 'ugrid_file' in self.opdict:
+        if 'ugrid_file' not in self.opdict:
             raise UserWarning('ugrid_file option not set')
         self._verify_lib_path()
         base_path = self.opdict['base_path']
@@ -396,128 +396,128 @@ UV04,UV05,UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
             raise UserWarning('Cannot find %s' % search_grid)
 
     def _verify_reloc(self):
-        if not 'reloc' in self.opdict:
+        if 'reloc' not in self.opdict:
             raise UserWarning('reloc option not set')
 
     def _verify_reloc_snr(self):
-        if not 'reloc_snr' in self.opdict:
+        if 'reloc_snr' not in self.opdict:
             raise UserWarning('reloc_snr option not set')
 
     def _verify_auto_loclevel(self):
-        if not 'auto_loclevel' in self.opdict:
+        if 'auto_loclevel' not in self.opdict:
             raise UserWarning('auto_loclevel option not set')
 
     def _verify_snr_loclevel(self):
         self._verify_auto_loclevel()
         auto_loclevel = self.opdict['auto_loclevel']
         if auto_loclevel:
-            if not 'snr_loclevel' in self.opdict:
+            if 'snr_loclevel' not in self.opdict:
                 raise UserWarning('snr_loclevel option not set')
 
     def _verify_loclevel(self):
         self._verify_auto_loclevel()
         auto_loclevel = self.opdict['auto_loclevel']
         if not auto_loclevel:
-            if not 'loclevel' in self.opdict:
+            if 'loclevel' not in self.opdict:
                 raise UserWarning('loclevel option not set')
 
     def _verify_probloc_spaceonly(self):
-        if not 'probloc_spaceonly' in self.opdict:
+        if 'probloc_spaceonly' not in self.opdict:
             raise UserWarning('probloc_spaceonly option not set')
 
     def _verify_xcorr_threshold(self):
-        if not 'xcorr_threshold' in self.opdict:
+        if 'xcorr_threshold' not in self.opdict:
             raise UserWarning('xcorr_threshold option not set')
 
     def _verify_newkurtfile(self):
-        if not 'new_kurtfile' in self.opdict:
+        if 'new_kurtfile' not in self.opdict:
             raise UserWarning('new_kurtfile option not set')
 
     def _verify_xcorr_before(self):
-        if not 'xcorr_before' in self.opdict:
+        if 'xcorr_before' not in self.opdict:
             raise UserWarning('xcorr_before option not set')
 
     def _verify_xcorr_after(self):
-        if not 'xcorr_after' in self.opdict:
+        if 'xcorr_after' not in self.opdict:
             raise UserWarning('xcorr_after option not set')
 
     def _verify_xcorr_corr(self):
-        if not 'xcorr_corr' in self.opdict:
+        if 'xcorr_corr' not in self.opdict:
             raise UserWarning('xcorr_corr option not set')
 
     def _verify_xcorr_delay(self):
-        if not 'xcorr_delay' in self.opdict:
+        if 'xcorr_delay' not in self.opdict:
             raise UserWarning('xcorr_delay option not set')
 
     def _verify_nbsta(self):
-        if not 'nbsta' in self.opdict:
+        if 'nbsta' not in self.opdict:
             raise UserWarning('nbsta option not set')
 
     def _verify_clus(self):
-        if not 'clus' in self.opdict:
+        if 'clus' not in self.opdict:
             raise UserWarning('clus option not set')
 
     def _verify_dd_loc(self):
-        if not 'dd_loc' in self.opdict:
+        if 'dd_loc' not in self.opdict:
             raise UserWarning('dd_loc option not set')
 
     def _verify_syn_addnoise(self):
-        if not 'syn_addnoise' in self.opdict:
+        if 'syn_addnoise' not in self.opdict:
             raise UserWarning('syn_addnoise option not set')
 
     def _verify_syn_snr(self):
         self._verify_syn_addnoise()
         syn_addnoise = self.opdict['syn_addnoise']
         if syn_addnoise:
-            if not 'syn_snr' in self.opdict:
+            if 'syn_snr' not in self.opdict:
                 raise UserWarning('syn_snr option not set')
 
     def _verify_syn_amplitude(self):
-        if not 'syn_amplitude' in self.opdict:
+        if 'syn_amplitude' not in self.opdict:
             raise UserWarning('syn_amplitude option not set')
 
     def _verify_syn_datalength(self):
-        if not 'syn_datalength' in self.opdict:
+        if 'syn_datalength' not in self.opdict:
             raise UserWarning('syn_datalength option not set')
 
     def _verify_syn_samplefreq(self):
-        if not 'syn_samplefreq' in self.opdict:
+        if 'syn_samplefreq' not in self.opdict:
             raise UserWarning('syn_samplefreq option not set')
 
     def _verify_syn_kwidth(self):
-        if not 'syn_kwidth' in self.opdict:
+        if 'syn_kwidth' not in self.opdict:
             raise UserWarning('syn_kwidth option not set')
 
     def _verify_syn_otime(self):
-        if not 'syn_otime' in self.opdict:
+        if 'syn_otime' not in self.opdict:
             raise UserWarning('syn_otime option not set')
 
     def _verify_syn_x(self):
-        if not 'syn_x' in self.opdict:
+        if 'syn_x' not in self.opdict:
             raise UserWarning('syn_x option not set')
 
     def _verify_syn_y(self):
-        if not 'syn_y' in self.opdict:
+        if 'syn_y' not in self.opdict:
             raise UserWarning('syn_y option not set')
 
     def _verify_syn_z(self):
-        if not 'syn_z' in self.opdict:
+        if 'syn_z' not in self.opdict:
             raise UserWarning('syn_z option not set')
 
     def _verify_syn_filename(self):
-        if not 'syn_filename' in self.opdict:
+        if 'syn_filename' not in self.opdict:
             raise UserWarning('syn_filename option not set')
 
     def _verify_plot_tbefore(self):
-        if not 'plot_tbefore' in self.opdict:
+        if 'plot_tbefore' not in self.opdict:
             raise UserWarning('plot_tbefore option not set')
 
     def _verify_plot_tafter(self):
-        if not 'plot_tafter' in self.opdict:
+        if 'plot_tafter' not in self.opdict:
             raise UserWarning('plot_tafter option not set')
 
     def _verify_otime_window(self):
-        if not 'otime_window' in self.opdict:
+        if 'otime_window' not in self.opdict:
             raise UserWarning('otime_window option not set')
 
     def _verify_channel_net_sta_comp(self):

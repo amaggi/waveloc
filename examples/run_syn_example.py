@@ -1,4 +1,3 @@
-import os
 from waveloc.options import WavelocOptions
 from waveloc.synth_migration import generateSyntheticDirac
 from waveloc.plotting import plotWavelocResults

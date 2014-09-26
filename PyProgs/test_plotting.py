@@ -39,7 +39,7 @@ class PlottingTests(unittest.TestCase):
         self.plotopt.opdict['z_err'] = (0.1, 0.1)
 
     def _create_dummy_grid(self):
-        
+
         x, y, z = self.plotopt.getXYZ()
         dt = 0.5
         tlen = 50.
@@ -111,7 +111,7 @@ class PlottingTests(unittest.TestCase):
         max_y = np.empty(nt, dtype='float')
         max_z = np.empty(nt, dtype='float')
 
-        sig=tlen/30.
+        sig = tlen/30.0
         max_val = np.exp(-(t-tc)**2/(2*sig**2))
         max_x = np.random.normal(loc=xc, scale=0.5, size=nt)
         max_y = np.random.normal(loc=yc, scale=0.5, size=nt)
@@ -138,14 +138,14 @@ class PlottingTests(unittest.TestCase):
                                          'out', 'TEST', 'grid',
                                          'GRID_FNAME.hdf5')
         exp_stack_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                         'out', 'TEST', 'stack',
-                                         'STACK_FNAME.hdf5')
+                                          'out', 'TEST', 'stack',
+                                          'STACK_FNAME.hdf5')
         exp_fig_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                         'out', 'TEST', 'fig',
-                                         'GRID_FNAME_grid.pdf')
+                                        'out', 'TEST', 'fig',
+                                        'GRID_FNAME_grid.pdf')
         exp_wfm_fig_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                         'out', 'TEST', 'fig',
-                                         'GRID_FNAME_wfm.pdf')
+                                            'out', 'TEST', 'fig',
+                                            'GRID_FNAME_wfm.pdf')
 
         grid_filename = self.plotopt.getGridFilename()
         stack_filename = self.plotopt.getStackFilename()

@@ -75,7 +75,7 @@ def plotKurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, I):
     :param nlevel: number of decomposition levels
     :param level_w: vector of levels
     :param Fs: sampling frequency of the signal
-    :param fi: 
+    :param fi: ??
     :param I: level index
 
     :type Kwav: numpy array
@@ -90,16 +90,15 @@ def plotKurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, I):
     plt.imshow(Kwav, aspect='auto', extent=(0, freq_w[-1], range(2*nlevel)[-1],
                                             range(2*nlevel)[0]),
                interpolation='none', cmap=plt.cm.hot_r)
-    #imgplot.set_cmap('gray')
     xx = np.arange(0, int(freq_w[len(freq_w)-1]), step=5)
     plt.xticks(xx)
     plt.yticks(range(2*nlevel), np.round(Level_w*10)/10)
-    plt.plot(Fs*fi,I,'yo')
+    plt.plot(Fs*fi, I, 'yo')
     plt.xlabel("Frequency (Hz)")
     plt.ylabel("Level k")
-    #plt.figtext(0.075, 0.90, "(a)", fontsize=15)
+    # plt.figtext(0.075, 0.90, "(a)", fontsize=15)
     plt.title("Level %.1f, Bw=%.2f Hz, fc=%.2f Hz" %
-                  (np.round(10*Level_w[I])/10, Fs*2**(-(Level_w[I]+1)), Fs*fi))
+              (np.round(10*Level_w[I])/10, Fs*2**(-(Level_w[I]+1)), Fs*fi))
     plt.colorbar()
     plt.show()
 
@@ -107,14 +106,14 @@ def plotKurtogram(Kwav, freq_w, nlevel, Level_w, Fs, fi, I):
 def getBandwidthAndFrequency(nlevel, Fs, level_w, freq_w, level_index,
                              freq_index):
     """
-    Gets bandwidth bw and frequency parameters knowing the 
-    level and the frequency indexes.
+    Gets bandwidth bw and frequency parameters knowing the level and the
+    frequency indexes.
 
     :param nlevel: number of decomposition levels
     :param Fs: sampling frequency of the signal
     :param level_w: vector of decomposition levels
     :param freq_w: vector of frequencies
-    :param level_index: index of the level 
+    :param level_index: index of the level
     :param freq_index: index of the frequency
 
     :type nlevel: integer
@@ -131,7 +130,6 @@ def getBandwidthAndFrequency(nlevel, Fs, level_w, freq_w, level_index,
         * l1: level
     """
 
-    #f1 = freq_w[freq_index]
     l1 = level_w[level_index]
     fi = (freq_index)/3./2**(nlevel+1)
     fi += 2.**(-2-l1)
@@ -166,9 +164,9 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
     Computes the fast kurtogram Kwav of signal x up to level 'nlevel'
     Maximum number of decomposition levels is log2(length(x)), but it is
     recommended to stay by a factor 1/8 below this.
-    Also returns the vector of k-levels Level_w, the frequency vector 
-    freq_w, the complex envelope of the signal c and the extreme 
-    frequencies of the "best" bandpass f_lower and f_upper.
+    Also returns the vector of k-levels Level_w, the frequency vector freq_w,
+    the complex envelope of the signal c and the extreme frequencies of the
+    "best" bandpass f_lower and f_upper.
 
     J. Antoni : 02/2005
     Translation to Python: T. Lecocq 02/2012
@@ -202,7 +200,8 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
         * Kwav: kurtogram
         * Level_w: vector of levels
         * freq_w: frequency vector
-        * c: complex envelope of the signal filtered in the frequency band that maximizes the kurtogram
+        * c: complex envelope of the signal filtered in the frequency band that
+             maximizes the kurtogram
         * f_lower: lower frequency of the band pass
         * f_upper: upper frequency of the band pass
     """
@@ -222,9 +221,9 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
 
         h, g, h1, h2, h3 = get_h_parameters(NFIR, fcut)
 
-        if opt2 == 1: # kurtosis of the complex envelope
+        if opt2 == 1:  # kurtosis of the complex envelope
             Kwav = K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, 'kurt2')
-        else: # variance of the envelope magnitude
+        else:  # variance of the envelope magnitude
             Kwav = K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, 'kurt1')
 
         # keep positive values only!
@@ -267,11 +266,12 @@ def Fast_Kurtogram(x, nlevel, verbose=False, Fs=1, NFIR=16, fcut=0.4,
 
 def K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, opt, level=0):
     """
-    Calculates the kurtosis K (2-D matrix) of the complete quinte wavelet packet 
-    transform w of signal x, up to nlevel, using the lowpass and highpass filters 
-    h and g, respectively. The WP coefficients are sorted according to the frequency
-    decomposition. This version handles both real and analytical filters, but
-    does not yield WP coefficients suitable for signal synthesis.
+    Calculates the kurtosis K (2-D matrix) of the complete quinte wavelet
+    packet transform w of signal x, up to nlevel, using the lowpass and
+    highpass filters h and g, respectively. The WP coefficients are sorted
+    according to the frequency decomposition. This version handles both real
+    and analytical filters, but does not yield WP coefficients suitable for
+    signal synthesis.
 
     J. Antoni : 12/2004
     Translation to Python: T. Lecocq 02/2012
@@ -322,12 +322,12 @@ def K_wpQ(x, h, g, h1, h2, h3, nlevel, verbose, opt, level=0):
 
 def K_wpQ_local(x, h, g, h1, h2, h3, nlevel, verbose, opt, level):
     """
-    Is a recursive funtion. 
-    Computes and returns the 2-D vector K, which contains the kurtosis value of the signal as 
-    well as the 2 kurtosis values corresponding to the signal filtered into 2 different 
-    band-passes.
-    Also returns and computes the 2-D vector KQ which contains the 3 kurtosis values corresponding 
-    to the signal filtered into 3 different band-passes.
+    Is a recursive funtion. Computes and returns the 2-D vector K, which
+    contains the kurtosis value of the signal as well as the 2 kurtosis values
+    corresponding to the signal filtered into 2 different band-passes.
+
+    Also returns and computes the 2-D vector KQ which contains the 3 kurtosis
+    values corresponding to the signal filtered into 3 different band-passes.
 
     :param x: signal
     :param h: lowpass filter
@@ -359,7 +359,7 @@ def K_wpQ_local(x, h, g, h1, h2, h3, nlevel, verbose, opt, level):
     a, d = DBFB(x, h, g)
 
     N = len(a)
-    d = d*np.power(-1., np.arange(1, N+1)) # indices pairs multipliés par -1
+    d = d*np.power(-1., np.arange(1, N+1))  # even indices multiplied by -1
     K1 = kurt(a[len(h)-1:], opt)
     K2 = kurt(d[len(g)-1:], opt)
 
@@ -813,7 +813,7 @@ def raylinv(p, b):
 
     if len(k) != 0:
         tmp = np.NaN
-        x[k1] = tmp(len(k))
+        x[k1] = tmp(len(k))  # BUG : k1 is undefined - look into original code
 
     # Put in the correct values when P is 1.
     k = np.where(p == 1)[0]
@@ -834,12 +834,14 @@ def raylinv(p, b):
 def plot_trace(fig, G, x, xfilt, kurtx, tr, info, f_lower, f_upper, snr,
                snr_ref, snr_kurt, kmax, kmax_ref, tstack):
     """
-    Plots both signal and kurtosis for comparison. TODO : flesh out this doc-string.
+    Plots both signal and kurtosis for comparison. TODO : flesh out this
+    doc-string.
 
     :param fig: figure
     :param G: location of the subplot in the figure
     :param x: initial signal
-    :param xfilt: signal filtered in bandpass determined after the kurtogram analysis
+    :param xfilt: signal filtered in bandpass determined after the kurtogram
+                  analysis
     :param kurtx: kurtosis of the initial signal
     :param tr: kurtosis of the filtered signal
     :param info: dictionary of parameters
@@ -902,9 +904,8 @@ def plot_trace(fig, G, x, xfilt, kurtx, tr, info, f_lower, f_upper, snr,
 
 def write_file(info, tstart, tend, tr):
     """
-    Replaces the initial kurtosis by a new one (from 
-    the signal filtered in the preferred band pass).
-    Writes it in the dictionary info.
+    Replaces the initial kurtosis by a new one (from the signal filtered in the
+    preferred band pass).  Writes it in the dictionary info.
 
     :param info: dictionary of parameters
     :param tstart: start-time
@@ -967,9 +968,8 @@ def waveval(xall, tstart, tend, dt, tdeb):
 
 def kurto(origin_time, info, opdict):
     """
-    Finds for each Waveloc event and for each station the best filtering 
-    parameters for kurtosis computation.
-    Writes them into the dictionary info.
+    Finds for each Waveloc event and for each station the best filtering
+    parameters for kurtosis computation.  Writes them into the dictionary info.
 
     :param origin_time: origin time of the signal
     :param info: dictionary of parameters
@@ -1005,7 +1005,7 @@ def kurto(origin_time, info, opdict):
 
     snr_ref = np.max(np.abs(x))/np.mean(np.abs(x))
     snr_kurt_ref = np.max(np.abs(kurtx))/np.mean(np.abs(kurtx))
-    kmax_ref = np.max(kurtx) # maximum of the kurtosis
+    kmax_ref = np.max(kurtx)  # maximum of the kurtosis
 
     # Compute the kurtogram and keep best frequencies
     if verbose:
@@ -1067,10 +1067,9 @@ def kurto(origin_time, info, opdict):
 
 def read_kurtogram_frequencies(filename):
     """
-    Reads the binary file with kurtogram frequencies.
-    Plots the histograms of lower and upper frequencies 
-    for each station.
-    Aims at determining the best filtering parameters.
+    Reads the binary file with kurtogram frequencies.  Plots the histograms of
+    lower and upper frequencies for each station.  Aims at determining the best
+    filtering parameters.
 
     :param filename: File to read
 

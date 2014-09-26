@@ -29,12 +29,12 @@ class Graph(object):
 
     .. attribute:: cluster_index
 
-        Indicates the cluster number of all events. 0 means the event does not belong
-        to any cluster.
+        Indicates the cluster number of all events. 0 means the event does not
+        belong to any cluster.
 
     .. attribute:: neighbours
 
-        Lists the indexes of the neighbour events for each event. 
+        Lists the indexes of the neighbour events for each event.
         GRAPH.neighbours is then a list of lists.
 
     """
@@ -49,7 +49,7 @@ class Graph(object):
 
     def set_flag(self, value):
         """
-        Appends value to flag attribute. 
+        Appends value to flag attribute.
 
         :param value: Value to append (0=False, 1=True).
         :type value: integer
@@ -77,9 +77,10 @@ class Graph(object):
 
 def DFS(GRAPH, summit_first, cluster_ind):
     """
-    Implementation of the depth first search (DFS) algorithm. This is a recursive
-    algorithm. See detailed description in ``do_clustering function``.
-    
+    Implementation of the depth first search (DFS) algorithm. This is a
+    recursive algorithm. See detailed description in ``do_clustering
+    function``.
+
     :param GRAPH: the algorithm updates GRAPH.flag and GRAPH.cluster_index
     :param summit_first: event index by which the research of neighbours begins
     :param cluster_ind: cluster index
@@ -134,13 +135,16 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, datadir,
                 data_files, threshold):
     """
     Plots the waveforms of all possible event pairs within a cluster.
-    On the same figure, displays the superimposed waveforms of the event pair for all stations.
-    Also displays the correlation value.
+    On the same figure, displays the superimposed waveforms of the event pair
+    for all stations. Also displays the correlation value.
 
-    :param CLUSTER: dictionary containing the event indexes belonging to each cluster
+    :param CLUSTER: dictionary containing the event indexes belonging to each
+                    cluster
     :param delay_file: file name of the file containing the time delays
-    :param coeff: cross-correlation values of all possible event pairs for all stations
-    :param locs: list of the whole Waveloc locations (each element of the list is a dictionary)
+    :param coeff: cross-correlation values of all possible event pairs for all
+                  stations
+    :param locs: list of the whole Waveloc locations (each element of the list
+                 is a dictionary)
     :param datadir: data directory path
     :param data_files: list of paths of data files
     :param threshold: correlation coefficient threshold
@@ -211,11 +215,12 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, datadir,
 
 def compute_nbsta(event, coeff, threshold):
     """
-    Computes the number of stations where the correlation value is greater than the threshold 
-    for every event pair
+    Computes the number of stations where the correlation value is greater than
+    the threshold for every event pair
 
     :param event: total number of events located by Waveloc
-    :param coeff: cross-correlation coefficients of all possible event pairs for all stations
+    :param coeff: cross-correlation coefficients of all possible event pairs
+                  for all stations
     :param threshold: correlation value threshold set to form a cluster
 
     :type event: integer
@@ -250,33 +255,39 @@ def compute_nbsta(event, coeff, threshold):
 
 def do_clustering(event, nbsta, nbmin):
     """
-    First step: all events are examined one by one. For each of them, the indexes of the events 
-    where there is a sufficient number of stations (i.e. the number exceeds or equals nbmin) are 
-    kept in GRAPH.neighbours. All events are flagged to 0 and belong to cluster 0 by default. The 
-    indexes of the events for which neighbours were found are written in the list ``summits``.
+    First step: all events are examined one by one. For each of them, the
+    indexes of the events where there is a sufficient number of stations (i.e.
+    the number exceeds or equals nbmin) are kept in GRAPH.neighbours. All
+    events are flagged to 0 and belong to cluster 0 by default. The indexes of
+    the events for which neighbours were found are written in the list
+    ``summits``.
 
-    From this list (summits), we extract the event which has the greatest number of neighbours. 
-    The clustering process will start with that event.
+    From this list (summits), we extract the event which has the greatest
+    number of neighbours.  The clustering process will start with that event.
 
-    Then the DFS algorithm is applied: when an event is examined, it is flagged to 1 and its 
-    cluster number is also updated (GRAPH.cluster_index). The DFS algorithm is recursive and 
-    explores each possible path until it ends: it means that when the research starts with a 
-    given event, it will search for the the first neighbour, and then the first neighbour of 
-    this first neighbour and so on... When all the ``first neighbours`` are found, the research 
-    can concentrates on second neighbours, and so on until all the neighbours are found.
+    Then the DFS algorithm is applied: when an event is examined, it is flagged
+    to 1 and its cluster number is also updated (GRAPH.cluster_index). The DFS
+    algorithm is recursive and explores each possible path until it ends: it
+    means that when the research starts with a given event, it will search for
+    the the first neighbour, and then the first neighbour of this first
+    neighbour and so on... When all the ``first neighbours`` are found, the
+    research can concentrates on second neighbours, and so on until all the
+    neighbours are found.
 
-    Once the DFS algorithm has found all events linked to summit_first, we write the corresponding 
-    indexes into the dictionary CLUSTER (where the keys are the cluster indexes) and look for 
-    events with neighbours which are still not flagged to 1. The process keeps going until the 
-    whole events with neighbours belong to a cluster.
+    Once the DFS algorithm has found all events linked to summit_first, we
+    write the corresponding indexes into the dictionary CLUSTER (where the keys
+    are the cluster indexes) and look for events with neighbours which are
+    still not flagged to 1. The process keeps going until the whole events with
+    neighbours belong to a cluster.
 
     The function finally returns the dictionary CLUSTER.
 
     :param event: total number of events in the Waveloc location file
-    :param nbsta: 2-D matrix containing the number of stations where the cross-correlation value 
-    is greater than a given threshold for all possible event pairs
-    :param nbmin: minimum number of stations where the cross-correlation value should be greater 
-    than a given threshold to form a cluster
+    :param nbsta: 2-D matrix containing the number of stations where the
+                  cross-correlation value is greater than a given threshold for
+                  all possible event pairs
+    :param nbmin: minimum number of stations where the cross-correlation value
+                  should be greater than a given threshold to form a cluster
 
     :type event: integer
     :type nbsta: matrix
@@ -299,7 +310,7 @@ def do_clustering(event, nbsta, nbmin):
         neighbours_of_I_summit__horiz = \
             (np.where(nbsta[I, :] >= nbmin)[1]).tolist()[0]
         GRAPH.set_neighbours(neighbours_of_I_summit__verti +
-                          neighbours_of_I_summit__horiz)
+                             neighbours_of_I_summit__horiz)
         GRAPH.set_flag(0)
         GRAPH.set_cluster_index(0)
         if neighbours_of_I_summit__verti + neighbours_of_I_summit__horiz:
@@ -347,21 +358,25 @@ def do_clustering(event, nbsta, nbmin):
 
 def plot_graphs(locs, stations, nbsta, CLUSTER, nbmin, threshold):
     """
-    Displays two figures.
-    On the first plot, all events are represented. Those belonging to a cluster are color-coded 
-    and labelled with the cluster index.
-    On the second plot, all events are also represented, but those belonging to a cluster are 
-    colored in black. The links between events of a same cluster are also plotted and color-coded 
-    in function of the number of stations where the correlation value exceeds the threshold.
+    Displays two figures.  On the first plot, all events are represented. Those
+    belonging to a cluster are color-coded and labelled with the cluster index.
+    On the second plot, all events are also represented, but those belonging to
+    a cluster are colored in black. The links between events of a same cluster
+    are also plotted and color-coded in function of the number of stations
+    where the correlation value exceeds the threshold.
+
     Uses mlab from mayavi
 
-    :param locs: list of the whole Waveloc locations (each element of the list is a dictionary)
+    :param locs: list of the whole Waveloc locations (each element of the list
+                 is a dictionary)
     :param stations: dictionary of stations
-    :param nbsta:2-D matrix containing the number of stations where the cross-correlation value 
-    is greater than a given threshold for all possible event pairs
-    :param CLUSTER: dictionary containing the indexes of the events for each cluster
-    :param nbmin: minimum number of stations where the cross-correlation value should be greater 
-    than a given threshold to form a cluster
+    :param nbsta: 2-D matrix containing the number of stations where the
+                  cross-correlation value is greater than a given threshold for
+                  all possible event pairs
+    :param CLUSTER: dictionary containing the indexes of the events for each
+                    cluster
+    :param nbmin: minimum number of stations where the cross-correlation value
+                  should be greater than a given threshold to form a cluster
     :param threshold: correlation value threshold set to form a cluster
 
     :type locs: dictionary
@@ -442,11 +457,11 @@ def plot_graphs(locs, stations, nbsta, CLUSTER, nbmin, threshold):
 
 def do_clustering_setup_and_run(opdict):
     """
-    Does clustering by applying the depth first search algorithm and saves the result 
-    (= a dictionary containing the event indexes forming each cluster) in a binary file.
-    Needs to define the correlation value threshold and the minimum number of stations 
-    where this threshold should be reached to form a cluster (should be done in the options
-    dictionary)
+    Does clustering by applying the depth first search algorithm and saves the
+    result (= a dictionary containing the event indexes forming each cluster)
+    in a binary file.  Needs to define the correlation value threshold and the
+    minimum number of stations where this threshold should be reached to form a
+    cluster (should be done in the options dictionary)
 
     :param opdict: Dictionary of waveloc options
 
@@ -484,7 +499,6 @@ def do_clustering_setup_and_run(opdict):
     cluster_file = "%s/cluster-%s-%s" % (locdir, str(tplot), str(nbmin))
 
     corr = [opdict['clus']]
-    #corr = np.arange(0, 1.1, 0.1)
     for threshold in corr:
         threshold = float(threshold)
         nbsta = compute_nbsta(event, coeff, threshold)
@@ -509,7 +523,7 @@ def do_clustering_setup_and_run(opdict):
                 stations = read_stations_file(stations_filename)
 
                 # Look at the waveforms
-                #plot_traces(CLUSTER, delay_file, coeff, locs, 
+                # plot_traces(CLUSTER, delay_file, coeff, locs,
                 #            data_dir, data_files, threshold)
 
                 # Plot graphs

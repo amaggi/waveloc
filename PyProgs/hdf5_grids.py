@@ -56,12 +56,12 @@ class H5SingleGrid(object):
         else:
             self._f = h5py.File(filename, 'w')
 
-            if not grid_data is None:
+            if grid_data is not None:
                 self.grid_data = self._f.create_dataset('grid_data',
                                                         data=grid_data,
                                                         compression='lzf')
 
-            if not grid_info is None:
+            if grid_info is not None:
                 self.grid_info = self.grid_data.attrs
                 for key, value in grid_info.iteritems():
                     self.grid_info[key] = value
@@ -155,7 +155,7 @@ class H5SingleGrid(object):
         for key, value in new_grid_info.iteritems():
             buf.attrs[key] = value
 
-        #set coordinates for interpolation
+        # set coordinates for interpolation
         npts = nx*ny*nz
         new_shape = (nx, ny, nz)
         x = np.empty(npts, dtype=float)

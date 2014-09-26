@@ -39,7 +39,7 @@ def hdf5_to_signature(base_path, datadir, dataglob, output_filename):
             datasum = np.sum(dset)
             datalen = len(dset)
             sig_file.write("%s \t %s \t %.6f \t %.6f \t %d\n" %
-                          (basename, name, maximum, datasum, datalen))
+                           (basename, name, maximum, datasum, datalen))
         f.close()
 
 
@@ -145,7 +145,7 @@ class SyntheticMigrationTests(unittest.TestCase):
         plotWavelocResults(plotopt)
 
 
-#@unittest.skip('Skip for rapidity')
+# @unittest.skip('Skip for rapidity')
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -258,7 +258,8 @@ class MigrationTests(unittest.TestCase):
         self.assertAlmostEqual(d, 0.0)
         self.assertAlmostEqual(l, 0.0)
 
-#@unittest.skip('Skip for rapidity')
+
+# @unittest.skip('Skip for rapidity')
 class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):

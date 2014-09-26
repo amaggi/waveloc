@@ -31,12 +31,11 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     # create plot-options
     plotopt = PlotOptions(opdict, syn=True)
 
-    #define length and sampling frequency of synthetic data
+    # define length and sampling frequency of synthetic data
     s_amplitude = opdict['syn_amplitude']
     s_data_length = opdict['syn_datalength']
     s_sample_freq = opdict['syn_samplefreq']
     s_filename = opdict['syn_filename']
-
 
     s_npts = int(s_data_length*s_sample_freq)
     s_delta = 1/s_sample_freq
@@ -52,7 +51,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     test_stack_file = os.path.join(base_path, 'out', opdict['outdir'], 'stack',
                                    'stack_all_'+s_filename)
     plotopt_file = os.path.join(base_path, 'out', opdict['outdir'], 'grid',
-                                  '%s.info' % s_filename)
+                                '%s.info' % s_filename)
 
     # get filenames for time-grids and search grids
     search_grid_filename = os.path.join(base_path, 'lib',
@@ -84,8 +83,6 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     #################################
     # create synthetic data
     #################################
-
-    it = int(round(s_t0/s_delta))
 
     # retrieve travel times for chosen hypocenter
     # and station list
@@ -163,7 +160,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
 
     # SETUP information to pass back
     plotopt.opdict['grid_filename'] = s_filename
-    plotopt.opdict['stack_filename'] = 'stack_all_'+s_filename 
+    plotopt.opdict['stack_filename'] = 'stack_all_' + s_filename
     plotopt.opdict['n_buf'] = n_buf
     plotopt.opdict['nt'] = nt
     plotopt.opdict['dt'] = s_delta

@@ -117,7 +117,7 @@ def plotLocationGrid(loc, grid_filename, fig_dir, otime_window):
     y_sigma = loc['y_sigma']
     z_sigma = loc['z_sigma']
 
-    #get indexes correponding to location
+    # get indexes correponding to location
     it_true = np.int(np.round((o_time-stack_starttime)/dt))
     if it_true > nt-1:
         msg = 'Origin time after last time for plot by %3f seconds. \n\
@@ -237,7 +237,7 @@ def plotDiracTest(test_info, fig_dir, otime_window):
         plt.xlabel('x (km wrt ref)', size=10)
         plt.ylabel('y (km wrt ref)', size=10)
 
-    #plot xz plane
+    # plot xz plane
     if dx > 0 and dz > 0:
         p = plt.subplot(4, 2, 5)
         pos = list(p.get_position().bounds)
@@ -312,7 +312,7 @@ def plotDiracTest(test_info, fig_dir, otime_window):
         p.yaxis.set_ticks_position('right')
         p.set_xlim(llim, rlim)
         if 'true_values' in test_info:
-            if not 't_err' in test_info:
+            if 't_err' not in test_info:
                 plt.hlines(x_true, llim, rlim, 'r', linewidth=2)
                 plt.vlines(t_true, min(max_x), max(max_x), 'r', linewidth=2)
         else:
@@ -340,7 +340,7 @@ def plotDiracTest(test_info, fig_dir, otime_window):
         p.yaxis.set_ticks_position('right')
         p.set_xlim(llim, rlim)
         if 'true_values' in test_info:
-            if not 't_err' in test_info:
+            if 't_err' not in test_info:
                 plt.hlines(y_true, llim, rlim, 'r', linewidth=2)
                 plt.vlines(t_true, min(max_y), max(max_y), 'r', linewidth=2)
         else:
@@ -368,7 +368,7 @@ def plotDiracTest(test_info, fig_dir, otime_window):
         p.yaxis.set_ticks_position('right')
         p.set_xlim(llim, rlim)
         if 'true_values' in test_info:
-            if not 't_err' in test_info:
+            if 't_err' not in test_info:
                 plt.hlines(z_true, llim, rlim, 'r', linewidth=2)
                 plt.vlines(t_true, min(max_z), max(max_z), 'r', linewidth=2)
         else:
@@ -474,7 +474,7 @@ def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
     ax_rig.plot(prob_y, y, 'b')
     ax_rig.axhspan(y_low, y_high, facecolor='r', alpha=0.2)
 
-    #XZ plot
+    # XZ plot
     left, width = left_h+0.05+0.075, 0.2
     left_h = left + width
 
@@ -500,7 +500,7 @@ def plotProbLoc(marginals, prob_loc, loc, fig_dir, space_only):
     ax_rig_2.plot(prob_z_rev, z, 'b')
     ax_rig_2.axhspan(z_low, z_high, facecolor='r', alpha=0.2)
 
-    #XZ plot
+    # XZ plot
     left, width = left_h+0.05+0.075, 0.2
     left_h = left + width
 

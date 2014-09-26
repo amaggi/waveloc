@@ -45,7 +45,7 @@ def do_migration_setup_and_run(opdict):
     # grids
     x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
 
-    #start and end times
+    # start and end times
     starttime = opdict['starttime']
     endtime = opdict['endtime']
     data_length = opdict['data_length']
@@ -58,7 +58,7 @@ def do_migration_setup_and_run(opdict):
 
     time_shift_secs = data_length-data_overlap
 
-    ######### FOR EACH TIME SPAN - DO MIGRATION #############
+    # ######## FOR EACH TIME SPAN - DO MIGRATION #############
 
     # start loop over time
     start_time = initial_start_time
@@ -200,7 +200,7 @@ def do_migration_loop_continuous(opdict, data, delta, start_time, grid_info,
             sg = stack_grid
         else:
             # working on big-ram machine
-            #create the hdf5 file
+            # create the hdf5 file
             f = h5py.File(grid_filename, 'w')
             sg = f.create_dataset('stack_grid', data=stack_grid)
             f.create_dataset('x', data=x)

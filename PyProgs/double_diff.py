@@ -45,7 +45,7 @@ def traveltimes(x, y, z, t_orig, stations, time_grids):
     arr_times = {}
 
     for staname in sorted(stations):
-        if not staname in time_grids.keys():
+        if staname not in time_grids.keys():
             logging.info("%s station not in time_grids" % staname)
             continue
         t_th[staname] = []
@@ -100,9 +100,10 @@ def fill_matrix(cluster, x, y, z, t_orig, stations, t_th, t_arr, coeff, delay,
     :param stations: dictionary of station coordinates
     :param t_th: dictionary of theoretical traveltimes
     :param t_arr: dictionary of theoretical arrival times
-    :param coeff: cross-correlation coefficients between all possible pairs of events
+    :param coeff: cross-correlation coefficients between all possible pairs of
+                  events
     :param delay: time delays measured between all possible pairs of events
-    :param threshold: 
+    :param threshold: threshold
 
     :type cluster: list
     :type x: list
@@ -121,9 +122,9 @@ def fill_matrix(cluster, x, y, z, t_orig, stations, t_th, t_arr, coeff, delay,
     nline, num = 0, 0
 
     for staname in sorted(stations):
-        if not staname in delay.keys():
+        if staname not in delay.keys():
             continue
-        if not staname in t_th.keys():
+        if staname not in t_th.keys():
             continue
         coord = [stations[staname]['x'], stations[staname]['y'],
                  -stations[staname]['elev']]
@@ -210,7 +211,8 @@ def coord_cluster(cluster, locs):
     Extract the coordinates of the events of a given cluster
 
     :param cluster: indices of events in the cluster
-    :param locs: list of the whole locations (each element of the list is a dictionary)
+    :param locs: list of the whole locations (each element of the list is a
+                 dictionary)
 
     :type cluster: list
     :type locs: list
@@ -237,16 +239,20 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
     Plot old and new locations (uses mayavi)
 
     :param cluster: indices of events composing all clusters
-    :param locs: list of the whole locations (each element of the list is a dictionary)
+    :param locs: list of the whole locations (each element of the list is a
+                 dictionary)
     :param stations: dictionary of stations
     :param x: new x-coordinates of events
     :param y: new y-coordinates of events
     :param z: new z-coordinates of events
     :param i: cluster index
-    :param threshold: minimum value of cross-correlation coefficient used to form a cluster
+    :param threshold: minimum value of cross-correlation coefficient used to
+                      form a cluster
     :param nbmin: minimum number of stations required to form a cluster
     :param area: coordinates of the study area
-    :param nbsta: number of stations where the measured correlation coefficient was greater than the given threshold for all possible event pairs
+    :param nbsta: number of stations where the measured correlation coefficient
+                  was greater than the given threshold for all possible event
+                  pairs
 
     :type cluster: numpy array
     :type locs: list
@@ -314,17 +320,19 @@ def plot_events(cluster, locs, stations, x, y, z, i, threshold, nbmin, area,
 def do_double_diff(x, y, z, to, stations, coeff, delay, cluster, threshold,
                    t_th,  arr_times):
     """
-    Do double difference location (inner routine) and return new coordinates. 
+    Do double difference location (inner routine) and return new coordinates.
 
     :param x: x-coordinates of events of a given cluster
     :param y: y-coordinates of events of a given cluster
     :param z: z-coordinates of events of a given cluster
     :param to: origin times of events of a given cluster
     :param stations: dictionary of stations
-    :param coeff: cross-correlation coefficients between all possible pairs of events
+    :param coeff: cross-correlation coefficients between all possible pairs of
+                  events
     :param delay: time delays measured between all possible pairs of events
     :param cluster: indices of events in the cluster
-    :param threshold: minimum value of cross-correlation coefficient used to form a cluster
+    :param threshold: minimum value of cross-correlation coefficient used to
+                      form a cluster
     :param t_th: theoretical traveltimes
     :param arr_times: theoretical arrival times
 
