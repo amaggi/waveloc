@@ -12,6 +12,7 @@ Download and installation
 The latest stable source distributions (most recent first) are downloadable
 from `AmazonAWS <http://aws.amazon.com>`_:
 
+* `waveloc-0.2.3.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.3.tar.gz>`_
 * `waveloc-0.2.2.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.2.tar.gz>`_
 * `waveloc-0.2.1.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.1.tar.gz>`_
 * `waveloc-0.2.0.tar.gz <https://s3.amazonaws.com/waveloc/waveloc-0.2.0.tar.gz>`_
