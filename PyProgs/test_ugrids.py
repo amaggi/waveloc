@@ -103,13 +103,9 @@ class UgridTests(unittest.TestCase):
         yi = self.y[i_chosen]
         zi = self.z[i_chosen]
 
-        ic, xc, yc, zc = ugrid_closest_point_index(self.x, self.y, self.z,
-                                                   xi, yi, zi)
+        ic = ugrid_closest_point_index(self.x, self.y, self.z, xi, yi, zi)
 
         self.assertEqual(ic, i_chosen)
-        self.assertAlmostEqual(xc, xi)
-        self.assertAlmostEqual(yc, yi)
-        self.assertAlmostEqual(zc, zi)
 
     def test_select_close_points(self):
 

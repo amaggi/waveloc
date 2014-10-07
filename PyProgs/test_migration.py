@@ -39,7 +39,7 @@ def hdf5_to_signature(base_path, datadir, dataglob, output_filename):
             datasum = np.sum(dset)
             datalen = len(dset)
             sig_file.write("%s \t %s \t %.6f \t %.6f \t %d\n" %
-                          (basename, name, maximum, datasum, datalen))
+                           (basename, name, maximum, datasum, datalen))
         f.close()
 
 
@@ -113,12 +113,7 @@ class SyntheticMigrationTests(unittest.TestCase):
 
         # retrieve info
         stack_filename = plotopt.getStackFilename()
-        n_buf = plotopt.opdict['n_buf']
-        nt = plotopt.opdict['nt']
         dt = plotopt.opdict['dt']
-        x_true = plotopt.opdict['x_loc']
-        y_true = plotopt.opdict['y_loc']
-        z_true = plotopt.opdict['z_loc']
         stack_start_time = plotopt.opdict['start_time']
 
         # loclevel for triggers
@@ -150,7 +145,7 @@ class SyntheticMigrationTests(unittest.TestCase):
         plotWavelocResults(plotopt)
 
 
-@unittest.skip('Skip for rapidity')
+# @unittest.skip('Skip for rapidity')
 class MigrationTests(unittest.TestCase):
 
     def setUp(self):
@@ -161,7 +156,7 @@ class MigrationTests(unittest.TestCase):
 
     def test_migration(self):
 
-        self.wo.opdict['load_ttimes_buf'] = True
+        self.wo.opdict['load_ttimes_buf'] = False
         self.wo.opdict['data_length'] = 300
 
         base_path = self.wo.opdict['base_path']
@@ -232,11 +227,12 @@ class MigrationTests(unittest.TestCase):
         # verify that the two give the same result
         np.testing.assert_allclose(lines_use_ram, lines_no_ram)
 
+    @unittest.skip('Time-consuming and uninteresting for code checking')
     def test_migration_fullRes(self):
 
         self.wo.opdict['search_grid'] = 'grid.Taisne.search.hdr'
         self.wo.opdict['outdir'] = 'TEST_fullRes'
-        self.wo.opdict['load_ttimes_buf'] = True
+        self.wo.opdict['load_ttimes_buf'] = False
         self.wo.opdict['data_length'] = 300
         self.wo.opdict['use_ram'] = True
         self.wo.verify_migration_options()
@@ -262,7 +258,8 @@ class MigrationTests(unittest.TestCase):
         self.assertAlmostEqual(d, 0.0)
         self.assertAlmostEqual(l, 0.0)
 
-@unittest.skip('Skip for rapidity')
+
+# @unittest.skip('Skip for rapidity')
 class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):
@@ -300,14 +297,14 @@ class UgridMigrationTests(unittest.TestCase):
                                                        ugrid=True)
 
         # get old-style max_val
-        stack_filename = test_info['stack_file']
+        stack_filename = test_info.getStackFilename()
         f = h5py.File(stack_filename, 'r')
         mv = f['max_val']
         max_val = mv[:]
         f.close()
 
         # get new-style max_val
-        stack_filename = test_info_ugrid['stack_file']
+        stack_filename = test_info_ugrid.getStackFilename()
         f = h5py.File(stack_filename, 'r')
         mv = f['max_val']
         max_val_ugrid = mv[:]

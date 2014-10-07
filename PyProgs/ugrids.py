@@ -120,7 +120,7 @@ def ugrid_closest_point_index(x, y, z, xi, yi, zi):
     dist = (x-xi)**2 + (y-yi)**2 + (z-zi)**2
     ic = np.argmin(dist)    # index of closest point
 
-    return ic 
+    return ic
 
 
 def select_points_closeto_plane(x, y, z, p_string, p_coord, p_dist):
@@ -136,7 +136,7 @@ def select_points_closeto_plane(x, y, z, p_string, p_coord, p_dist):
         result = np.abs(z - p_coord) < p_dist
     else:
         raise UserWarning('Unknown plane %s' % p_string)
-    
+
     return result
 
 

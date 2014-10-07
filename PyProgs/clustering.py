@@ -3,7 +3,6 @@
 """
 Provides classes and functions for clustering of earthquakes based on the
 depth-first algorithm.
-
 """
 
 import os
@@ -22,13 +21,21 @@ class Graph(object):
     """
     Class of Graph objects. Contains 4 attributes:
 
-    * flag
-    * cluster_index
-    * voisins (neighbours)
-    * nb_voisins (number of neighbours)
+    ** Attributes **
 
-    TODO: Flesh out this doc-string. The structure of this object is very
-    obscure...
+    .. attribute:: flag
+
+        Indicates if an event already belongs to a cluster (1) or not (0).
+
+    .. attribute:: cluster_index
+
+        Indicates the cluster number of all events. 0 means the event does not
+        belong to any cluster.
+
+    .. attribute:: neighbours
+
+        Lists the indexes of the neighbour events for each event.
+        GRAPH.neighbours is then a list of lists.
 
     """
 
@@ -38,15 +45,14 @@ class Graph(object):
         """
         self.flag = []
         self.cluster_index = []
-        self.voisins = []
-        self.nb_voisins = []
+        self.neighbours = []
 
     def set_flag(self, value):
         """
-        Appends value to flag attribute
+        Appends value to flag attribute.
 
         :param value: Value to append (0=False, 1=True).
-        :type value: int
+        :type value: integer
         """
         self.flag.append(value)
 
@@ -55,62 +61,62 @@ class Graph(object):
         Appends value to cluster_index attribute
 
         :param value: Value to append.
-        :type value: integer ??
+        :type value: integer
         """
         self.cluster_index.append(value)
 
-    def set_voisins(self, value):
+    def set_neighbours(self, value):
         """
-        Appends value to voisins attribute
+        Appends value to neighbours attribute
 
-        :param value: Value to append.
-        :type value: integer ??
+        :param value: Value to append (list of integers)
+        :type value: list
         """
-        self.voisins.append(value)
+        self.neighbours.append(value)
 
 
-def CZ_DFS(GRAPH, sommet_first, cluster_ind):
+def DFS(GRAPH, summit_first, cluster_ind):
     """
-    Implementation of the depth first search algorithm. This is a recursive
-    algorithm.
-    TODO : flesh out this doc-string.
+    Implementation of the depth first search (DFS) algorithm. This is a
+    recursive algorithm. See detailed description in ``do_clustering
+    function``.
 
-    :param GRAPH:
-    :param sommet_first:
-    :param cluster_ind:
+    :param GRAPH: the algorithm updates GRAPH.flag and GRAPH.cluster_index
+    :param summit_first: event index by which the research of neighbours begins
+    :param cluster_ind: cluster index
 
     :type GRAPH: Graph object
-    :type sommet_first: integer
+    :type summit_first: integer
     :type cluster_ind: integer
 
     """
 
-    GRAPH.flag[sommet_first] = 1
-    GRAPH.cluster_index[sommet_first] = cluster_ind
+    GRAPH.flag[summit_first] = 1
+    GRAPH.cluster_index[summit_first] = cluster_ind
 
-    for ind_sommet_fils in range(len(GRAPH.voisins[sommet_first])):
-        sommet_fils = GRAPH.voisins[sommet_first][ind_sommet_fils]
-        if GRAPH.flag[sommet_fils] == 0:
-            GRAPH, cluster_ind = CZ_DFS(GRAPH, sommet_fils, cluster_ind)
+    for ind_summit_fils in range(len(GRAPH.neighbours[summit_first])):
+        summit_fils = GRAPH.neighbours[summit_first][ind_summit_fils]
+        if GRAPH.flag[summit_fils] == 0:
+            cluster_ind = DFS(GRAPH, summit_fils, cluster_ind)
 
-    return GRAPH, cluster_ind
+    return cluster_ind
 
 
 def waveval(stack_time, t_before, t_after, dt, tdeb):
     """
-    TODO : flesh out this doc-string
+    Finds the indexes corresponding to t_before and t_after
 
-    :param stack_time:
-    :param t_before:
-    :param t_after:
-    :param dt:
-    :param tdeb:
+    :param stack_time: origin time of the event
+    :param t_before: time taken before the origin time
+    :param t_after: time taken after the origin time
+    :param dt: waveform sample distance in seconds
+    :param tdeb: start time of the waveform
 
-    :type stack_time: float?
-    :type t_before: float?
-    :type t_after: float?
+    :type stack_time: UTCDateTime
+    :type t_before: float
+    :type t_after: float
     :type dt: float
-    :type tdeb: float ?
+    :type tdeb: UTCDateTime
 
     :rtype: integer
     :returns: indexes corresponding to t_before and t_after
@@ -125,20 +131,31 @@ def waveval(stack_time, t_before, t_after, dt, tdeb):
     return i_start, i_end
 
 
-def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir,
+def plot_traces(CLUSTER, delay_file, coeff, locs, datadir,
                 data_files, threshold):
     """
-    TODO : flesh out this doc-string
+    Plots the waveforms of all possible event pairs within a cluster.
+    On the same figure, displays the superimposed waveforms of the event pair
+    for all stations. Also displays the correlation value.
 
-    :param CLUSTER:
-    :param delay_file:
-    :param coeff:
-    :param locs:
-    :param statons:
-    :param datadir:
-    :param data_files:
-    :param threshold:
+    :param CLUSTER: dictionary containing the event indexes belonging to each
+                    cluster
+    :param delay_file: file name of the file containing the time delays
+    :param coeff: cross-correlation values of all possible event pairs for all
+                  stations
+    :param locs: list of the whole Waveloc locations (each element of the list
+                 is a dictionary)
+    :param datadir: data directory path
+    :param data_files: list of paths of data files
+    :param threshold: correlation coefficient threshold
 
+    :type CLUSTER: dictionary
+    :type delay_file: string
+    :type coeff: dictionary
+    :type locs: list
+    :type datadir: string
+    :type data_files: list
+    :type threshold: float
     """
 
     # Read the file containing the time delays
@@ -195,68 +212,26 @@ def plot_traces(CLUSTER, delay_file, coeff, locs, stations, datadir,
                              (str(i), str(e1), str(e2), co))
                 plt.show()
 
-# TODO : Are the following lines still necessary ? What do they do ?
-#                # Plot location
-#                fig = plt.figure()
-#                x1 = locs[e1-1]['x_mean']
-#                y1 = locs[e1-1]['y_mean']
-#                z1 = -locs[e1-1]['z_mean']
-#                x2 = locs[e2-1]['x_mean']
-#                y2 = locs[e2-1]['y_mean']
-#                z2 = -locs[e2-1]['z_mean']
-#                ax1 = fig.add_subplot(221,xlabel='x' ,ylabel='y')
-#                ax1.plot(x1, y1, 'bo', x2, y2, 'ro')
-#                ax1.axis(rg_x+rg_y)
-#                ax1.text(367.5, 7652.5, "dx=%.03f" % np.abs(x1-x2))
-#                ax2 = fig.add_subplot(222, xlabel='x', ylabel='z')
-#                ax2.plot(x1,z1, 'bo', x2, z2, 'ro')
-#                ax2.axis(rg_x+rg_z)
-#                ax2.text(367.5, 2, "dz=%.03f" % np.abs(z1-z2))
-#                ax3 = fig.add_subplot(223, xlabel='y', ylabel='z')
-#                ax3.plot(y1, z1, 'bo', y2, z2, 'ro')
-#                ax3.axis(rg_y+rg_z)
-#                ax3.text(7651, 2, "dy=%.03f" % np.abs(y1-y2))
-#                #plt.show()
-#
-#                fig = plt.figure()
-#                fig.set_facecolor('white')
-#                for l in range(len(list_name)):
-#                    name = list_name[l]
-#                    if delay[name][e1-1][e2-1] != 'NaN' and \
-#                    coeff[name][e1-1][e2-1]>0.8:
-#                        stack_time_1 = locs[e1-1]['o_time']
-#                        i_start_1, i_end_1 = waveval(stack_time_1, t_before,
-#                                                     t_after, dt, tdeb)
-#                        val1 = tr[name][i_start_1-1:i_end_1]
-#                        stack_time_2 = locs[e2-1]['o_time']
-#                        i_start_2, i_end_2 = \
-#                            waveval(stack_time_2-delay[name][e1-1][e2-1],
-#                                    t_before, t_after, dt, tdeb)
-#                        val2 = tr[name][i_start_2-1:i_end_2]
-#                        t = np.linspace(0, t_after+t_before,
-#                                        (t_after+t_before)/dt+1)
-#                        plt.plot(t,val1/max(val1))
-#                        plt.plot(t,val2/max(val2), 'r')
-#                        plt.title("%s - coeff: %s" %
-#                                  (name,coeff[name][e1-1][e2-1]))
-#                        #plt.show()
-
 
 def compute_nbsta(event, coeff, threshold):
     """
-    TODO : flesh out this doc-string
+    Computes the number of stations where the correlation value is greater than
+    the threshold for every event pair
 
-    :param event:
-    :param coeff:
-    :param threshold:
+    :param event: total number of events located by Waveloc
+    :param coeff: cross-correlation coefficients of all possible event pairs
+                  for all stations
+    :param threshold: correlation value threshold set to form a cluster
 
-    :rtype: numpy maxtrix containing integers
+    :type event: integer
+    :type coeff: dictionary
+    :type threshold: float
+
+    :rtype: numpy matrix containing integers
     :returns: matrix of number of stations
 
     """
 
-    # Compute the number of stations where the correlation value is >=
-    # threshold for every event pair
     nbsta = []
     for i in xrange(event):
         liste = []
@@ -280,59 +255,89 @@ def compute_nbsta(event, coeff, threshold):
 
 def do_clustering(event, nbsta, nbmin):
     """
-    TODO : flesh out this doc-string
+    First step: all events are examined one by one. For each of them, the
+    indexes of the events where there is a sufficient number of stations (i.e.
+    the number exceeds or equals nbmin) are kept in GRAPH.neighbours. All
+    events are flagged to 0 and belong to cluster 0 by default. The indexes of
+    the events for which neighbours were found are written in the list
+    ``summits``.
 
-    :param event:
-    :param nbsta:
-    :param nbmin:
+    From this list (summits), we extract the event which has the greatest
+    number of neighbours.  The clustering process will start with that event.
 
-    :type event:
-    :type nbsta: integer
+    Then the DFS algorithm is applied: when an event is examined, it is flagged
+    to 1 and its cluster number is also updated (GRAPH.cluster_index). The DFS
+    algorithm is recursive and explores each possible path until it ends: it
+    means that when the research starts with a given event, it will search for
+    the the first neighbour, and then the first neighbour of this first
+    neighbour and so on... When all the ``first neighbours`` are found, the
+    research can concentrates on second neighbours, and so on until all the
+    neighbours are found.
+
+    Once the DFS algorithm has found all events linked to summit_first, we
+    write the corresponding indexes into the dictionary CLUSTER (where the keys
+    are the cluster indexes) and look for events with neighbours which are
+    still not flagged to 1. The process keeps going until the whole events with
+    neighbours belong to a cluster.
+
+    The function finally returns the dictionary CLUSTER.
+
+    :param event: total number of events in the Waveloc location file
+    :param nbsta: 2-D matrix containing the number of stations where the
+                  cross-correlation value is greater than a given threshold for
+                  all possible event pairs
+    :param nbmin: minimum number of stations where the cross-correlation value
+                  should be greater than a given threshold to form a cluster
+
+    :type event: integer
+    :type nbsta: matrix
     :type nbmin: integer
 
+    :rtype: dictionary
+    :returns: indexes of events forming each cluster
     """
 
     # CODE CHRISTOPHE - CLUSTERING : DEPTH FIRST SEARCH
-    voisins_du_sommet_I__horiz = []
-    voisins_du_sommet_I__verti = []
+    neighbours_of_I_summit__horiz = []
+    neighbours_of_I_summit__verti = []
 
     GRAPH = Graph()
-    sommets = []
+    summits = []
 
     for I in range(event):
-        voisins_du_sommet_I__verti = \
+        neighbours_of_I_summit__verti = \
             (np.where(nbsta[:, I] >= nbmin)[0]).tolist()[0]
-        voisins_du_sommet_I__horiz = \
+        neighbours_of_I_summit__horiz = \
             (np.where(nbsta[I, :] >= nbmin)[1]).tolist()[0]
-        GRAPH.set_voisins(voisins_du_sommet_I__verti +
-                          voisins_du_sommet_I__horiz)
+        GRAPH.set_neighbours(neighbours_of_I_summit__verti +
+                             neighbours_of_I_summit__horiz)
         GRAPH.set_flag(0)
         GRAPH.set_cluster_index(0)
-        if voisins_du_sommet_I__verti+voisins_du_sommet_I__horiz:
-            sommets.append(I)
+        if neighbours_of_I_summit__verti + neighbours_of_I_summit__horiz:
+            summits.append(I)
 
-    if sommets:
-        NB_MAX_VOISINS = 0
-        for ind_sommet in range(len(sommets)):
-            l = len(GRAPH.voisins[sommets[ind_sommet]])
-            if l > NB_MAX_VOISINS:
-                sommet_first = sommets[ind_sommet]
-                NB_MAX_VOISINS = l
+    if summits:
+        nb_max_neighbours = 0
+        for ind_summit in range(len(summits)):
+            l = len(GRAPH.neighbours[summits[ind_summit]])
+            if l > nb_max_neighbours:
+                summit_first = summits[ind_summit]
+                nb_max_neighbours = l
 
-        ind_sommet_first = 0
+        ind_summit_first = 0
         cluster_ind = 0
         CLUSTER = {}
         while 1:
             event_index_flagged = []
             event_index_non_flagged_with_neighbours = []
-            ind_sommet_first = ind_sommet_first+1
+            ind_summit_first = ind_summit_first+1
             cluster_ind = cluster_ind+1
-            GRAPH, cluster_ind = CZ_DFS(GRAPH, sommet_first, cluster_ind)
-            for k in range(len(GRAPH.voisins)):
+            cluster_ind = DFS(GRAPH, summit_first, cluster_ind)
+            for k in range(len(GRAPH.neighbours)):
                 if GRAPH.flag[k] == 1 and \
-                   GRAPH.cluster_index[k] == ind_sommet_first:
+                   GRAPH.cluster_index[k] == ind_summit_first:
                     event_index_flagged.append(k)
-                elif GRAPH.flag[k] == 0 and len(GRAPH.voisins[k]) != 0:
+                elif GRAPH.flag[k] == 0 and len(GRAPH.neighbours[k]) != 0:
                     event_index_non_flagged_with_neighbours.append(k)
 
             # add 1 to each event number as the first one is number one (and
@@ -341,7 +346,7 @@ def do_clustering(event, nbsta, nbmin):
                                         np.ones(len(event_index_flagged),
                                                 dtype=np.int))
             if len(event_index_non_flagged_with_neighbours) > 1:
-                sommet_first = event_index_non_flagged_with_neighbours[0]
+                summit_first = event_index_non_flagged_with_neighbours[0]
             else:
                 break
 
@@ -353,16 +358,33 @@ def do_clustering(event, nbsta, nbmin):
 
 def plot_graphs(locs, stations, nbsta, CLUSTER, nbmin, threshold):
     """
-    TODO : flesh out this doc-string
+    Displays two figures.  On the first plot, all events are represented. Those
+    belonging to a cluster are color-coded and labelled with the cluster index.
+    On the second plot, all events are also represented, but those belonging to
+    a cluster are colored in black. The links between events of a same cluster
+    are also plotted and color-coded in function of the number of stations
+    where the correlation value exceeds the threshold.
+
     Uses mlab from mayavi
 
-    :param locs:
-    :param stations:
-    :param nbsta:
-    :param CLUSTER:
-    :param nbmin:
-    :param threshold:
+    :param locs: list of the whole Waveloc locations (each element of the list
+                 is a dictionary)
+    :param stations: dictionary of stations
+    :param nbsta: 2-D matrix containing the number of stations where the
+                  cross-correlation value is greater than a given threshold for
+                  all possible event pairs
+    :param CLUSTER: dictionary containing the indexes of the events for each
+                    cluster
+    :param nbmin: minimum number of stations where the cross-correlation value
+                  should be greater than a given threshold to form a cluster
+    :param threshold: correlation value threshold set to form a cluster
 
+    :type locs: dictionary
+    :type stations: dictionary
+    :type nbsta: matrix
+    :type CLUSTER: dictionary
+    :type nbmin: integer
+    :type threshold: float
     """
     from mayavi import mlab
 
@@ -435,7 +457,11 @@ def plot_graphs(locs, stations, nbsta, CLUSTER, nbmin, threshold):
 
 def do_clustering_setup_and_run(opdict):
     """
-    TODO : flesh out this doc-string
+    Does clustering by applying the depth first search algorithm and saves the
+    result (= a dictionary containing the event indexes forming each cluster)
+    in a binary file.  Needs to define the correlation value threshold and the
+    minimum number of stations where this threshold should be reached to form a
+    cluster (should be done in the options dictionary)
 
     :param opdict: Dictionary of waveloc options
 
@@ -473,7 +499,6 @@ def do_clustering_setup_and_run(opdict):
     cluster_file = "%s/cluster-%s-%s" % (locdir, str(tplot), str(nbmin))
 
     corr = [opdict['clus']]
-    #corr = np.arange(0, 1.1, 0.1)
     for threshold in corr:
         threshold = float(threshold)
         nbsta = compute_nbsta(event, coeff, threshold)
@@ -498,7 +523,7 @@ def do_clustering_setup_and_run(opdict):
                 stations = read_stations_file(stations_filename)
 
                 # Look at the waveforms
-                #plot_traces(CLUSTER, delay_file, coeff, locs, stations,
+                # plot_traces(CLUSTER, delay_file, coeff, locs,
                 #            data_dir, data_files, threshold)
 
                 # Plot graphs

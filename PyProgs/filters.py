@@ -202,7 +202,7 @@ def lfilter_zi(b, a):
     zi_matrix = linalg.inv(zin)*(np.matrix(zid).transpose())
     zi_return = []
 
-    #convert the result into a regular array (not a matrix)
+    # convert the result into a regular array (not a matrix)
     for i in range(len(zi_matrix)):
         zi_return.append(float(zi_matrix[i][0]))
 
@@ -221,14 +221,14 @@ def filtfilt(b, a, x):
 
     """
 
-    #For now only accepting 1d arrays
+    # For now only accepting 1d arrays
     ntaps = max(len(a), len(b))
     edge = ntaps*3
 
     if x.ndim != 1:
         raise ValueError("Filiflit is only accepting 1 dimension arrays.")
 
-    #x must be bigger than edge
+    # x must be bigger than edge
     if x.size < edge:
         raise ValueError("Input vector needs to be bigger than 3 *\
             max(len(a),len(b).")
@@ -241,11 +241,11 @@ def filtfilt(b, a, x):
 
     zi = lfilter_zi(b, a)
 
-    #Grow the signal to have edges for stabilizing
-    #the filter with inverted replicas of the signal
+    # Grow the signal to have edges for stabilizing
+    # the filter with inverted replicas of the signal
     s = np.r_[2*x[0]-x[edge:1:-1], x, 2*x[-1]-x[-1:-edge:-1]]
 
-    #in the case of one go we only need one of the extremes
+    # in the case of one go we only need one of the extremes
     # both are needed for filtfilt
 
     (y, zf) = lfilter(b, a, s, -1, zi*s[0])
@@ -455,7 +455,6 @@ def variance_under_rotation(x, y, dt, LENwin):
 
     # find number of samples in averaging windows
     nLEN = int(LENwin/dt)+1
-    #xabs=np.abs(x)
 
     var = []
     for i in range(len(x)-nLEN+1):
@@ -539,7 +538,7 @@ def smooth(x, window_len=11, window='hanning'):
     if window_len < 3:
         return x
 
-    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+    if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         raise ValueError("Window is on of 'flat', 'hanning', 'hamming', \
             'bartlett', 'blackman'")
 

@@ -40,7 +40,7 @@ class PlottingTests(unittest.TestCase):
         self.plotopt.opdict['z_err'] = (0.1, 0.1)
 
     def _create_dummy_grid(self):
-        
+
         x, y, z = self.plotopt.getXYZ()
         dt = 0.5
         tlen = 50.
@@ -48,7 +48,6 @@ class PlottingTests(unittest.TestCase):
         n_buf = len(x)
         nt = int(tlen/dt)
         grid = np.empty((n_buf, nt), dtype='float')
-        t = np.arange(0, tlen, dt)
 
         x_range = np.max(x)-np.min(x)
         y_range = np.max(y)-np.min(y)
@@ -113,7 +112,7 @@ class PlottingTests(unittest.TestCase):
         max_y = np.empty(nt, dtype='float')
         max_z = np.empty(nt, dtype='float')
 
-        sig=tlen/30.
+        sig = tlen/30.0
         max_val = np.exp(-(t-tc)**2/(2*sig**2))
         max_x = np.random.normal(loc=xc, scale=0.5, size=nt)
         max_y = np.random.normal(loc=yc, scale=0.5, size=nt)
@@ -122,7 +121,7 @@ class PlottingTests(unittest.TestCase):
         stack_filename = self.plotopt.getStackFilename()
         f = h5py.File(stack_filename, 'w')
         f.create_dataset('max_val', data=max_val)
-        mv = f.create_dataset('max_val_smooth', data=max_val)
+        f.create_dataset('max_val_smooth', data=max_val)
         f.create_dataset('max_x', data=max_x)
         f.create_dataset('max_y', data=max_y)
         f.create_dataset('max_z', data=max_z)
@@ -140,14 +139,14 @@ class PlottingTests(unittest.TestCase):
                                          'out', 'TEST', 'grid',
                                          'GRID_FNAME.hdf5')
         exp_stack_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                         'out', 'TEST', 'stack',
-                                         'STACK_FNAME.hdf5')
+                                          'out', 'TEST', 'stack',
+                                          'STACK_FNAME.hdf5')
         exp_fig_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                         'out', 'TEST', 'fig',
-                                         'GRID_FNAME_grid.pdf')
+                                        'out', 'TEST', 'fig',
+                                        'GRID_FNAME_grid.pdf')
         exp_wfm_fig_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                         'out', 'TEST', 'fig',
-                                         'GRID_FNAME_wfm.pdf')
+                                            'out', 'TEST', 'fig',
+                                            'GRID_FNAME_wfm.pdf')
 
         grid_filename = self.plotopt.getGridFilename()
         stack_filename = self.plotopt.getStackFilename()

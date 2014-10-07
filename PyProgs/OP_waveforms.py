@@ -206,12 +206,12 @@ class Waveform(object):
             logging.info("Tapering single traces.")
             st = stream_taper(st)
 
-        if not pad_value is None:
+        if pad_value is not None:
             try:
                 first_tr = st.traces[0]
                 # save delta (to save typing)
                 delta = first_tr.stats.delta
-                if (not starttime is None) and \
+                if (starttime is not None) and \
                    ((first_tr.stats.starttime - starttime) > delta):
                     logging.debug("Padding with value %f from %s to first\
                                    point in file at %s." %
@@ -237,7 +237,7 @@ class Waveform(object):
                 last_tr = st.traces[-1]
                 # save delta (to save typing)
                 delta = last_tr.stats.delta
-                if (not endtime is None) and \
+                if (endtime is not None) and \
                    ((endtime - last_tr.stats.endtime) > delta):
                     logging.debug("Padding with value %f from last point\
                                    in file at %s to %s." %
@@ -321,13 +321,13 @@ class Waveform(object):
         if taper:
             st = stream_taper(st)
 
-        if not pad_value is None:
+        if pad_value is not None:
             try:
 
                 first_tr = st.traces[0]
                 # save delta (to save typing)
                 delta = first_tr.stats.delta
-                if (not starttime is None) and \
+                if (starttime is not None) and \
                    ((first_tr.stats.starttime - starttime) > delta):
                     logging.debug("Padding with value %f from %s to first\
                         point in file at %s." %
@@ -352,7 +352,7 @@ class Waveform(object):
                 last_tr = st.traces[-1]
                 # save delta (to save typing)
                 delta = last_tr.stats.delta
-                if (not endtime is None) and \
+                if (endtime is not None) and \
                    ((endtime - last_tr.stats.endtime) > delta):
                     logging.debug("Padding with value %f from last point \
                     in file at %s to %s." % (pad_value,
@@ -761,8 +761,9 @@ class Waveform(object):
                 C = 1-dt/float(win)
                 xs = rec_kurtosis_old(x, C)
                 # Chassande-Mottin style kurtosis
-                #C1=dt/float(win)
-                #xs=rec_kurtosis(x,C1)
+                # C1 = dt / float(win)
+                # xs = rec_kurtosis(x, C1)
+
                 # smooth xs
                 try:
                     xs_filt = smooth(xs)

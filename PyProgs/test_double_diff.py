@@ -58,19 +58,19 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
         self.locs_true = []
         self.locs_true.append({'x_mean': 50.2, 'y_mean': 49.7, 'z_mean': 4.5,
                                'o_time': utcdatetime.UTCDateTime(
-                                    '2010-01-01T12: 00: 00.0000Z')})
+                                   '2010-01-01T12: 00: 00.0000Z')})
         self.locs_true.append({'x_mean': 50.3, 'y_mean': 49.9, 'z_mean': 4.75,
                                'o_time': utcdatetime.UTCDateTime(
-                                    '2010-01-01T12: 01: 00.0000Z')})
+                                   '2010-01-01T12: 01: 00.0000Z')})
         self.locs_true.append({'x_mean': 49.8, 'y_mean': 50.1, 'z_mean': 5.25,
                                'o_time': utcdatetime.UTCDateTime(
-                                    '2010-01-01T12: 02: 00.0000Z')})
+                                   '2010-01-01T12: 02: 00.0000Z')})
         self.locs_true.append({'x_mean': 49.7, 'y_mean': 50.4, 'z_mean': 5.5,
                                'o_time': utcdatetime.UTCDateTime(
-                                    '2010-01-01T12: 03: 00.0000Z')})
+                                   '2010-01-01T12: 03: 00.0000Z')})
         self.locs_true.append({'x_mean': 50.0, 'y_mean': 49.9, 'z_mean': 5,
                                'o_time': utcdatetime.UTCDateTime(
-                                    '2010-01-01T12: 04: 00.0000Z')})
+                                   '2010-01-01T12: 04: 00.0000Z')})
 
         centroid_x_true = np.mean([loc['x_mean'] for loc in self.locs_true])
         centroid_y_true = np.mean([loc['y_mean'] for loc in self.locs_true])
@@ -93,11 +93,11 @@ class SyntheticsDoubleDiffTests(unittest.TestCase):
             self.locs_mes.append({'x_mean':
                                  self.locs_true[i]['x_mean']+err_x[i],
                                  'y_mean':
-                                 self.locs_true[i]['y_mean']+err_y[i],
-                                 'z_mean':
-                                 self.locs_true[i]['z_mean']+err_z[i],
-                                 'o_time':
-                                 self.locs_true[i]['o_time']+err_to[i]})
+                                     self.locs_true[i]['y_mean']+err_y[i],
+                                     'z_mean':
+                                     self.locs_true[i]['z_mean']+err_z[i],
+                                     'o_time':
+                                     self.locs_true[i]['o_time']+err_to[i]})
 
         centroid_x_mes = np.mean([loc['x_mean'] for loc in self.locs_mes])
         centroid_y_mes = np.mean([loc['y_mean'] for loc in self.locs_mes])
