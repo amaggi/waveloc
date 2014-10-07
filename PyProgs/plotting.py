@@ -415,6 +415,7 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
             stack_wfm = max_val[istart:iend]
 
             # plot
+            plotopt = PlotOptions(opdict)
             plotLocationWaveforms(loc, start_time, delta, data_dict, mig_dict,
                                   stack_wfm, figdir)
 
