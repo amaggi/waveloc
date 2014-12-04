@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from options import WavelocOptions
 from plot_options import PlotOptions
-from plotting import plotWavelocResults
+from plotting import plotWavelocResults, plotLocationWaveforms
 
 
 def suite():
@@ -13,6 +13,7 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(PlottingTests('test_plotOptions'))
     suite.addTest(PlottingTests('test_plotWavelocResults'))
+    suite.addTest(PlottingTests('test_plotLocationWaveforms'))
     suite.addTest(FullPlottingTests('test_waveloc_example'))
 
     return suite
@@ -22,22 +23,34 @@ class PlottingTests(unittest.TestCase):
 
     def setUp(self):
 
-        wo = WavelocOptions()
-        wo.set_test_options()
-        wo.verify_base_path()
+        from locations_trigger import read_locs_from_file
+        from obspy.core import UTCDateTime
 
-        self.plotopt = PlotOptions(wo.opdict)
+        self.wo = WavelocOptions()
+        self.wo.set_test_options()
+        self.wo.verify_base_path()
+
+        self.plotopt = PlotOptions(self.wo.opdict)
         self.plotopt.opdict['grid_filename'] = 'GRID_FNAME.hdf5'
         self.plotopt.opdict['stack_filename'] = 'STACK_FNAME.hdf5'
 
+
+        self.otime = UTCDateTime(2014, 01, 01, 0, 0, 0, 0)
+        self.plotopt.opdict['start_time'] = self.otime - 5.
+
+
         self._create_dummy_grid()
         self._create_dummy_stack()
+        self._create_dummy_locations()
 
-        self.plotopt.opdict['plot_otime_window'] = 5.
+        self.plotopt.opdict['otime_window'] = 5.
         self.plotopt.opdict['t_err'] = (0.5, 0.5)
         self.plotopt.opdict['x_err'] = (0.5, 0.5)
         self.plotopt.opdict['y_err'] = (0.5, 0.5)
         self.plotopt.opdict['z_err'] = (0.1, 0.1)
+
+        locs = read_locs_from_file(self.plotopt.getLocationsFilename())
+        self.plotopt.opdict['loc'] = locs[0]
 
     def _create_dummy_grid(self):
 
@@ -128,9 +141,54 @@ class PlottingTests(unittest.TestCase):
         f.create_dataset('t', data=t)
         f.close()
 
+        self.plotopt.opdict['stack_wfm'] = max_val
+        data_dict={}
+        data_dict['DUM1'] = np.random.rand(nt)
+        data_dict['DUM2'] = np.random.rand(nt)
+        data_dict['DUM3'] = np.random.rand(nt)
+        self.plotopt.opdict['data_dict'] = data_dict
+        self.plotopt.opdict['mig_dict'] = data_dict
+
+    def _create_dummy_locations(self):
+
+        from locations_trigger import write_header_options
+
+        x, y, z = self.plotopt.getXYZ()
+        dt = 0.5
+        tlen = 50
+        nt = int(tlen/dt)
+        t = np.arange(0, tlen, dt)
+
+        x_range = np.max(x)-np.min(x)
+        y_range = np.max(y)-np.min(y)
+        z_range = np.max(z)-np.min(z)
+
+        xc = np.min(x)+x_range/2.
+        yc = np.min(y)+y_range/3.
+        zc = np.min(z)+z_range/5.
+        tc = tlen/2.0
+
+        loc_filename = self.plotopt.getLocationsFilename()
+        loc_file = open(loc_filename, 'w')
+        write_header_options(loc_file, self.wo.opdict)
+
+        loc_file.write(u"Max = %.2f, %s - %.2f s + %.2f s, x= %.4f pm %.4f\
+                         km, y= %.4f pm %.4f km, z= %.4f pm %.4f km\n" %
+                       (1.0, self.otime.isoformat(),
+                        tlen/30., tlen/30.,
+                        xc, 0.5, yc, 0.5, zc, 0.1))
+        loc_file.close()
+  
+
+        
     def test_plotWavelocResults(self):
 
         plotWavelocResults(self.plotopt)
+
+    def test_plotLocationWaveforms(self):
+
+        plotLocationWaveforms(self.plotopt)
+
 
     def test_plotOptions(self):
 
@@ -141,22 +199,18 @@ class PlottingTests(unittest.TestCase):
         exp_stack_filename = os.path.join(self.plotopt.opdict['base_path'],
                                           'out', 'TEST', 'stack',
                                           'STACK_FNAME.hdf5')
-        exp_fig_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                        'out', 'TEST', 'fig',
-                                        'GRID_FNAME_grid.pdf')
-        exp_wfm_fig_filename = os.path.join(self.plotopt.opdict['base_path'],
-                                            'out', 'TEST', 'fig',
-                                            'GRID_FNAME_wfm.pdf')
+        exp_loc_filename = os.path.join(self.plotopt.opdict['base_path'],
+                                        'out', 'TEST', 'loc',
+                                        'locations.dat')
 
         grid_filename = self.plotopt.getGridFilename()
         stack_filename = self.plotopt.getStackFilename()
-        fig_filename = self.plotopt.getFigFilename()
-        wfm_fig_filename = self.plotopt.getWfmFigFilename()
+        loc_filename = self.plotopt.getLocationsFilename()
 
         self.assertEqual(grid_filename, exp_grid_filename)
         self.assertEqual(stack_filename, exp_stack_filename)
-        self.assertEqual(fig_filename, exp_fig_filename)
-        self.assertEqual(wfm_fig_filename, exp_wfm_fig_filename)
+        self.assertEqual(loc_filename, exp_loc_filename)
+
 
 class FullPlottingTests(unittest.TestCase):
 
@@ -165,14 +219,15 @@ class FullPlottingTests(unittest.TestCase):
         from SDS_processing import do_SDS_processing_setup_and_run
         from migration import do_migration_setup_and_run
         from locations_trigger import do_locations_trigger_setup_and_run
-        from plot_locations2 import do_plotting_setup_and_run
+        from plotting import do_plotting_setup_and_run
 
         # set up default parameters
         wo = WavelocOptions()
         wo.verify_base_path()
 
         wo.opdict['time'] = True
-        wo.opdict['verbose'] = False
+        wo.opdict['verbose'] = True
+        wo.opdict['ugrid_type'] = 'FULL'
 
         wo.opdict['test_datadir'] = 'test_data'
         wo.opdict['datadir'] = 'TEST'
@@ -180,7 +235,7 @@ class FullPlottingTests(unittest.TestCase):
 
         wo.opdict['net_list'] = 'YA'
         wo.opdict['sta_list'] = "FJS,FLR,FOR,HDL,RVL,SNE,UV01,UV02,UV03,UV04,UV05,\
-                                 UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
+                              UV06,UV07,UV08,UV09,UV10,UV11,UV12,UV13,UV14,UV15"
         wo.opdict['comp_list'] = "HHZ"
 
         wo.opdict['starttime'] = "2010-10-14T00:14:00.0Z"
@@ -216,25 +271,26 @@ class FullPlottingTests(unittest.TestCase):
 
         wo.opdict['plot_tbefore'] = 4
         wo.opdict['plot_tafter'] = 6
-        wo.opdict['plot_otime_window'] = 2
+        wo.opdict['otime_window'] = 2
+
 
         ##########################################
         # end of option setting - start processing
         ##########################################
 
         wo.verify_SDS_processing_options()
-        #do_SDS_processing_setup_and_run(wo.opdict)
+        do_SDS_processing_setup_and_run(wo.opdict)
 
         wo.verify_migration_options()
-        #do_migration_setup_and_run(wo.opdict)
+        do_migration_setup_and_run(wo.opdict)
 
-        # do trigger location
         wo.verify_location_options()
-        #do_locations_trigger_setup_and_run(wo.opdict)
+        do_locations_trigger_setup_and_run(wo.opdict)
 
         # This will do plotting of grids and stacks for locations
         wo.verify_plotting_options()
-        do_plotting_setup_and_run(wo.opdict, plot_wfm=True, plot_grid=True)
+        do_plotting_setup_and_run(wo.opdict, plot_wfm=True, plot_grid=False)
+        do_plotting_setup_and_run(wo.opdict, plot_wfm=False, plot_grid=True)
 
 if __name__ == '__main__':
 

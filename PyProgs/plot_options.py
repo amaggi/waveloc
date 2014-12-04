@@ -67,6 +67,10 @@ class PlotOptions(object):
         return os.path.join(self.opdict['base_path'], 'out',
                             self.opdict['outdir'], 'stack')
 
+    def getLocDir(self):
+        return os.path.join(self.opdict['base_path'], 'out',
+                            self.opdict['outdir'], 'loc')
+
     def getGridFilename(self):
         dir = self.getGridDir()
         return os.path.join(dir, self.opdict['grid_filename'])
@@ -76,15 +80,19 @@ class PlotOptions(object):
         return os.path.join(dir, self.opdict['stack_filename'])
 
     def getFigFilename(self):
-        grid_filename = self.getGridFilename()
-        basename = os.path.basename(grid_filename)
-        fig_filename = "%s_grid.pdf" % os.path.splitext(basename)[0]
+        otime = self.opdict['loc']['o_time']
+        basename = otime.isoformat()
+        fig_filename = "loc_%s_grid.pdf" % basename
         dir = self.getFigDir()
         return os.path.join(dir, fig_filename)
 
     def getWfmFigFilename(self):
-        grid_filename = self.getGridFilename()
-        basename = os.path.basename(grid_filename)
-        fig_filename = "%s_wfm.pdf" % os.path.splitext(basename)[0]
+        otime = self.opdict['loc']['o_time']
+        basename = otime.isoformat()
+        fig_filename = "loc_%s_wfm.pdf" % basename
         dir = self.getFigDir()
         return os.path.join(dir, fig_filename)
+
+    def getLocationsFilename(self):
+        dir = self.getLocDir()
+        return os.path.join(dir, 'locations.dat')

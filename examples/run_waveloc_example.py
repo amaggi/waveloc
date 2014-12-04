@@ -80,4 +80,4 @@ do_locations_trigger_setup_and_run(wo.opdict)
 
 # plot results for located events
 wo.verify_plotting_options()
-do_plotting_setup_and_run(wo.opdict, plot_wfm=False, plot_grid=True)
+do_plotting_setup_and_run(wo.opdict, plot_wfm=True, plot_grid=True)

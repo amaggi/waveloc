@@ -254,7 +254,86 @@ def plotLocationWaveforms(plotopt):
     Plots the waveforms re-aligned after a waveloc location.
     Uses information in the plotopt object
     """
-    raise NotImplemented('Plotting waveforms not implemented yet')
+
+    # get filenames
+    fig_filename = plotopt.getWfmFigFilename()
+
+    # get location parameters
+    dt = plotopt.opdict['dt']
+    loc = plotopt.opdict['loc']
+    otime = loc['o_time']
+    otime_left = -loc['o_err_left']
+    otime_right = loc['o_err_right']
+    stack_wfm = plotopt.opdict['stack_wfm']
+    start_time = plotopt.opdict['start_time']
+    data_dict = plotopt.opdict['data_dict']
+    mig_dict = plotopt.opdict['mig_dict']
+
+    # get the time range
+    t = np.arange(len(stack_wfm))*dt - (otime - start_time)
+    #t = np.arange(len(stack_wfm))*dt + start_time
+
+    # get and sort the stations
+    stations = data_dict.keys()
+    stations.sort()
+    n_traces = len(stations)+1
+
+    # start the plot (set up the two panels)
+    plt.clf()
+    fig = plt.figure()
+    ax = fig.add_subplot(n_traces, 2, 1, title='Data')
+    ax.text(-0.25, 2.0, "(a)", transform=ax.transAxes)
+    ax.set_axis_off()
+    ax = fig.add_subplot(n_traces, 2, 2, title='Characteristic function')
+    ax.text(-0.12, 2.0, "(b)", transform=ax.transAxes)
+    ax.set_axis_off()
+
+    # iterate over stations
+    i = 0
+    for sta in stations:
+        # plot the data in the first column
+        if i != len(stations)-1:
+            ax = fig.add_subplot(n_traces, 2, 2*i+1)
+            ax.set_axis_off()
+        else:
+            ax = fig.add_subplot(n_traces, 2, 2*i+1, xlabel='time (s)')
+            ax.xaxis.set_ticks_position('none')
+            ax.yaxis.set_ticks([])
+            ax.spines['top'].set_color('none')
+            ax.spines['left'].set_color('none')
+            ax.spines['right'].set_color('none')
+        ax.plot(t, data_dict[sta], 'b')
+        ax.axvspan(otime_left, otime_right, facecolor='r', alpha=0.2)
+        # add the station name
+        pos = list(ax.get_position().bounds)
+        fig.text(pos[0]-0.01, pos[1]+pos[3]/2., sta, fontsize=10,
+                 horizontalalignment='right',
+                 verticalalignment='center')
+
+        # plot the characteristic function in the second column
+        if i != len(stations)-1:
+            ax = fig.add_subplot(n_traces, 2, 2*i+2)
+            ax.set_axis_off()
+        else:
+            ax = fig.add_subplot(n_traces, 2, 2*i+2, xlabel='time (s)')
+            ax.xaxis.set_ticks_position('none')
+            ax.yaxis.set_ticks([])
+            ax.spines['top'].set_color('none')
+            ax.spines['left'].set_color('none')
+            ax.spines['right'].set_color('none')
+        ax.plot(t, mig_dict[sta], 'b')
+        ax.axvspan(otime_left, otime_right, facecolor='r',  alpha=0.2)
+        # add the maximum kurtosis value
+        pos = list(ax.get_position().bounds)
+        fig.text(pos[0]+pos[2]+0.05, pos[1], '%.1f' % np.max(mig_dict[sta]),
+                 fontsize=10, horizontalalignment='right')
+        i = i+1
+
+    fig.suptitle(otime.isoformat(), x=0.5, y=0.05)
+
+    plt.savefig(fig_filename)
+    print(fig_filename)
+    plt.clf()
 
 
 def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
@@ -302,7 +381,7 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
             gauss_files.sort()
             mig_files = gauss_files
 
-    figdir = os.path.join(base_path, 'out', opdict['outdir'], 'fig')
+    # figdir = os.path.join(base_path, 'out', opdict['outdir'], 'fig')
 
     # read time grid information
     x, y, z, time_grids = get_interpolated_time_ugrids(opdict)
@@ -355,6 +434,7 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
             stack_filename = 'stack_all_' + grid_filename.split('_')[-1]
             plotopt.opdict['grid_filename'] = grid_filename
             plotopt.opdict['stack_filename'] = stack_filename
+            plotopt.opdict['loc'] = loc
 
             plotopt.opdict['dt'] = delta
             plotopt.opdict['n_buf'] = n_buf
@@ -416,7 +496,12 @@ def do_plotting_setup_and_run(opdict, plot_wfm=True, plot_grid=True):
 
             # plot
             plotopt = PlotOptions(opdict)
-            plotLocationWaveforms(loc, start_time, delta, data_dict, mig_dict,
-                                  stack_wfm, figdir)
+            plotopt.opdict['dt'] = delta
+            plotopt.opdict['data_dict'] = data_dict
+            plotopt.opdict['mig_dict'] = mig_dict
+            plotopt.opdict['stack_wfm'] = stack_wfm
+            plotopt.opdict['loc'] = loc
+            plotopt.opdict['start_time'] = start_time
+            plotLocationWaveforms(plotopt)
 
     f_stack.close()
