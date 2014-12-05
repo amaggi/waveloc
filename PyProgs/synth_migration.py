@@ -5,6 +5,7 @@ import logging
 import numpy as np
 from hdf5_grids import H5SingleGrid
 from plot_options import PlotOptions
+from obspy.core import UTCDateTime
 
 
 def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
@@ -169,6 +170,9 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     plotopt.opdict['y_loc'] = syn_y
     plotopt.opdict['z_loc'] = syn_z
     plotopt.opdict['start_time'] = -stack_shift_time
+    loc = {}
+    loc['o_time'] = UTCDateTime(2014,1,1,0,0,0,0)
+    plotopt.opdict['loc'] = loc
 
     logging.debug(plotopt.opdict)
     f = open(plotopt_file, 'w')
