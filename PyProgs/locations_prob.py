@@ -9,7 +9,7 @@ import numpy as np
 
 from locations_trigger import read_locs_from_file, \
     do_locations_trigger_setup_and_run
-from NllGridLib import read_hdr_file
+from NLL_grid_lib import read_hdr_file
 from hdf5_grids import get_interpolated_time_ugrids
 from migration import do_migration_loop_continuous
 from OP_waveforms import read_data_compatible_with_time_dict

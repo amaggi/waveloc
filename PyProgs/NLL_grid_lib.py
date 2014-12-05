@@ -1,6 +1,6 @@
 """
-The NllGridLib module contains functions to read the output of NonLinLoc (NLL)
-in order to use the travel-times within waveloc.
+The Nll_grid_lib module contains functions to read the output of NonLinLoc
+(NLL) in order to use the travel-times within waveloc.
 Contributed by Alessia Maggi
 
 """

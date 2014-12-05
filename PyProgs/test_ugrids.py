@@ -1,7 +1,7 @@
 import os
 import unittest
 import numpy as np
-from NllGridLib import read_hdr_file
+from NLL_grid_lib import read_hdr_file
 from ugrids import create_random_ugrid, nll2random_ugrid, nll2reg_ugrid,\
     ugrid_closest_point_index, ugrid_svr, select_points_closeto_plane
 

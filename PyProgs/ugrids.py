@@ -5,7 +5,7 @@ Helper functions for creating and manipulating unstructured grids.
 import os
 import h5py
 import numpy as np
-from NllGridLib import read_hdr_file
+from NLL_grid_lib import read_hdr_file
 from sklearn import preprocessing
 from sklearn.svm import SVR
 

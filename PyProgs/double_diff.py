@@ -14,7 +14,7 @@ from obspy.core import utcdatetime
 from locations_trigger import read_locs_from_file, read_header_from_file, \
     write_header_options
 from correlation import BinaryFile
-from NllGridLib import read_stations_file, read_hdr_file
+from NLL_grid_lib import read_stations_file, read_hdr_file
 from hdf5_grids import get_interpolated_time_grids
 
 

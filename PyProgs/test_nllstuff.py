@@ -1,13 +1,13 @@
 import os
 import unittest
 import numpy as np
-from NllGridLib import latlon2rect, rect2latlon, read_hdr_file,\
+from NLL_grid_lib import latlon2rect, rect2latlon, read_hdr_file,\
     read_stations_file
 
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(NLLTests('test_NllReadHdr'))
+    suite.addTest(NLLTests('test_NLLReadHdr'))
     suite.addTest(NLLTests('test_ReadStations'))
     suite.addTest(ProjectionTests('test_TransUnknown'))
     suite.addTest(ProjectionTests('test_TransGlobal'))
@@ -54,7 +54,7 @@ class ProjectionTests(unittest.TestCase):
 
 class NLLTests(unittest.TestCase):
 
-    def test_NllReadHdr(self):
+    def test_NLLReadHdr(self):
 
         base_path = os.getenv('WAVELOC_PATH')
         nll_hdr_file = os.path.join(base_path, 'test_data',

@@ -20,7 +20,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
 
     # Creates the synthetic dataset for us to work with
 
-    from NllGridLib import read_stations_file, read_hdr_file
+    from NLL_grid_lib import read_stations_file, read_hdr_file
     from migration import migrate_4D_stack, extract_max_values
     from hdf5_grids import get_interpolated_time_grids,\
         get_interpolated_time_ugrids

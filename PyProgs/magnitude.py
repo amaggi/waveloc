@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from OP_waveforms import Waveform
 from locations_trigger import read_locs_from_file, read_header_from_file, \
     write_header_options
-from NllGridLib import read_stations_file
+from NLL_grid_lib import read_stations_file
 
 
 def read_paz(files):

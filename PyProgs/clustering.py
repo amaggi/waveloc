@@ -14,7 +14,7 @@ from OP_waveforms import Waveform
 import logging
 from correlation import BinaryFile
 from locations_trigger import read_locs_from_file
-from NllGridLib import read_stations_file
+from NLL_grid_lib import read_stations_file
 
 
 class Graph(object):

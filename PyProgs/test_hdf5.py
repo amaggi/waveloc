@@ -3,7 +3,7 @@ import os
 import unittest
 import numpy as np
 from hdf5_grids import H5SingleGrid, H5NllSingleGrid, nll2hdf5
-from NllGridLib import read_hdr_file
+from NLL_grid_lib import read_hdr_file
 
 
 def suite():

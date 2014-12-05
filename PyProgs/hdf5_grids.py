@@ -3,7 +3,7 @@ import os
 import logging
 import numpy as np
 from scipy import ndimage
-from NllGridLib import read_hdr_file
+from NLL_grid_lib import read_hdr_file
 from ugrids import read_ugrid, nll2reg_ugrid
 
 """
@@ -355,7 +355,7 @@ def get_interpolated_time_grids(opdict):
     :param opdict: Dictionary of options in WavelocOptions.opdict format
     """
     import glob
-    from NllGridLib import read_hdr_file
+    from NLL_grid_lib import read_hdr_file
 
     base_path = opdict['base_path']
     full_time_grids = glob.glob(os.path.join(base_path, 'lib',
