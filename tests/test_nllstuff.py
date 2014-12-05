@@ -1,7 +1,7 @@
 import os
 import unittest
 import numpy as np
-from NLL_grid_lib import latlon2rect, rect2latlon, read_hdr_file,\
+from waveloc.NLL_grid_lib import latlon2rect, rect2latlon, read_hdr_file,\
     read_stations_file
 
 

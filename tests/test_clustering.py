@@ -1,5 +1,5 @@
 import unittest
-from clustering import compute_nbsta, do_clustering
+from waveloc.clustering import compute_nbsta, do_clustering
 import numpy as np
 
 

@@ -1,7 +1,7 @@
 import os
 import unittest
 import numpy as np
-from kurtogram import Fast_Kurtogram, getBandwidthAndFrequency, \
+from waveloc.kurtogram import Fast_Kurtogram, getBandwidthAndFrequency, \
     get_h_parameters, Find_wav_kurt, getFTSquaredEnvelope
 
 

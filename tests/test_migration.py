@@ -4,10 +4,10 @@ import h5py
 import logging
 import unittest
 import numpy as np
-from options import WavelocOptions
-from migration import do_migration_setup_and_run
-from synth_migration import generateSyntheticDirac
-from plotting import plotWavelocResults
+from waveloc.options import WavelocOptions
+from waveloc.migration import do_migration_setup_and_run
+from waveloc.synth_migration import generateSyntheticDirac
+from waveloc.plotting import plotWavelocResults
 
 
 def suite():
@@ -104,7 +104,7 @@ def hdf5_max_values(filename):
 class SyntheticMigrationTests(unittest.TestCase):
 
     def test_dirac_migration(self):
-        from locations_trigger import trigger_locations_inner
+        from waveloc.locations_trigger import trigger_locations_inner
 
         outdir = 'TEST_Dirac'
 
@@ -264,7 +264,7 @@ class UgridMigrationTests(unittest.TestCase):
 
     def test_time_grid_ugrids(self):
 
-        from hdf5_grids import get_interpolated_time_grids,\
+        from waveloc.hdf5_grids import get_interpolated_time_grids,\
             get_interpolated_time_ugrids
 
         wo = WavelocOptions()

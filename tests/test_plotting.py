@@ -3,9 +3,9 @@ import h5py
 import unittest
 import logging
 import numpy as np
-from options import WavelocOptions
-from plot_options import PlotOptions
-from plotting import plotWavelocResults, plotLocationWaveforms
+from waveloc.options import WavelocOptions
+from waveloc.plot_options import PlotOptions
+from waveloc.plotting import plotWavelocResults, plotLocationWaveforms
 
 
 def suite():
@@ -23,7 +23,7 @@ class PlottingTests(unittest.TestCase):
 
     def setUp(self):
 
-        from locations_trigger import read_locs_from_file
+        from waveloc.locations_trigger import read_locs_from_file
         from obspy.core import UTCDateTime
 
         self.wo = WavelocOptions()
@@ -151,7 +151,7 @@ class PlottingTests(unittest.TestCase):
 
     def _create_dummy_locations(self):
 
-        from locations_trigger import write_header_options
+        from waveloc.locations_trigger import write_header_options
 
         x, y, z = self.plotopt.getXYZ()
         tlen = 50
@@ -211,11 +211,11 @@ class PlottingTests(unittest.TestCase):
 class FullPlottingTests(unittest.TestCase):
 
     def test_waveloc_example(self):
-        from options import WavelocOptions
-        from SDS_processing import do_SDS_processing_setup_and_run
-        from migration import do_migration_setup_and_run
-        from locations_trigger import do_locations_trigger_setup_and_run
-        from plotting import do_plotting_setup_and_run
+        from waveloc.options import WavelocOptions
+        from waveloc.SDS_processing import do_SDS_processing_setup_and_run
+        from waveloc.migration import do_migration_setup_and_run
+        from waveloc.locations_trigger import do_locations_trigger_setup_and_run
+        from waveloc.plotting import do_plotting_setup_and_run
 
         # set up default parameters
         wo = WavelocOptions()

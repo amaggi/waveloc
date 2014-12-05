@@ -1,5 +1,5 @@
 import unittest
-from double_diff import do_double_diff, coord_cluster
+from waveloc.double_diff import do_double_diff, coord_cluster
 from obspy.core import utcdatetime
 import numpy as np
 

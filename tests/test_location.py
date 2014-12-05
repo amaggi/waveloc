@@ -2,12 +2,12 @@ import os
 import unittest
 import h5py
 import numpy as np
-from options import WavelocOptions
-from locations_trigger import do_locations_trigger_setup_and_run, \
+from waveloc.options import WavelocOptions
+from waveloc.locations_trigger import do_locations_trigger_setup_and_run, \
     trigger_locations_inner, read_locs_from_file
-from locations_prob import do_locations_prob_setup_and_run, \
+from waveloc.locations_prob import do_locations_prob_setup_and_run, \
     read_prob_locs_from_file
-from integrate4D import compute_integral4D, compute_expected_coordinates4D
+from waveloc.integrate4D import compute_integral4D, compute_expected_coordinates4D
 
 
 def suite():
@@ -50,7 +50,7 @@ class TriggeringTests(unittest.TestCase):
 
     def test_smoothing(self):
 
-        from filters import smooth
+        from waveloc.filters import smooth
 
         x = np.arange(100)
         max_val = 100.*np.exp(-(x-50.)*(x-50.)/(10.*10.))+np.random.rand(100)

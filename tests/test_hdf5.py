@@ -2,8 +2,8 @@ import h5py
 import os
 import unittest
 import numpy as np
-from hdf5_grids import H5SingleGrid, H5NllSingleGrid, nll2hdf5
-from NLL_grid_lib import read_hdr_file
+from waveloc.hdf5_grids import H5SingleGrid, H5NllSingleGrid, nll2hdf5
+from waveloc.NLL_grid_lib import read_hdr_file
 
 
 def suite():

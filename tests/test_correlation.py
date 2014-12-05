@@ -1,5 +1,5 @@
 import unittest
-from correlation import correlate
+from waveloc.correlation import correlate
 import numpy as np
 
 

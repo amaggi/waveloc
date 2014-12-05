@@ -2,9 +2,9 @@ import unittest
 import os
 import glob
 import numpy as np
-from SDS_processing import do_SDS_processing_setup_and_run
-from OP_waveforms import Waveform
-from options import WavelocOptions
+from waveloc.SDS_processing import do_SDS_processing_setup_and_run
+from waveloc.OP_waveforms import Waveform
+from waveloc.options import WavelocOptions
 
 
 def suite():
@@ -32,7 +32,7 @@ def waveforms_to_signature(base_path, datadir, dataglob, output_filename):
 class KurtosisTests(unittest.TestCase):
 
     def test_ss_kurtosis(self):
-        from filters import sw_kurtosis1, sw_kurtosis2
+        from waveloc.filters import sw_kurtosis1, sw_kurtosis2
 
         npts = 1000
         nkurt = 7
@@ -50,7 +50,7 @@ class KurtosisTests(unittest.TestCase):
         self.assertEquals(np.argmax(k1), np.argmax(k2))
 
     def test_rec_kurtosis(self):
-        from filters import rec_kurtosis
+        from waveloc.filters import rec_kurtosis
 
         npts = 100000
         w = 3.0
@@ -75,7 +75,7 @@ class ProcessingTests(unittest.TestCase):
         self.wo.verify_SDS_processing_options()
 
     def test_positive_gradient(self):
-        from OP_waveforms import stream_positive_derivative
+        from waveloc.OP_waveforms import stream_positive_derivative
         from obspy.core import read
 
         base_path = self.wo.opdict['base_path']
@@ -97,7 +97,7 @@ class ProcessingTests(unittest.TestCase):
         np.testing.assert_almost_equal(tr.data[20:100], dy_exp[20:100], 2)
 
     def test_channel_read(self):
-        from SDS_processing import read_channel_file
+        from waveloc.SDS_processing import read_channel_file
 
         base_path = self.wo.opdict['base_path']
 
