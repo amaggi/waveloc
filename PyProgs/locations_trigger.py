@@ -13,7 +13,6 @@ from OP_waveforms import Waveform
 from filters import smooth
 from hdf5_grids import get_interpolated_time_ugrids
 from ugrids import ugrid_closest_point_index
-from plot_options import PlotOptions
 
 
 def plot_location_triggers(trace, trig_start, trig_end, trig_95_start,

@@ -154,10 +154,7 @@ class PlottingTests(unittest.TestCase):
         from locations_trigger import write_header_options
 
         x, y, z = self.plotopt.getXYZ()
-        dt = 0.5
         tlen = 50
-        nt = int(tlen/dt)
-        t = np.arange(0, tlen, dt)
 
         x_range = np.max(x)-np.min(x)
         y_range = np.max(y)-np.min(y)
@@ -166,7 +163,6 @@ class PlottingTests(unittest.TestCase):
         xc = np.min(x)+x_range/2.
         yc = np.min(y)+y_range/3.
         zc = np.min(z)+z_range/5.
-        tc = tlen/2.0
 
         loc_filename = self.plotopt.getLocationsFilename()
         loc_file = open(loc_filename, 'w')
