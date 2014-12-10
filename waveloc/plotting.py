@@ -271,7 +271,6 @@ def plotLocationWaveforms(plotopt):
 
     # get the time range
     t = np.arange(len(stack_wfm))*dt - (otime - start_time)
-    #t = np.arange(len(stack_wfm))*dt + start_time
 
     # get and sort the stations
     stations = data_dict.keys()

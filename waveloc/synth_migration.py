@@ -171,7 +171,7 @@ def generateSyntheticDirac(opdict, time_grids=None, ugrid=True):
     plotopt.opdict['z_loc'] = syn_z
     plotopt.opdict['start_time'] = -stack_shift_time
     loc = {}
-    loc['o_time'] = UTCDateTime(2014,1,1,0,0,0,0)
+    loc['o_time'] = UTCDateTime(2014, 1, 1, 0, 0, 0, 0)
     plotopt.opdict['loc'] = loc
 
     logging.debug(plotopt.opdict)
